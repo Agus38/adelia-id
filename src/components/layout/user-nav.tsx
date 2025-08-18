@@ -11,31 +11,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useSidebar } from '@/components/ui/sidebar';
 import { LogOut, Settings, User, Shield } from 'lucide-react';
 import Link from 'next/link';
 
 export function UserNav() {
-   const { isMobile } = useSidebar();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-         <div className="flex items-center gap-3">
-           <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-             <Avatar className="h-9 w-9">
-               <AvatarImage src="https://placehold.co/100x100.png" alt="@adelia" data-ai-hint="user avatar" />
-               <AvatarFallback>A</AvatarFallback>
-             </Avatar>
-           </Button>
-            {!isMobile && (
-              <div className="text-left">
-                  <p className="text-sm font-medium leading-none">Adelia</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    Admin
-                  </p>
-              </div>
-            )}
-         </div>
+        <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+          <Avatar className="h-9 w-9">
+            <AvatarImage src="https://placehold.co/100x100.png" alt="@adelia" data-ai-hint="user avatar" />
+            <AvatarFallback>A</AvatarFallback>
+          </Avatar>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">

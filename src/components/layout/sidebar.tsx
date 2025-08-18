@@ -16,9 +16,11 @@ import { allMenuItems, adminMenuItems } from '@/lib/menu-items-v2';
 import { Logo } from '../icons';
 import { UserNav } from './user-nav';
 import { Shield } from 'lucide-react';
+import { useSidebar } from '../ui/sidebar';
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { isMobile } = useSidebar();
   const isAdminPage = pathname.startsWith('/admin');
 
   const itemsToDisplay = isAdminPage ? adminMenuItems : allMenuItems.filter(item => item.access !== 'admin');
@@ -67,7 +69,7 @@ export function AppSidebar() {
         <SidebarFooter className="mt-auto group-data-[collapsible=icon]:hidden">
           <SidebarSeparator />
            <div className="p-2 flex items-center justify-between">
-              <UserNav />
+              {isMobile ? null : <UserNav />}
            </div>
         </SidebarFooter>
       </SidebarContent>
