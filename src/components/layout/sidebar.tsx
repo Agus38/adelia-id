@@ -28,7 +28,7 @@ export function AppSidebar() {
         <SidebarMenu>
           {allMenuItems.map((item) => (
             <SidebarMenuItem key={item.id}>
-              <Link href={item.href} passHref>
+              <Link href={item.href}>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === item.href}
@@ -37,10 +37,10 @@ export function AppSidebar() {
                     side: 'right',
                   }}
                 >
-                  <>
+                  <span>
                     <item.icon />
                     <span>{item.title}</span>
-                  </>
+                  </span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
