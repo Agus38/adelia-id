@@ -17,7 +17,8 @@ import {
   Settings,
   FileText,
   LifeBuoy,
-  User
+  User,
+  Shield,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -95,11 +96,16 @@ export const menuItems: MenuItem[] = [
     href: '/stok-manyar',
     icon: Archive,
   },
+  {
+    id: 'admin-panel',
+    title: 'PANEL ADMIN',
+    href: '/admin',
+    icon: Shield,
+    access: 'admin',
+  },
 ];
 
-
-export const allMenuItems: MenuItem[] = [
-  homeMenuItem,
+export const adminMenuItems: MenuItem[] = [
   {
     id: 'user-management',
     title: 'Manajemen Pengguna',
@@ -124,6 +130,12 @@ export const allMenuItems: MenuItem[] = [
     description: 'Tutorial integrasi dan konfigurasi sistem.',
     access: 'admin',
   },
+];
+
+
+export const allMenuItems: MenuItem[] = [
+  homeMenuItem,
+  ...adminMenuItems,
   {
     id: 'ai-assistant',
     title: 'Asisten AI Nexus',
