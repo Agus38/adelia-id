@@ -69,7 +69,9 @@ export function AppSidebar() {
         <SidebarFooter className="mt-auto group-data-[collapsible=icon]:hidden">
           <SidebarSeparator />
            <div className="p-2 flex items-center justify-between">
-              {isMobile ? null : <UserNav />}
+              <div>
+                {!isMobile && <UserNav />}
+              </div>
            </div>
         </SidebarFooter>
       </SidebarContent>
