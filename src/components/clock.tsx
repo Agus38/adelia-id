@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 
 export function Clock() {
-  const [time, setTime] = useState(new Date());
+  const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    setTime(new Date());
     const timerId = setInterval(() => {
       setTime(new Date());
     }, 1000);
@@ -32,8 +33,17 @@ export function Clock() {
     return new Intl.DateTimeFormat('id-ID', options).format(date).replace(/\./g, ':');
   };
 
+  if (time === null) {
+    return (
+       <div className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-center min-w-[130px]">
+        <div className="text-sm font-medium">Memuat...</div>
+        <div className="text-lg font-bold tracking-wider">--:--:--</div>
+      </div>
+    )
+  }
+
   return (
-    <div className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-center">
+    <div className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-center min-w-[130px]">
       <div className="text-sm font-medium">{formatDate(time)}</div>
       <div className="text-lg font-bold tracking-wider">{formatTime(time)}</div>
     </div>
