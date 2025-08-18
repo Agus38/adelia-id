@@ -1,3 +1,6 @@
+
+'use client'
+
 import { MenuGrid } from "@/components/menu-grid";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +11,9 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay"
+import * as React from "react"
+
 
 const carouselSlides = [
   {
@@ -31,15 +37,23 @@ const carouselSlides = [
 ]
 
 export default function Home() {
+    const plugin = React.useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: true })
+  )
+
   return (
     <div className="flex-1 flex flex-col">
       {/* Top Banner Carousel */}
       <div className="mb-8">
-        <Carousel className="w-full"
+        <Carousel 
+          plugins={[plugin.current]}
+          className="w-full"
           opts={{
             align: "start",
             loop: true,
           }}
+          onMouseEnter={plugin.current.stop}
+          onMouseLeave={plugin.current.reset}
         >
           <CarouselContent>
             {carouselSlides.map((slide, index) => (
@@ -60,8 +74,6 @@ export default function Home() {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2" />
-          <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2" />
         </Carousel>
       </div>
 
