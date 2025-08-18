@@ -58,7 +58,7 @@ export default function Home() {
           <CarouselContent>
             {carouselSlides.map((slide, index) => (
               <CarouselItem key={index}>
-                 <div className="relative w-full h-48 md:h-52 rounded-lg overflow-hidden shadow-lg">
+                 <div className="relative w-full h-40 md:h-48 rounded-lg overflow-hidden shadow-lg">
                     <Image
                       src={slide.image}
                       alt={slide.title}
