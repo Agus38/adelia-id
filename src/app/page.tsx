@@ -1,22 +1,68 @@
 import { MenuGrid } from "@/components/menu-grid";
 import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+
+const carouselSlides = [
+  {
+    title: "Solusi Inovatif",
+    description: "Tingkatkan produktivitas bisnis Anda dengan alat canggih kami.",
+    image: "https://placehold.co/1200x200.png",
+    hint: "promotional banner"
+  },
+  {
+    title: "Analitik Cerdas",
+    description: "Dapatkan wawasan mendalam dari data Anda dengan dasbor interaktif.",
+    image: "https://placehold.co/1200x200.png",
+    hint: "data analytics"
+  },
+  {
+    title: "Asisten AI Nexus",
+    description: "Biarkan AI membantu Anda menyelesaikan tugas lebih cepat dan efisien.",
+    image: "https://placehold.co/1200x200.png",
+    hint: "artificial intelligence"
+  }
+]
 
 export default function Home() {
   return (
     <div className="flex-1 flex flex-col">
-      {/* Top Banner */}
-      <div className="relative w-full h-48 md:h-52 rounded-lg overflow-hidden shadow-lg mb-8">
-        <Image
-          src="https://placehold.co/1200x200.png"
-          alt="Promotional Banner"
-          layout="fill"
-          objectFit="cover"
-          data-ai-hint="promotional banner"
-        />
-        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-6 text-white">
-          <h2 className="text-3xl md:text-4xl font-bold">Solusi Inovatif</h2>
-          <p className="text-center mt-2 md:text-lg">Tingkatkan produktivitas bisnis Anda dengan alat canggih kami.</p>
-        </div>
+      {/* Top Banner Carousel */}
+      <div className="mb-8">
+        <Carousel className="w-full"
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+        >
+          <CarouselContent>
+            {carouselSlides.map((slide, index) => (
+              <CarouselItem key={index}>
+                 <div className="relative w-full h-48 md:h-52 rounded-lg overflow-hidden shadow-lg">
+                    <Image
+                      src={slide.image}
+                      alt={slide.title}
+                      layout="fill"
+                      objectFit="cover"
+                      data-ai-hint={slide.hint}
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-6 text-white">
+                      <h2 className="text-3xl md:text-4xl font-bold">{slide.title}</h2>
+                      <p className="text-center mt-2 md:text-lg">{slide.description}</p>
+                    </div>
+                  </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2" />
+          <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2" />
+        </Carousel>
       </div>
 
       {/* Main Content */}
