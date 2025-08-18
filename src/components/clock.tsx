@@ -6,6 +6,7 @@ export function Clock() {
   const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    // This effect runs only on the client, after hydration
     setTime(new Date());
     const timerId = setInterval(() => {
       setTime(new Date());
@@ -43,7 +44,7 @@ export function Clock() {
   }
 
   return (
-    <div className="bg-accent text-accent-foreground rounded-lg px-4 py-1 text-center min-w-[130px]">
+    <div className="bg-[#4560ec] text-white rounded-lg px-4 py-1 text-center min-w-[130px]">
       <div className="text-xs font-medium">{formatDate(time)}</div>
       <div className="text-base font-bold tracking-wider">{formatTime(time)}</div>
     </div>
