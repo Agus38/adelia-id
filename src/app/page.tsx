@@ -7,7 +7,7 @@ export default function Home() {
       {/* Top Banner */}
       <div className="relative w-full h-48 md:h-52 rounded-lg overflow-hidden shadow-lg mb-8">
         <Image
-          src="https://placehold.co/1200x400.png"
+          src="https://placehold.co/1200x200.png"
           alt="Promotional Banner"
           layout="fill"
           objectFit="cover"
