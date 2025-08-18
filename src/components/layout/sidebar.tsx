@@ -9,12 +9,19 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarFooter,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { allMenuItems } from '@/lib/menu-items-v2';
+import { allMenuItems, adminMenuItems } from '@/lib/menu-items-v2';
 import { Logo } from '../icons';
+import { UserNav } from './user-nav';
+import { Shield } from 'lucide-react';
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const isAdminPage = pathname.startsWith('/admin');
+
+  const itemsToDisplay = isAdminPage ? adminMenuItems : allMenuItems.filter(item => item.access !== 'admin');
 
   return (
     <Sidebar>
@@ -25,8 +32,18 @@ export function AppSidebar() {
             <h1 className="font-semibold text-lg">Adelia-ID</h1>
           </div>
         </SidebarHeader>
+
+        {isAdminPage && (
+           <div className="p-2 group-data-[collapsible=icon]:hidden">
+              <div className="p-2 rounded-md bg-muted text-center">
+                <Shield className="inline-block h-5 w-5 mb-1" />
+                <p className="text-sm font-semibold">Mode Admin</p>
+              </div>
+           </div>
+        )}
+
         <SidebarMenu>
-          {allMenuItems.map((item) => (
+          {itemsToDisplay.map((item) => (
             <SidebarMenuItem key={item.id}>
               <Link href={item.href}>
                 <SidebarMenuButton
@@ -46,6 +63,13 @@ export function AppSidebar() {
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
+        
+        <SidebarFooter className="mt-auto group-data-[collapsible=icon]:hidden">
+          <SidebarSeparator />
+           <div className="p-2 flex items-center justify-between">
+              <UserNav />
+           </div>
+        </SidebarFooter>
       </SidebarContent>
     </Sidebar>
   );

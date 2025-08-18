@@ -96,16 +96,17 @@ export const menuItems: MenuItem[] = [
     href: '/stok-manyar',
     icon: Archive,
   },
-  {
-    id: 'admin-panel',
-    title: 'PANEL ADMIN',
-    href: '/admin',
-    icon: Shield,
-    access: 'admin',
-  },
 ];
 
 export const adminMenuItems: MenuItem[] = [
+  {
+    id: 'admin-dashboard',
+    title: 'Dasbor Admin',
+    href: '/admin',
+    icon: LayoutGrid,
+    description: 'Tampilan ringkasan dan manajemen sistem.',
+    access: 'admin',
+  },
   {
     id: 'user-management',
     title: 'Manajemen Pengguna',
@@ -118,13 +119,13 @@ export const adminMenuItems: MenuItem[] = [
     id: 'menu-management',
     title: 'Manajemen Menu',
     href: '/admin/menus',
-    icon: LayoutGrid,
+    icon: Settings,
     description: 'Sesuaikan item menu, ikon, dan visibilitas.',
     access: 'admin',
   },
   {
-    id: 'setup',
-    title: 'Pengaturan',
+    id: 'system-settings',
+    title: 'Pengaturan Sistem',
     href: '/admin/setup',
     icon: Settings2,
     description: 'Tutorial integrasi dan konfigurasi sistem.',
@@ -152,14 +153,6 @@ export const allMenuItems: MenuItem[] = [
     access: 'all',
   },
   {
-    id: 'app-settings',
-    title: 'Pengaturan Aplikasi',
-    href: '/settings',
-    icon: Settings,
-    description: 'Konfigurasi pengaturan aplikasi umum.',
-    access: 'all',
-  },
-  {
     id: 'reports',
     title: 'Laporan',
     href: '/reports',
@@ -182,5 +175,12 @@ export const allMenuItems: MenuItem[] = [
     icon: User,
     description: 'Kelola detail profil pribadi Anda.',
     access: 'all',
+  },
+  {
+    id: 'admin-panel',
+    title: 'Panel Admin',
+    href: '/admin',
+    icon: Shield,
+    access: 'admin',
   },
 ];

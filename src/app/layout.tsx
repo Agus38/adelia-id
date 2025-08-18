@@ -4,7 +4,6 @@ import {SidebarProvider} from '@/components/ui/sidebar';
 import {AppSidebar} from '@/components/layout/sidebar';
 import {Header} from '@/components/layout/header';
 import {Toaster} from '@/components/ui/toaster';
-import {Footer} from '@/components/layout/footer';
 import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
@@ -35,14 +34,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SidebarProvider>
-            <div className="flex min-h-screen w-full flex-col md:flex-row">
+            <div className="flex min-h-screen w-full flex-col bg-muted/40">
               <AppSidebar />
-              <div className="flex flex-1 flex-col">
+              <div className="flex flex-1 flex-col sm:gap-4 sm:py-4 sm:pl-14">
                 <Header />
-                <main className="flex flex-1 flex-col bg-background">
+                <main className="flex-1 p-4 sm:px-6 sm:py-0">
                   {children}
                 </main>
-                <Footer />
               </div>
             </div>
           </SidebarProvider>
