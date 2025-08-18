@@ -59,7 +59,6 @@ export const menuItems: MenuItem[] = [
     title: 'MENU 3',
     href: '#',
     icon: Calculator,
-    comingSoon: true,
   },
   {
     id: 'wa-smw',
