@@ -1,10 +1,9 @@
 'use client';
 
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { Moon } from 'lucide-react';
 import { Clock } from '@/components/clock';
 import { UserNav } from './user-nav';
+import { ThemeToggle } from '../theme-toggle';
 
 export function Header() {
   return (
@@ -14,10 +13,7 @@ export function Header() {
       </div>
       <Clock />
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon">
-          <Moon className="h-5 w-5" />
-          <span className="sr-only">Toggle Theme</span>
-        </Button>
+        <ThemeToggle />
         <UserNav />
       </div>
     </header>
