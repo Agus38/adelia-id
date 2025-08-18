@@ -35,17 +35,17 @@ export function Clock() {
 
   if (time === null) {
     return (
-       <div className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-center min-w-[130px]">
-        <div className="text-sm font-medium">Memuat...</div>
-        <div className="text-lg font-bold tracking-wider">--:--:--</div>
+       <div className="bg-accent text-accent-foreground rounded-lg px-4 py-1 text-center min-w-[130px]">
+        <div className="text-xs font-medium">Memuat...</div>
+        <div className="text-base font-bold tracking-wider">--:--:--</div>
       </div>
     )
   }
 
   return (
-    <div className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-center min-w-[130px]">
-      <div className="text-sm font-medium">{formatDate(time)}</div>
-      <div className="text-lg font-bold tracking-wider">{formatTime(time)}</div>
+    <div className="bg-accent text-accent-foreground rounded-lg px-4 py-1 text-center min-w-[130px]">
+      <div className="text-xs font-medium">{formatDate(time)}</div>
+      <div className="text-base font-bold tracking-wider">{formatTime(time)}</div>
     </div>
   );
 }
