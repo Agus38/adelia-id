@@ -8,8 +8,7 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay"
 import * as React from "react"
@@ -38,14 +37,36 @@ const carouselSlides = [
 
 export default function Home() {
     const plugin = React.useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: true })
-  )
+      Autoplay({ delay: 4000, stopOnInteraction: true })
+    )
+    const [api, setApi] = React.useState<CarouselApi>()
+    const [current, setCurrent] = React.useState(0)
+ 
+    React.useEffect(() => {
+      if (!api) {
+        return
+      }
+ 
+      setCurrent(api.selectedScrollSnap())
+ 
+      const onSelect = (api: CarouselApi) => {
+        setCurrent(api.selectedScrollSnap())
+      }
+
+      api.on("select", onSelect)
+ 
+      return () => {
+        api.off("select", onSelect)
+      }
+    }, [api])
+
 
   return (
     <div className="flex-1 flex flex-col">
       {/* Top Banner Carousel */}
-      <div className="mb-8">
+      <div className="mb-4">
         <Carousel 
+          setApi={setApi}
           plugins={[plugin.current]}
           className="w-full"
           opts={{
@@ -75,6 +96,17 @@ export default function Home() {
             ))}
           </CarouselContent>
         </Carousel>
+        <div className="flex justify-center gap-2 mt-2">
+            {carouselSlides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => api?.scrollTo(index)}
+                className={`h-2 w-2 rounded-full transition-colors ${
+                  current === index ? 'bg-primary' : 'bg-muted'
+                }`}
+              />
+            ))}
+          </div>
       </div>
 
       {/* Main Content */}

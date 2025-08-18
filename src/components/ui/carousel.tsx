@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -132,6 +133,7 @@ const Carousel = React.forwardRef<
           scrollNext,
           canScrollPrev,
           canScrollNext,
+          setApi,
         }}
       >
         <div
