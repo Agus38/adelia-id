@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <div className="flex-1 flex flex-col">
       {/* Top Banner */}
-      <div className="relative w-full h-48 md:h-64 rounded-lg overflow-hidden shadow-lg mb-8">
+      <div className="relative w-full h-48 md:h-52 rounded-lg overflow-hidden shadow-lg mb-8">
         <Image
           src="https://placehold.co/1200x400.png"
           alt="Promotional Banner"
