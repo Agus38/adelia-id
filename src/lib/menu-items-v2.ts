@@ -135,7 +135,6 @@ export const adminMenuItems: MenuItem[] = [
 
 export const allMenuItems: MenuItem[] = [
   homeMenuItem,
-  ...adminMenuItems,
   {
     id: 'ai-assistant',
     title: 'Asisten AI Nexus',
