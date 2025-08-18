@@ -19,6 +19,7 @@ import {
   LifeBuoy,
   User,
   Shield,
+  ImageIcon,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -121,6 +122,14 @@ export const adminMenuItems: MenuItem[] = [
     href: '/admin/menus',
     icon: Settings,
     description: 'Sesuaikan item menu, ikon, dan visibilitas.',
+    access: 'admin',
+  },
+    {
+    id: 'banner-management',
+    title: 'Manajemen Banner',
+    href: '/admin/banner',
+    icon: ImageIcon,
+    description: 'Kelola banner dan slide di halaman utama.',
     access: 'admin',
   },
   {

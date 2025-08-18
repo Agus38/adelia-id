@@ -15,6 +15,7 @@ import {
   DollarSign,
   Users2,
   CreditCard,
+  ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -40,6 +41,12 @@ const managementLinks = [
     href: "/admin/menus",
     icon: LayoutGrid,
     description: "Sesuaikan item menu, ikon, dan visibilitas.",
+  },
+  {
+    title: "Manajemen Banner",
+    href: "/admin/banner",
+    icon: ImageIcon,
+    description: "Kelola banner dan slide di halaman utama.",
   },
   {
     title: "Pengaturan Sistem",
