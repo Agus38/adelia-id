@@ -5,6 +5,7 @@ import {AppSidebar} from '@/components/layout/sidebar';
 import {Header} from '@/components/layout/header';
 import {Toaster} from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
+import { Footer } from '@/components/layout/footer';
 
 export const metadata: Metadata = {
   title: 'Adelia-ID',
@@ -36,11 +37,12 @@ export default function RootLayout({
           <SidebarProvider>
             <div className="flex min-h-screen w-full flex-col bg-muted/40">
               <AppSidebar />
-              <div className="flex flex-1 flex-col sm:gap-4 sm:py-4 sm:pl-14">
+              <div className="flex flex-1 flex-col sm:pl-14">
                 <Header />
-                <main className="flex-1 p-4 sm:px-6 sm:py-0">
+                <main className="flex-1 p-4 sm:px-6 sm:py-4">
                   {children}
                 </main>
+                <Footer />
               </div>
             </div>
           </SidebarProvider>
