@@ -28,7 +28,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <SidebarProvider>
-          <div className="flex min-h-screen w-full">
+          <div className="flex min-h-screen w-full flex-col md:flex-row">
             <AppSidebar />
             <div className="flex flex-1 flex-col">
               <Header />

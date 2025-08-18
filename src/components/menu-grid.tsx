@@ -1,23 +1,23 @@
 import Link from "next/link";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { menuItems } from "@/lib/menu-items";
+import { Card, CardContent } from "@/components/ui/card";
+import { menuItems } from "@/lib/menu-items-v2";
 
 export function MenuGrid() {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-3 gap-4 md:gap-6">
       {menuItems.map((item) => (
         <Link href={item.href} key={item.id}>
-          <Card className="hover:bg-primary/20 transition-colors duration-200 h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+          <Card className="hover:bg-primary/20 transition-colors duration-200 aspect-square flex flex-col items-center justify-center p-4 border-2 border-transparent hover:border-purple-300 shadow-lg rounded-2xl">
+            <CardContent className="p-0 flex flex-col items-center justify-center gap-2">
+              <item.icon className="h-8 w-8 text-blue-600" />
+              <p className="text-sm text-center font-semibold text-foreground">
                 {item.title}
-              </CardTitle>
-              <item.icon className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                {item.description}
               </p>
+              {item.comingSoon && (
+                <p className="text-xs text-red-500 font-bold">
+                  COMING SOON
+                </p>
+              )}
             </CardContent>
           </Card>
         </Link>

@@ -10,7 +10,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { allMenuItems } from '@/lib/menu-items';
+import { allMenuItems } from '@/lib/menu-items-v2';
 import { Logo } from '../icons';
 
 export function AppSidebar() {
