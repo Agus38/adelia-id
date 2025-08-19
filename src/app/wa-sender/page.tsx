@@ -112,15 +112,11 @@ export default function DailyReportPage() {
   ) => {
     const setter = type === 'pemasukan' ? setExtraPemasukan : setExtraPengeluaran;
     const list = type === 'pemasukan' ? extraPemasukan : extraPengeluaran;
-
-    const updatedValue = typeof value === 'string' && field === 'value'
-      ? parseFormattedNumber(value)
-      : value;
-
+    
     setter(
       list.map(item =>
         item.id === id
-          ? { ...item, [field]: field === 'value' ? Number(updatedValue) || 0 : updatedValue }
+          ? { ...item, [field]: field === 'value' ? Number(value) || 0 : value }
           : item
       )
     );
@@ -134,19 +130,9 @@ export default function DailyReportPage() {
     }).format(value);
   };
 
-  const formatInputNumber = (value: number) => {
-    if (value === 0) return '';
-    return new Intl.NumberFormat('id-ID').format(value);
-  }
-
-  const parseFormattedNumber = (value: string) => {
-    return Number(value.replace(/\./g, '')) || 0;
-  }
-
   const handleNumericInputChange = (setter: React.Dispatch<React.SetStateAction<number>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const parsedValue = parseFormattedNumber(value);
-    setter(parsedValue);
+    const value = e.target.valueAsNumber || 0;
+    setter(value);
   }
 
   const SummaryRow = ({ label, value, isBold = false, isDestructive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean }) => (
@@ -161,34 +147,6 @@ export default function DailyReportPage() {
       </div>
     </div>
   );
-
-  const NumericInput = ({value, onChange, ...props}: React.ComponentProps<typeof Input> & { value: number, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void}) => {
-    return (
-        <Input 
-            value={formatInputNumber(value)}
-            onChange={onChange}
-            type="text"
-            inputMode="numeric"
-            maxLength={13} // 999.999.999 -> 12 chars
-            placeholder="0"
-            {...props}
-        />
-    )
-  }
-  
-  const ExtraNumericInput = ({value, onChange, ...props}: React.ComponentProps<typeof Input> & { value: number, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void}) => {
-    return (
-        <Input 
-            value={formatInputNumber(value)}
-            onChange={onChange}
-            type="text"
-            inputMode="numeric"
-            maxLength={13}
-            placeholder="0"
-            {...props}
-        />
-    )
-  }
 
   return (
     <div className="flex-1 space-y-4 pt-6 px-1.5 md:px-2">
@@ -254,15 +212,15 @@ export default function DailyReportPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <div className="space-y-2">
               <Label htmlFor="modalAwal">Modal Awal</Label>
-              <NumericInput id="modalAwal" value={modalAwal} onChange={handleNumericInputChange(setModalAwal)} />
+              <Input id="modalAwal" type="number" placeholder="0" value={modalAwal || ''} onChange={handleNumericInputChange(setModalAwal)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="omsetBersih">Omset Bersih</Label>
-              <NumericInput id="omsetBersih" value={omsetBersih} onChange={handleNumericInputChange(setOmsetBersih)} />
+              <Input id="omsetBersih" type="number" placeholder="0" value={omsetBersih || ''} onChange={handleNumericInputChange(setOmsetBersih)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="pajak">Pajak</Label>
-              <NumericInput id="pajak" value={pajak} onChange={handleNumericInputChange(setPajak)} />
+              <Input id="pajak" type="number" placeholder="0" value={pajak || ''} onChange={handleNumericInputChange(setPajak)} />
             </div>
             <div className="space-y-2">
               <Label>Omset Kotor</Label>
@@ -277,18 +235,18 @@ export default function DailyReportPage() {
               <AccordionTrigger>Pemasukan Online</AccordionTrigger>
               <AccordionContent className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                  <div className="space-y-2"><Label>GoFood</Label><NumericInput value={goFood} onChange={handleNumericInputChange(setGoFood)} /></div>
-                  <div className="space-y-2"><Label>GrabFood</Label><NumericInput value={grabFood} onChange={handleNumericInputChange(setGrabFood)} /></div>
-                  <div className="space-y-2"><Label>ShopeeFood</Label><NumericInput value={shopeeFood} onChange={handleNumericInputChange(setShopeeFood)} /></div>
-                  <div className="space-y-2"><Label>Qris Mandiri</Label><NumericInput value={qrisMandiri} onChange={handleNumericInputChange(setQrisMandiri)} /></div>
-                  <div className="space-y-2"><Label>Qris Bri</Label><NumericInput value={qrisBri} onChange={handleNumericInputChange(setQrisBri)} /></div>
-                  <div className="space-y-2"><Label>Debit Mandiri</Label><NumericInput value={debitMandiri} onChange={handleNumericInputChange(setDebitMandiri)} /></div>
-                  <div className="space-y-2"><Label>Debit Bri</Label><NumericInput value={debitBri} onChange={handleNumericInputChange(setDebitBri)} /></div>
+                  <div className="space-y-2"><Label>GoFood</Label><Input type="number" placeholder="0" value={goFood || ''} onChange={handleNumericInputChange(setGoFood)} /></div>
+                  <div className="space-y-2"><Label>GrabFood</Label><Input type="number" placeholder="0" value={grabFood || ''} onChange={handleNumericInputChange(setGrabFood)} /></div>
+                  <div className="space-y-2"><Label>ShopeeFood</Label><Input type="number" placeholder="0" value={shopeeFood || ''} onChange={handleNumericInputChange(setShopeeFood)} /></div>
+                  <div className="space-y-2"><Label>Qris Mandiri</Label><Input type="number" placeholder="0" value={qrisMandiri || ''} onChange={handleNumericInputChange(setQrisMandiri)} /></div>
+                  <div className="space-y-2"><Label>Qris Bri</Label><Input type="number" placeholder="0" value={qrisBri || ''} onChange={handleNumericInputChange(setQrisBri)} /></div>
+                  <div className="space-y-2"><Label>Debit Mandiri</Label><Input type="number" placeholder="0" value={debitMandiri || ''} onChange={handleNumericInputChange(setDebitMandiri)} /></div>
+                  <div className="space-y-2"><Label>Debit Bri</Label><Input type="number" placeholder="0" value={debitBri || ''} onChange={handleNumericInputChange(setDebitBri)} /></div>
                 </div>
                  {extraPemasukan.map(field => (
                   <div key={field.id} className="flex items-end gap-2">
                     <div className="flex-1 space-y-2"><Label>Nama Pemasukan</Label><Input value={field.name} placeholder="cth: Transfer Bank" onChange={e => handleExtraFieldChange('pemasukan', field.id, 'name', e.target.value)} /></div>
-                    <div className="flex-1 space-y-2"><Label>Jumlah</Label><ExtraNumericInput value={field.value} onChange={e => handleExtraFieldChange('pemasukan', field.id, 'value', e.target.value)} /></div>
+                    <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="number" placeholder="0" value={field.value || ''} onChange={e => handleExtraFieldChange('pemasukan', field.id, 'value', e.target.value)} /></div>
                     <Button variant="ghost" size="icon" onClick={() => handleRemoveExtraField('pemasukan', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 ))}
@@ -299,16 +257,16 @@ export default function DailyReportPage() {
               <AccordionTrigger>Pengeluaran Offline</AccordionTrigger>
               <AccordionContent className="space-y-4 pt-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                  <div className="space-y-2"><Label>Transport</Label><NumericInput value={transport} onChange={handleNumericInputChange(setTransport)} /></div>
-                  <div className="space-y-2"><Label>Gosend</Label><NumericInput value={goSend} onChange={handleNumericInputChange(setGoSend)} /></div>
-                  <div className="space-y-2"><Label>Iuran Bulanan</Label><NumericInput value={iuranBulanan} onChange={handleNumericInputChange(setIuranBulanan)} /></div>
-                  <div className="space-y-2"><Label>Bonus</Label><NumericInput value={bonus} onChange={handleNumericInputChange(setBonus)} /></div>
-                  <div className="space-y-2"><Label>Lembur</Label><NumericInput value={lembur} onChange={handleNumericInputChange(setLembur)} /></div>
+                  <div className="space-y-2"><Label>Transport</Label><Input type="number" placeholder="0" value={transport || ''} onChange={handleNumericInputChange(setTransport)} /></div>
+                  <div className="space-y-2"><Label>Gosend</Label><Input type="number" placeholder="0" value={goSend || ''} onChange={handleNumericInputChange(setGoSend)} /></div>
+                  <div className="space-y-2"><Label>Iuran Bulanan</Label><Input type="number" placeholder="0" value={iuranBulanan || ''} onChange={handleNumericInputChange(setIuranBulanan)} /></div>
+                  <div className="space-y-2"><Label>Bonus</Label><Input type="number" placeholder="0" value={bonus || ''} onChange={handleNumericInputChange(setBonus)} /></div>
+                  <div className="space-y-2"><Label>Lembur</Label><Input type="number" placeholder="0" value={lembur || ''} onChange={handleNumericInputChange(setLembur)} /></div>
                 </div>
                 {extraPengeluaran.map(field => (
                   <div key={field.id} className="flex items-end gap-2">
                     <div className="flex-1 space-y-2"><Label>Nama Pengeluaran</Label><Input value={field.name} placeholder="cth: Beli Gas" onChange={e => handleExtraFieldChange('pengeluaran', field.id, 'name', e.target.value)} /></div>
-                    <div className="flex-1 space-y-2"><Label>Jumlah</Label><ExtraNumericInput value={field.value} onChange={e => handleExtraFieldChange('pengeluaran', field.id, 'value', e.target.value)} /></div>
+                    <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="number" placeholder="0" value={field.value || ''} onChange={e => handleExtraFieldChange('pengeluaran', field.id, 'value', e.target.value)} /></div>
                     <Button variant="ghost" size="icon" onClick={() => handleRemoveExtraField('pengeluaran', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 ))}
@@ -345,3 +303,5 @@ export default function DailyReportPage() {
     </div>
   );
 }
+
+    
