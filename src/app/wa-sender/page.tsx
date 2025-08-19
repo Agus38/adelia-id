@@ -205,7 +205,9 @@ export default function DailyReportPage() {
             </div>
             <div className="space-y-2">
               <Label>Omset Kotor</Label>
-              <Input value={formatCurrency(omsetKotor)} readOnly className="font-semibold" />
+              <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold">
+                {formatCurrency(omsetKotor)}
+              </div>
             </div>
           </div>
 
@@ -262,19 +264,27 @@ export default function DailyReportPage() {
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
                 <div className="space-y-2">
                   <Label>Total Pengeluaran (Online + Offline)</Label>
-                  <Input value={formatCurrency(totalPengeluaran)} readOnly className="font-semibold text-destructive" />
+                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold text-destructive">
+                    {formatCurrency(totalPengeluaran)}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Sisa Omset (Omset Bersih - Total Pengeluaran)</Label>
-                  <Input value={formatCurrency(sisaOmset)} readOnly className="font-semibold" />
+                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold">
+                    {formatCurrency(sisaOmset)}
+                  </div>
                 </div>
                  <div className="space-y-2">
                   <Label>Omset + Pajak</Label>
-                  <Input value={formatCurrency(omsetPlusPajak)} readOnly className="font-semibold" />
+                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold">
+                    {formatCurrency(omsetPlusPajak)}
+                  </div>
                 </div>
                  <div className="space-y-2">
                   <Label>Omset + Pajak + Modal</Label>
-                  <Input value={formatCurrency(omsetPlusPajakPlusModal)} readOnly className="font-bold text-lg" />
+                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-lg font-bold">
+                    {formatCurrency(omsetPlusPajakPlusModal)}
+                  </div>
                 </div>
             </div>
           </div>
@@ -286,3 +296,5 @@ export default function DailyReportPage() {
     </div>
   );
 }
+
+    
