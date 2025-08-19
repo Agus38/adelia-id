@@ -347,8 +347,8 @@ export default function DailyReportPage() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button>Simpan</Button>
-          <Button>
+          <Button className="bg-[#4560ec] hover:bg-[#4560ec]/90 text-white">Simpan</Button>
+          <Button className="bg-[#25d366] hover:bg-[#25d366]/90 text-white">
              <Send className="mr-2 h-4 w-4" />
             Kirim WA
           </Button>
@@ -373,5 +373,3 @@ export default function DailyReportPage() {
     </>
   );
 }
-
-    
