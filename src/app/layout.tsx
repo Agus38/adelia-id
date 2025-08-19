@@ -39,7 +39,7 @@ export default function RootLayout({
               <AppSidebar />
               <div className="flex flex-1 flex-col sm:pl-14">
                 <Header />
-                <main className="flex-1 p-1 sm:px-6 sm:py-4">
+                <main className="flex-1 p-4 md:p-6">
                   {children}
                 </main>
                 <Footer />
