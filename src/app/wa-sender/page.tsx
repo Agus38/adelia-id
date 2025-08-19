@@ -19,7 +19,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Calendar as CalendarIcon, PlusCircle, Send, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, PlusCircle, Save, Send, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -346,9 +346,12 @@ export default function DailyReportPage() {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button className="bg-[#4560ec] hover:bg-[#4560ec]/90 text-white">Simpan</Button>
-          <Button className="bg-[#25d366] hover:bg-[#25d366]/90 text-white">
+        <CardFooter className="flex justify-between gap-4">
+          <Button className="flex-1 bg-[#4560ec] hover:bg-[#4560ec]/90 text-white">
+            <Save className="mr-2 h-4 w-4" />
+            Simpan
+          </Button>
+          <Button className="flex-1 bg-[#25d366] hover:bg-[#25d366]/90 text-white">
              <Send className="mr-2 h-4 w-4" />
             Kirim WA
           </Button>
