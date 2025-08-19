@@ -298,8 +298,3 @@ export default function DailyReportPage() {
     </div>
   );
 }
-
-    
-
-    
-
