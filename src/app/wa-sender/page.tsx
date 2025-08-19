@@ -114,7 +114,7 @@ export default function DailyReportPage() {
 
   const handleNumericInputChange = (setter: React.Dispatch<React.SetStateAction<number>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
       const rawValue = e.target.value.replace(/\./g, '');
-      if (/^\d*$/.test(rawValue)) {
+      if (/^\d*$/.test(rawValue) && rawValue.length <= 9) {
           const numValue = Number(rawValue);
           setter(numValue);
       }
@@ -136,7 +136,7 @@ export default function DailyReportPage() {
             return { ...item, name: e.target.value };
           } else {
             const rawValue = e.target.value.replace(/\./g, '');
-             if (/^\d*$/.test(rawValue)) {
+             if (/^\d*$/.test(rawValue) && rawValue.length <= 9) {
               const numValue = Number(rawValue);
               return { ...item, value: numValue };
             }
