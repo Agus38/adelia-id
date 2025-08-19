@@ -19,7 +19,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Calendar as CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, PlusCircle, Send, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -279,7 +279,7 @@ export default function DailyReportPage() {
             </div>
           </div>
 
-          <Accordion type="multiple" defaultValue={[]} className="w-full">
+          <Accordion type="multiple" defaultValue={['item-1', 'item-2']} className="w-full">
             <AccordionItem value="item-1">
               <AccordionTrigger>Pemasukan Online</AccordionTrigger>
               <AccordionContent className="space-y-4 pt-4">
@@ -346,8 +346,12 @@ export default function DailyReportPage() {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="justify-end">
+        <CardFooter className="flex justify-between">
           <Button>Simpan Laporan</Button>
+          <Button>
+             <Send className="mr-2 h-4 w-4" />
+            Kirim WhatsApp
+          </Button>
         </CardFooter>
       </Card>
     </div>
@@ -369,3 +373,5 @@ export default function DailyReportPage() {
     </>
   );
 }
+
+    
