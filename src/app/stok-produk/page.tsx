@@ -117,29 +117,29 @@ export default function StokProdukPage() {
               </RadioGroup>
             </div>
           </div>
-          <Table>
+          <Table className="border">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px]">NO</TableHead>
-                <TableHead>BARANG</TableHead>
-                <TableHead className="w-[100px]">PAGI</TableHead>
-                <TableHead className="w-[100px]">SORE</TableHead>
+                <TableHead className="w-[50px] border-r">NO</TableHead>
+                <TableHead className="border-r">BARANG</TableHead>
+                <TableHead className="w-[100px] border-r">PAGI</TableHead>
+                <TableHead className="w-[100px] border-r">SORE</TableHead>
                 <TableHead>ORDER</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {stockData.map((item, index) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{index + 1}</TableCell>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell>
+                  <TableCell className="font-medium border-r">{index + 1}</TableCell>
+                  <TableCell className="border-r">{item.name}</TableCell>
+                  <TableCell className="border-r">
                     <Input 
                       value={item.morning} 
                       onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
                       className="h-8"
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="border-r">
                     <Input 
                       value={item.afternoon} 
                       onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
