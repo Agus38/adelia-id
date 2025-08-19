@@ -28,8 +28,16 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
+       {isMobile && (
+        <SidebarHeader className="border-b">
+           <div className="flex items-center gap-2 font-semibold">
+              <Logo />
+              <span className="text-primary text-lg">Adelia-ID</span>
+            </div>
+        </SidebarHeader>
+      )}
       <SidebarContent>
-        {isAdminPage && (
+        {isAdminPage && !isMobile && (
            <div className="p-2 group-data-[collapsible=icon]:hidden">
               <div className="p-2 rounded-md bg-muted text-center">
                 <Shield className="inline-block h-5 w-5 mb-1" />
