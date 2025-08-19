@@ -29,13 +29,6 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarContent>
-        <SidebarHeader className="group-data-[collapsible=icon]:hidden">
-          <div className="flex items-center gap-2">
-            <Logo />
-            <h1 className="font-semibold text-lg">Adelia-ID</h1>
-          </div>
-        </SidebarHeader>
-
         {isAdminPage && (
            <div className="p-2 group-data-[collapsible=icon]:hidden">
               <div className="p-2 rounded-md bg-muted text-center">
