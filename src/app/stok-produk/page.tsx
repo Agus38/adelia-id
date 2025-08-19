@@ -117,48 +117,46 @@ export default function StokProdukPage() {
               </RadioGroup>
             </div>
           </div>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">NO</TableHead>
-                  <TableHead>BARANG</TableHead>
-                  <TableHead className="w-[100px]">PAGI</TableHead>
-                  <TableHead className="w-[100px]">SORE</TableHead>
-                  <TableHead>ORDER</TableHead>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]">NO</TableHead>
+                <TableHead>BARANG</TableHead>
+                <TableHead className="w-[100px]">PAGI</TableHead>
+                <TableHead className="w-[100px]">SORE</TableHead>
+                <TableHead>ORDER</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stockData.map((item, index) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{index + 1}</TableCell>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell>
+                    <Input 
+                      value={item.morning} 
+                      onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
+                      className="h-8"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input 
+                      value={item.afternoon} 
+                      onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
+                      className="h-8"
+                    />
+                  </TableCell>
+                  <TableCell>
+                      <Input 
+                      value={item.order} 
+                      onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
+                      className="h-8"
+                    />
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {stockData.map((item, index) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{index + 1}</TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>
-                      <Input 
-                        value={item.morning} 
-                        onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
-                        className="h-8"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input 
-                        value={item.afternoon} 
-                        onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
-                        className="h-8"
-                      />
-                    </TableCell>
-                    <TableCell>
-                       <Input 
-                        value={item.order} 
-                        onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
-                        className="h-8"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
          <CardFooter className="flex justify-between gap-4">
           <Button variant="destructive" onClick={handleClear} className="w-1/2">
