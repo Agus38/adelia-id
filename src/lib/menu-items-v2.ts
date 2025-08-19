@@ -44,57 +44,64 @@ export const homeMenuItem: MenuItem = {
 export const menuItems: MenuItem[] = [
   {
     id: 'wa-sender',
-    title: 'MENU 1',
+    title: 'Laporan Harian',
     href: '/wa-sender',
     icon: MessageSquare,
   },
   {
     id: 'stok-produk',
-    title: 'MENU 2',
+    title: 'Stok Produk',
     href: '/stok-produk',
     icon: Package,
+    comingSoon: true,
   },
   {
-    id: 'coming-soon',
-    title: 'MENU 3',
-    href: '#',
+    id: 'kalkulator',
+    title: 'Kalkulator',
+    href: '/kalkulator',
     icon: Calculator,
+    comingSoon: true,
   },
   {
     id: 'wa-smw',
-    title: 'MENU 4',
+    title: 'WA SMW',
     href: '/wa-smw',
     icon: Send,
+    comingSoon: true,
   },
   {
     id: 'nexus-ai',
-    title: 'MENU 5',
+    title: 'Nexus AI',
     href: '/ai-assistant',
     icon: Bot,
   },
   {
     id: 'cek-usia',
-    title: 'MENU 6',
+    title: 'Cek Usia',
     href: '/cek-usia',
     icon: Cake,
+    comingSoon: true,
   },
   {
     id: 'convert',
-    title: 'MENU 7',
+    title: 'Konversi',
     href: '/convert',
     icon: Repeat,
+    comingSoon: true,
   },
   {
     id: 'diskon',
-    title: 'MENU 8',
+    title: 'Diskon',
     href: '/diskon',
     icon: Tag,
+    comingSoon: true,
   },
   {
     id: 'stok-manyar',
-    title: 'MENU 9',
+    title: 'Stok Manyar',
     href: '/stok-manyar',
     icon: Archive,
+    comingSoon: true,
   },
 ];
 
@@ -144,6 +151,13 @@ export const adminMenuItems: MenuItem[] = [
 
 export const allMenuItems: MenuItem[] = [
   homeMenuItem,
+  {
+    id: 'wa-sender-sidebar',
+    title: 'Laporan Harian',
+    href: '/wa-sender',
+    icon: MessageSquare,
+    access: 'all',
+  },
   {
     id: 'ai-assistant',
     title: 'Asisten AI Nexus',
