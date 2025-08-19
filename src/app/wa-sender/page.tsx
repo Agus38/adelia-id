@@ -347,7 +347,7 @@ export default function DailyReportPage() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button>Simpan*</Button>
+          <Button>Simpan</Button>
           <Button>
              <Send className="mr-2 h-4 w-4" />
             Kirim WA
