@@ -13,8 +13,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    --primary: 210 100% 86%; /* #B4D4FF */
-    --primary-foreground: 210 100% 25%;
+    --primary: 226 83% 60%; /* #4560EC */
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 0 0% 92%;
     --secondary-foreground: 240 10% 3.9%;
@@ -30,19 +30,19 @@
 
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 325 66% 53%;
+    --ring: 226 83% 60%;
 
     --radius: 0.75rem; /* iOS like rounded corners */
 
     /* Sidebar specific colors */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 10% 3.9%;
-    --sidebar-primary: 325 66% 53%; /* accent */
+    --sidebar-primary: 226 83% 60%; 
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 96%; /* background */
     --sidebar-accent-foreground: 240 10% 3.9%;
     --sidebar-border: 0 0% 89.8%;
-    --sidebar-ring: 325 66% 53%;
+    --sidebar-ring: 226 83% 60%;
   }
 
   .dark {
@@ -55,8 +55,8 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 210 100% 86%;
-    --primary-foreground: 210 100% 25%;
+    --primary: 226 83% 60%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 240 4% 16%;
     --secondary-foreground: 0 0% 98%;
@@ -72,17 +72,17 @@
 
     --border: 240 4% 16%;
     --input: 240 4% 16%;
-    --ring: 325 66% 53%;
+    --ring: 226 83% 60%;
 
     /* Sidebar specific colors */
     --sidebar-background: 240 10% 3.9%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 325 66% 53%; /* accent */
+    --sidebar-primary: 226 83% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 4% 16%;
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 4% 16%;
-    --sidebar-ring: 325 66% 53%;
+    --sidebar-ring: 226 83% 60%;
   }
 }
 
