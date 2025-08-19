@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function SetupPage() {
@@ -28,7 +29,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
           <section>
             <h3 className="text-xl font-semibold mb-2">Langkah 1: Dapatkan Kunci API Supabase Anda</h3>
             <p className="text-muted-foreground">
-              Masuk ke akun Supabase Anda dan navigasikan ke proyek Anda. Di bawah Pengaturan Proyek &gt; API, Anda akan menemukan URL Proyek dan kunci `anon` publik Anda.
+              Masuk ke akun Supabase Anda dan navigasikan ke proyek Anda. Di bawah Pengaturan Proyek > API, Anda akan menemukan URL Proyek dan kunci `anon` publik Anda.
             </p>
           </section>
 

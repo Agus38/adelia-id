@@ -1,3 +1,4 @@
+
 import {
   Users,
   LayoutGrid,
@@ -10,6 +11,14 @@ import {
   User,
   Home,
   type LucideIcon,
+  MessageSquare,
+  Package,
+  Calculator,
+  Send,
+  Cake,
+  Repeat,
+  Tag,
+  Archive,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -19,6 +28,7 @@ export interface MenuItem {
   icon: LucideIcon;
   description: string;
   access: 'all' | 'admin';
+  comingSoon?: boolean;
 }
 
 export const homeMenuItem: MenuItem = {
@@ -28,33 +38,92 @@ export const homeMenuItem: MenuItem = {
   icon: Home,
   description: 'Kembali ke halaman utama.',
   access: 'all',
-}
+};
 
 export const menuItems: MenuItem[] = [
   {
-    id: 'user-management',
-    title: 'Manajemen Pengguna',
-    href: '/admin/users',
-    icon: Users,
-    description: 'Kelola pengguna, peran, dan hak akses.',
-    access: 'admin',
+    id: 'wa-sender',
+    title: 'Laporan Harian',
+    href: '/wa-sender',
+    icon: MessageSquare,
+    description: 'Kirim laporan harian via WhatsApp.',
+    access: 'all',
   },
   {
-    id: 'menu-management',
-    title: 'Manajemen Menu',
-    href: '/admin/menus',
-    icon: LayoutGrid,
-    description: 'Sesuaikan item menu, ikon, dan visibilitas.',
-    access: 'admin',
+    id: 'stok-produk',
+    title: 'Stok Produk',
+    href: '/stok-produk',
+    icon: Package,
+    description: 'Kelola inventaris produk Anda.',
+    access: 'all',
+    comingSoon: true,
   },
   {
-    id: 'setup',
-    title: 'Pengaturan',
-    href: '/admin/setup',
-    icon: Settings2,
-    description: 'Tutorial integrasi dan konfigurasi sistem.',
-    access: 'admin',
+    id: 'kalkulator',
+    title: 'Kalkulator',
+    href: '/kalkulator',
+    icon: Calculator,
+    description: 'Gunakan kalkulator untuk perhitungan cepat.',
+    access: 'all',
+    comingSoon: true,
   },
+  {
+    id: 'wa-smw',
+    title: 'WA SMW',
+    href: '/wa-smw',
+    icon: Send,
+    description: 'Kirim pesan WhatsApp melalui SMW.',
+    access: 'all',
+    comingSoon: true,
+  },
+  {
+    id: 'nexus-ai',
+    title: 'Nexus AI',
+    href: '/ai-assistant',
+    icon: Bot,
+    description: 'Bantuan cerdas untuk tugas Anda.',
+    access: 'all',
+  },
+  {
+    id: 'cek-usia',
+    title: 'Cek Usia',
+    href: '/cek-usia',
+    icon: Cake,
+    description: 'Hitung usia berdasarkan tanggal lahir.',
+    access: 'all',
+    comingSoon: true,
+  },
+  {
+    id: 'convert',
+    title: 'Konversi',
+    href: '/convert',
+    icon: Repeat,
+    description: 'Alat untuk mengonversi berbagai satuan.',
+    access: 'all',
+    comingSoon: true,
+  },
+  {
+    id: 'diskon',
+    title: 'Diskon',
+    href: '/diskon',
+    icon: Tag,
+    description: 'Hitung harga setelah diskon.',
+    access: 'all',
+    comingSoon: true,
+  },
+  {
+    id: 'stok-manyar',
+    title: 'Stok Manyar',
+    href: '/stok-manyar',
+    icon: Archive,
+    description: 'Kelola inventaris untuk lokasi Manyar.',
+    access: 'all',
+    comingSoon: true,
+  },
+];
+
+export const allMenuItems: MenuItem[] = [
+  homeMenuItem,
   {
     id: 'ai-assistant',
     title: 'Asisten AI Nexus',
@@ -72,14 +141,6 @@ export const menuItems: MenuItem[] = [
     access: 'all',
   },
   {
-    id: 'app-settings',
-    title: 'Pengaturan Aplikasi',
-    href: '/settings',
-    icon: Settings,
-    description: 'Konfigurasi pengaturan aplikasi umum.',
-    access: 'all',
-  },
-  {
     id: 'reports',
     title: 'Laporan',
     href: '/reports',
@@ -89,7 +150,7 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: 'support',
-    title: 'Bantuan &amp; Dukungan',
+    title: 'Bantuan & Dukungan',
     href: '/support',
     icon: LifeBuoy,
     description: 'Hubungi dukungan atau lihat FAQ.',
@@ -104,5 +165,3 @@ export const menuItems: MenuItem[] = [
     access: 'all',
   },
 ];
-
-export const allMenuItems: MenuItem[] = [homeMenuItem, ...menuItems];

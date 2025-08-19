@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { menuItems, MenuItem } from '@/lib/menu-items';
+import { menuItems } from '@/lib/menu-items';
 import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
