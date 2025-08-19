@@ -109,11 +109,6 @@ export default function Home() {
           </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex flex-col items-center justify-center p-4">
-        <h1 className="text-3xl font-bold">Adelia-ID</h1>
-        <div className="mt-2 h-1.5 w-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full" />
-      </div>
       <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
         <MenuGrid />
       </div>
