@@ -85,7 +85,6 @@ export default function DailyReportPage() {
   const totalPengeluaran = totalPemasukanOnline + totalPengeluaranOffline; // As per logic description
 
   const sisaOmset = omsetBersih - totalPengeluaran;
-  const omsetPlusPajak = sisaOmset + pajak;
   const omsetPlusPajakPlusModal = sisaOmset + pajak + modalAwal;
   
   const handleAddExtraField = (type: 'pemasukan' | 'pengeluaran') => {
@@ -130,6 +129,19 @@ export default function DailyReportPage() {
       minimumFractionDigits: 0,
     }).format(value);
   };
+
+  const SummaryRow = ({ label, value, isBold = false, isDestructive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean }) => (
+    <div className="flex justify-between items-center">
+      <Label className={cn("text-sm", isBold && "font-semibold")}>{label}</Label>
+      <div className={cn(
+        "text-sm font-semibold text-right",
+        isBold && "text-base font-bold",
+        isDestructive && "text-destructive"
+      )}>
+        {value}
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex-1 space-y-4 pt-6 px-1.5 md:px-2">
@@ -263,31 +275,19 @@ export default function DailyReportPage() {
           {/* Totals */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Ringkasan Keuangan</h3>
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
-                <div className="space-y-2">
-                  <Label>Total Pengeluaran (Online + Offline)</Label>
-                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold text-destructive">
-                    {formatCurrency(totalPengeluaran)}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Sisa Omset (Omset Bersih - Total Pengeluaran)</Label>
-                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold">
-                    {formatCurrency(sisaOmset)}
-                  </div>
-                </div>
-                 <div className="space-y-2">
-                  <Label>Omset + Pajak</Label>
-                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold">
-                    {formatCurrency(omsetPlusPajak)}
-                  </div>
-                </div>
-                 <div className="space-y-2">
-                  <Label>Omset + Pajak + Modal</Label>
-                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-lg font-bold">
-                    {formatCurrency(omsetPlusPajakPlusModal)}
-                  </div>
-                </div>
+             <div className="space-y-2 rounded-lg border bg-muted/50 p-4">
+                <SummaryRow label="Modal Awal" value={formatCurrency(modalAwal)} />
+                <SummaryRow label="Omset Bersih" value={formatCurrency(omsetBersih)} />
+                <SummaryRow label="Pajak" value={formatCurrency(pajak)} />
+                <SummaryRow label="Omset Kotor" value={formatCurrency(omsetKotor)} isBold />
+                <Separator className="my-2" />
+                <SummaryRow label="Pemasukan Online" value={formatCurrency(totalPemasukanOnline)} />
+                <SummaryRow label="Pengeluaran Offline" value={formatCurrency(totalPengeluaranOffline)} />
+                <Separator className="my-2" />
+                <SummaryRow label="Total Pengeluaran" value={formatCurrency(totalPengeluaran)} isDestructive />
+                <SummaryRow label="Sisa Omset" value={formatCurrency(sisaOmset)} isBold />
+                <Separator className="my-2" />
+                <SummaryRow label="Omset + Pajak + Modal" value={formatCurrency(omsetPlusPajakPlusModal)} isBold />
             </div>
           </div>
         </CardContent>
@@ -298,3 +298,5 @@ export default function DailyReportPage() {
     </div>
   );
 }
+
+    
