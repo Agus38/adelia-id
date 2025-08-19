@@ -126,27 +126,27 @@ export default function StokProdukPage() {
             <TableBody>
               {stockData.map((item, index) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium border-r py-1">{index + 1}</TableCell>
-                  <TableCell className="border-r py-1">{item.name}</TableCell>
-                  <TableCell className="border-r py-1">
+                  <TableCell className="font-medium border-r py-0 px-4">{index + 1}</TableCell>
+                  <TableCell className="border-r py-0 px-4">{item.name}</TableCell>
+                  <TableCell className="border-r py-0 px-2">
                     <Input 
                       value={item.morning} 
                       onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
-                      className="h-8 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm"
+                      className="h-auto border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm p-2"
                     />
                   </TableCell>
-                  <TableCell className="border-r py-1">
+                  <TableCell className="border-r py-0 px-2">
                     <Input 
                       value={item.afternoon} 
                       onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
-                      className="h-8 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm"
+                      className="h-auto border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm p-2"
                     />
                   </TableCell>
-                  <TableCell className="py-1">
+                  <TableCell className="py-0 px-2">
                       <Input 
                       value={item.order} 
                       onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
-                      className="h-8 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm"
+                      className="h-auto border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm p-2"
                     />
                   </TableCell>
                 </TableRow>
