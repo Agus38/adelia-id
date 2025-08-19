@@ -113,7 +113,7 @@ export default function StokProdukPage() {
             </RadioGroup>
           </div>
         </div>
-        <Table className="border">
+        <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px] border-r">NO</TableHead>

@@ -240,8 +240,8 @@ ${pemasukanText}
 
   return (
     <>
-    <div className="flex-1 space-y-4 pt-6 px-1.5 md:px-2">
-      <Card>
+    <div className="flex-1 space-y-4 pt-6">
+      <Card className="mx-1.5 md:mx-2">
         <CardHeader>
           <CardTitle>Laporan Keuangan Harian</CardTitle>
           <CardDescription>

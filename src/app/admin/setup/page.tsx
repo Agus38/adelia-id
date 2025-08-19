@@ -29,14 +29,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
           <section>
             <h3 className="text-xl font-semibold mb-2">Langkah 1: Dapatkan Kunci API Supabase Anda</h3>
             <p className="text-muted-foreground">
-              Masuk ke akun Supabase Anda dan navigasikan ke proyek Anda. Di bawah Pengaturan Proyek > API, Anda akan menemukan URL Proyek dan kunci `anon` publik Anda.
+              Masuk ke akun Supabase Anda dan navigasikan ke proyek Anda. Di bawah Pengaturan Proyek > API, Anda akan menemukan URL Proyek dan kunci \`anon\` publik Anda.
             </p>
           </section>
 
           <section>
             <h3 className="text-xl font-semibold mb-2">Langkah 2: Konfigurasi Variabel Lingkungan</h3>
             <p className="text-muted-foreground mb-4">
-              Buat file `.env.local` di root proyek Anda dan tambahkan variabel berikut:
+              Buat file \`.env.local\` di root proyek Anda dan tambahkan variabel berikut:
             </p>
             <pre className="p-4 rounded-md bg-muted text-sm overflow-x-auto">
               <code>{envCode}</code>
@@ -56,7 +56,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
           <section>
             <h3 className="text-xl font-semibold mb-2">Langkah 4: Buat Klien Supabase</h3>
             <p className="text-muted-foreground mb-4">
-              Buat file untuk menginisialisasi klien Supabase Anda. Misalnya, `src/lib/supabaseClient.ts`:
+              Buat file untuk menginisialisasi klien Supabase Anda. Misalnya, \`src/lib/supabaseClient.ts\`:
             </p>
             <pre className="p-4 rounded-md bg-muted text-sm overflow-x-auto">
               <code>{clientCode}</code>

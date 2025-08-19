@@ -83,7 +83,7 @@ export default function Home() {
                     <Image
                       src={slide.image}
                       alt={slide.title}
-                      layout="fill"
+                      fill
                       objectFit="cover"
                       data-ai-hint={slide.hint}
                     />
