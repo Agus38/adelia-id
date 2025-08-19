@@ -60,14 +60,12 @@ export const menuItems: MenuItem[] = [
     title: 'Kalkulator',
     href: '/kalkulator',
     icon: Calculator,
-    comingSoon: true,
   },
   {
     id: 'wa-smw',
     title: 'WA SMW',
     href: '/wa-smw',
     icon: Send,
-    comingSoon: true,
   },
   {
     id: 'nexus-ai',
@@ -80,28 +78,24 @@ export const menuItems: MenuItem[] = [
     title: 'Cek Usia',
     href: '/cek-usia',
     icon: Cake,
-    comingSoon: true,
   },
   {
     id: 'convert',
     title: 'Konversi',
     href: '/convert',
     icon: Repeat,
-    comingSoon: true,
   },
   {
     id: 'diskon',
     title: 'Diskon',
     href: '/diskon',
     icon: Tag,
-    comingSoon: true,
   },
   {
     id: 'stok-manyar',
     title: 'Stok Manyar',
     href: '/stok-manyar',
     icon: Archive,
-    comingSoon: true,
   },
 ];
 
@@ -214,3 +208,5 @@ export const allMenuItems: MenuItem[] = [
     access: 'admin',
   },
 ];
+
+    
