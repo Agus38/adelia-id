@@ -347,10 +347,10 @@ export default function DailyReportPage() {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button>Simpan Laporan</Button>
+          <Button>Simpan*</Button>
           <Button>
              <Send className="mr-2 h-4 w-4" />
-            Kirim WhatsApp
+            Kirim WA
           </Button>
         </CardFooter>
       </Card>
