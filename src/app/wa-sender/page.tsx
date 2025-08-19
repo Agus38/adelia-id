@@ -27,12 +27,28 @@ import { id } from 'date-fns/locale';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 type ExtraField = {
   id: number;
   name: string;
   value: number;
 };
+
+type DeletionInfo = {
+  type: 'pemasukan' | 'pengeluaran';
+  id: number;
+} | null;
 
 export default function DailyReportPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
@@ -63,6 +79,10 @@ export default function DailyReportPage() {
   const [bonus, setBonus] = React.useState(0);
   const [lembur, setLembur] = React.useState(0);
   const [extraPengeluaran, setExtraPengeluaran] = React.useState<ExtraField[]>([]);
+
+  // Deletion state
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [itemToDelete, setItemToDelete] = React.useState<DeletionInfo>(null);
 
   // Calculations
   const omsetKotor = omsetBersih + pajak;
@@ -99,12 +119,22 @@ export default function DailyReportPage() {
     }
   };
 
-  const handleRemoveExtraField = (type: 'pemasukan' | 'pengeluaran', id: number) => {
+  const confirmRemoveExtraField = (type: 'pemasukan' | 'pengeluaran', id: number) => {
+    setItemToDelete({ type, id });
+    setDeleteDialogOpen(true);
+  };
+  
+  const handleRemoveExtraField = () => {
+    if (!itemToDelete) return;
+    const { type, id } = itemToDelete;
+
     if (type === 'pemasukan') {
       setExtraPemasukan(extraPemasukan.filter(field => field.id !== id));
     } else {
       setExtraPengeluaran(extraPengeluaran.filter(field => field.id !== id));
     }
+    setDeleteDialogOpen(false);
+    setItemToDelete(null);
   }
   
   const formatValue = (value: number) => {
@@ -169,6 +199,7 @@ export default function DailyReportPage() {
   );
 
   return (
+    <>
     <div className="flex-1 space-y-4 pt-6 px-1.5 md:px-2">
       <Card>
         <CardHeader>
@@ -267,7 +298,7 @@ export default function DailyReportPage() {
                   <div key={field.id} className="flex items-end gap-2">
                     <div className="flex-1 space-y-2"><Label>Nama Pemasukan</Label><Input value={field.name} placeholder="cth: Transfer Bank" onChange={(e) => handleExtraFieldChange('pemasukan', field.id, 'name', e)} /></div>
                     <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(field.value)} onChange={(e) => handleExtraFieldChange('pemasukan', field.id, 'value', e)} /></div>
-                    <Button variant="ghost" size="icon" onClick={() => handleRemoveExtraField('pemasukan', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => confirmRemoveExtraField('pemasukan', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 ))}
                 <Button variant="outline" size="sm" onClick={() => handleAddExtraField('pemasukan')}><PlusCircle className="mr-2 h-4 w-4" /> Tambah Pemasukan</Button>
@@ -287,7 +318,7 @@ export default function DailyReportPage() {
                   <div key={field.id} className="flex items-end gap-2">
                     <div className="flex-1 space-y-2"><Label>Nama Pengeluaran</Label><Input value={field.name} placeholder="cth: Beli Gas" onChange={(e) => handleExtraFieldChange('pengeluaran', field.id, 'name', e)} /></div>
                     <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(field.value)} onChange={(e) => handleExtraFieldChange('pengeluaran', field.id, 'value', e)} /></div>
-                    <Button variant="ghost" size="icon" onClick={() => handleRemoveExtraField('pengeluaran', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => confirmRemoveExtraField('pengeluaran', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 ))}
                 <Button variant="outline" size="sm" onClick={() => handleAddExtraField('pengeluaran')}><PlusCircle className="mr-2 h-4 w-4" /> Tambah Pengeluaran</Button>
@@ -321,5 +352,21 @@ export default function DailyReportPage() {
         </CardFooter>
       </Card>
     </div>
+
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tindakan ini tidak dapat dibatalkan. Ini akan menghapus item ini secara permanen.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setItemToDelete(null)}>Batal</AlertDialogCancel>
+          <AlertDialogAction onClick={handleRemoveExtraField}>Lanjutkan</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
