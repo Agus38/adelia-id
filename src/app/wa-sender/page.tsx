@@ -38,6 +38,9 @@ export default function DailyReportPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [shift, setShift] = React.useState('pagi');
 
+  // Helper to parse formatted string to number
+  const parseCurrency = (value: string) => Number(value.replace(/\./g, '')) || 0;
+
   // Financial State
   const [modalAwal, setModalAwal] = React.useState(0);
   const [omsetBersih, setOmsetBersih] = React.useState(0);
@@ -103,25 +106,47 @@ export default function DailyReportPage() {
       setExtraPengeluaran(extraPengeluaran.filter(field => field.id !== id));
     }
   }
+  
+  const formatValue = (value: number) => {
+    if (value === 0) return '';
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
 
+  const handleNumericInputChange = (setter: React.Dispatch<React.SetStateAction<number>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const rawValue = e.target.value.replace(/\./g, '');
+      if (/^\d*$/.test(rawValue)) {
+          const numValue = Number(rawValue);
+          setter(numValue);
+      }
+  };
+  
   const handleExtraFieldChange = (
     type: 'pemasukan' | 'pengeluaran',
     id: number,
     field: 'name' | 'value',
-    value: string | number
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const setter = type === 'pemasukan' ? setExtraPemasukan : setExtraPengeluaran;
     const list = type === 'pemasukan' ? extraPemasukan : extraPengeluaran;
     
     setter(
-      list.map(item =>
-        item.id === id
-          ? { ...item, [field]: field === 'value' ? Number(value) || 0 : value }
-          : item
-      )
+      list.map(item => {
+        if (item.id === id) {
+          if (field === 'name') {
+            return { ...item, name: e.target.value };
+          } else {
+            const rawValue = e.target.value.replace(/\./g, '');
+             if (/^\d*$/.test(rawValue)) {
+              const numValue = Number(rawValue);
+              return { ...item, value: numValue };
+            }
+          }
+        }
+        return item;
+      })
     );
   };
-  
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -129,11 +154,6 @@ export default function DailyReportPage() {
       minimumFractionDigits: 0,
     }).format(value);
   };
-
-  const handleNumericInputChange = (setter: React.Dispatch<React.SetStateAction<number>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.valueAsNumber || 0;
-    setter(value);
-  }
 
   const SummaryRow = ({ label, value, isBold = false, isDestructive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean }) => (
     <div className="flex justify-between items-center">
@@ -212,15 +232,15 @@ export default function DailyReportPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <div className="space-y-2">
               <Label htmlFor="modalAwal">Modal Awal</Label>
-              <Input id="modalAwal" type="number" placeholder="0" value={modalAwal || ''} onChange={handleNumericInputChange(setModalAwal)} />
+              <Input id="modalAwal" type="text" inputMode="numeric" placeholder="0" value={formatValue(modalAwal)} onChange={handleNumericInputChange(setModalAwal)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="omsetBersih">Omset Bersih</Label>
-              <Input id="omsetBersih" type="number" placeholder="0" value={omsetBersih || ''} onChange={handleNumericInputChange(setOmsetBersih)} />
+              <Input id="omsetBersih" type="text" inputMode="numeric" placeholder="0" value={formatValue(omsetBersih)} onChange={handleNumericInputChange(setOmsetBersih)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="pajak">Pajak</Label>
-              <Input id="pajak" type="number" placeholder="0" value={pajak || ''} onChange={handleNumericInputChange(setPajak)} />
+              <Input id="pajak" type="text" inputMode="numeric" placeholder="0" value={formatValue(pajak)} onChange={handleNumericInputChange(setPajak)} />
             </div>
             <div className="space-y-2">
               <Label>Omset Kotor</Label>
@@ -235,18 +255,18 @@ export default function DailyReportPage() {
               <AccordionTrigger>Pemasukan Online</AccordionTrigger>
               <AccordionContent className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                  <div className="space-y-2"><Label>GoFood</Label><Input type="number" placeholder="0" value={goFood || ''} onChange={handleNumericInputChange(setGoFood)} /></div>
-                  <div className="space-y-2"><Label>GrabFood</Label><Input type="number" placeholder="0" value={grabFood || ''} onChange={handleNumericInputChange(setGrabFood)} /></div>
-                  <div className="space-y-2"><Label>ShopeeFood</Label><Input type="number" placeholder="0" value={shopeeFood || ''} onChange={handleNumericInputChange(setShopeeFood)} /></div>
-                  <div className="space-y-2"><Label>Qris Mandiri</Label><Input type="number" placeholder="0" value={qrisMandiri || ''} onChange={handleNumericInputChange(setQrisMandiri)} /></div>
-                  <div className="space-y-2"><Label>Qris Bri</Label><Input type="number" placeholder="0" value={qrisBri || ''} onChange={handleNumericInputChange(setQrisBri)} /></div>
-                  <div className="space-y-2"><Label>Debit Mandiri</Label><Input type="number" placeholder="0" value={debitMandiri || ''} onChange={handleNumericInputChange(setDebitMandiri)} /></div>
-                  <div className="space-y-2"><Label>Debit Bri</Label><Input type="number" placeholder="0" value={debitBri || ''} onChange={handleNumericInputChange(setDebitBri)} /></div>
+                  <div className="space-y-2"><Label>GoFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(goFood)} onChange={handleNumericInputChange(setGoFood)} /></div>
+                  <div className="space-y-2"><Label>GrabFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(grabFood)} onChange={handleNumericInputChange(setGrabFood)} /></div>
+                  <div className="space-y-2"><Label>ShopeeFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(shopeeFood)} onChange={handleNumericInputChange(setShopeeFood)} /></div>
+                  <div className="space-y-2"><Label>Qris Mandiri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(qrisMandiri)} onChange={handleNumericInputChange(setQrisMandiri)} /></div>
+                  <div className="space-y-2"><Label>Qris Bri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(qrisBri)} onChange={handleNumericInputChange(setQrisBri)} /></div>
+                  <div className="space-y-2"><Label>Debit Mandiri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(debitMandiri)} onChange={handleNumericInputChange(setDebitMandiri)} /></div>
+                  <div className="space-y-2"><Label>Debit Bri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(debitBri)} onChange={handleNumericInputChange(setDebitBri)} /></div>
                 </div>
                  {extraPemasukan.map(field => (
                   <div key={field.id} className="flex items-end gap-2">
-                    <div className="flex-1 space-y-2"><Label>Nama Pemasukan</Label><Input value={field.name} placeholder="cth: Transfer Bank" onChange={e => handleExtraFieldChange('pemasukan', field.id, 'name', e.target.value)} /></div>
-                    <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="number" placeholder="0" value={field.value || ''} onChange={e => handleExtraFieldChange('pemasukan', field.id, 'value', e.target.value)} /></div>
+                    <div className="flex-1 space-y-2"><Label>Nama Pemasukan</Label><Input value={field.name} placeholder="cth: Transfer Bank" onChange={(e) => handleExtraFieldChange('pemasukan', field.id, 'name', e)} /></div>
+                    <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(field.value)} onChange={(e) => handleExtraFieldChange('pemasukan', field.id, 'value', e)} /></div>
                     <Button variant="ghost" size="icon" onClick={() => handleRemoveExtraField('pemasukan', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 ))}
@@ -257,16 +277,16 @@ export default function DailyReportPage() {
               <AccordionTrigger>Pengeluaran Offline</AccordionTrigger>
               <AccordionContent className="space-y-4 pt-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                  <div className="space-y-2"><Label>Transport</Label><Input type="number" placeholder="0" value={transport || ''} onChange={handleNumericInputChange(setTransport)} /></div>
-                  <div className="space-y-2"><Label>Gosend</Label><Input type="number" placeholder="0" value={goSend || ''} onChange={handleNumericInputChange(setGoSend)} /></div>
-                  <div className="space-y-2"><Label>Iuran Bulanan</Label><Input type="number" placeholder="0" value={iuranBulanan || ''} onChange={handleNumericInputChange(setIuranBulanan)} /></div>
-                  <div className="space-y-2"><Label>Bonus</Label><Input type="number" placeholder="0" value={bonus || ''} onChange={handleNumericInputChange(setBonus)} /></div>
-                  <div className="space-y-2"><Label>Lembur</Label><Input type="number" placeholder="0" value={lembur || ''} onChange={handleNumericInputChange(setLembur)} /></div>
+                  <div className="space-y-2"><Label>Transport</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(transport)} onChange={handleNumericInputChange(setTransport)} /></div>
+                  <div className="space-y-2"><Label>Gosend</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(goSend)} onChange={handleNumericInputChange(setGoSend)} /></div>
+                  <div className="space-y-2"><Label>Iuran Bulanan</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(iuranBulanan)} onChange={handleNumericInputChange(setIuranBulanan)} /></div>
+                  <div className="space-y-2"><Label>Bonus</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(bonus)} onChange={handleNumericInputChange(setBonus)} /></div>
+                  <div className="space-y-2"><Label>Lembur</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(lembur)} onChange={handleNumericInputChange(setLembur)} /></div>
                 </div>
                 {extraPengeluaran.map(field => (
                   <div key={field.id} className="flex items-end gap-2">
-                    <div className="flex-1 space-y-2"><Label>Nama Pengeluaran</Label><Input value={field.name} placeholder="cth: Beli Gas" onChange={e => handleExtraFieldChange('pengeluaran', field.id, 'name', e.target.value)} /></div>
-                    <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="number" placeholder="0" value={field.value || ''} onChange={e => handleExtraFieldChange('pengeluaran', field.id, 'value', e.target.value)} /></div>
+                    <div className="flex-1 space-y-2"><Label>Nama Pengeluaran</Label><Input value={field.name} placeholder="cth: Beli Gas" onChange={(e) => handleExtraFieldChange('pengeluaran', field.id, 'name', e)} /></div>
+                    <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(field.value)} onChange={(e) => handleExtraFieldChange('pengeluaran', field.id, 'value', e)} /></div>
                     <Button variant="ghost" size="icon" onClick={() => handleRemoveExtraField('pengeluaran', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 ))}
@@ -303,5 +323,3 @@ export default function DailyReportPage() {
     </div>
   );
 }
-
-    
