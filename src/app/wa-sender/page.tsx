@@ -105,7 +105,8 @@ export default function DailyReportPage() {
   const totalPengeluaran = totalPemasukanOnline + totalPengeluaranOffline;
 
   const sisaOmset = omsetBersih - totalPengeluaran;
-  const omsetPlusPajakPlusModal = sisaOmset + pajak + modalAwal;
+  const sisaOmsetPlusPajak = sisaOmset + pajak;
+  const totalAkhir = sisaOmsetPlusPajak + modalAwal;
   
   const handleAddExtraField = (type: 'pemasukan' | 'pengeluaran') => {
     const newField = { id: Date.now(), name: '', value: 0 };
@@ -339,8 +340,9 @@ export default function DailyReportPage() {
                 <Separator className="my-2" />
                 <SummaryRow label="Total Pengeluaran" value={formatCurrency(totalPengeluaran)} isDestructive />
                 <SummaryRow label="Sisa Omset" value={formatCurrency(sisaOmset)} isBold />
+                <SummaryRow label="Omset + Pajak" value={formatCurrency(sisaOmsetPlusPajak)} isBold />
                 <Separator className="my-2" />
-                <SummaryRow label="Omset + Pajak + Modal" value={formatCurrency(omsetPlusPajakPlusModal)} isBold />
+                <SummaryRow label="Total Akhir (Setor)" value={formatCurrency(totalAkhir)} isBold />
             </div>
           </div>
         </CardContent>
@@ -367,5 +369,3 @@ export default function DailyReportPage() {
     </>
   );
 }
-
-    
