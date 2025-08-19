@@ -131,7 +131,7 @@ export default function DailyReportPage() {
   };
 
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+    <div className="flex-1 space-y-4 pt-6 px-1.5 md:px-2">
       <Card>
         <CardHeader>
           <CardTitle>Laporan Keuangan Harian</CardTitle>
@@ -286,3 +286,5 @@ export default function DailyReportPage() {
     </div>
   );
 }
+
+    
