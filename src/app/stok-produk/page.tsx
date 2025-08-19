@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -20,7 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const initialStockData = [
   { id: 1, name: 'Daging', morning: '', afternoon: '', order: '' },
@@ -47,7 +45,6 @@ export default function StokProdukPage() {
     // Set date only on client-side to avoid hydration mismatch
     setDate(new Date());
   }, []);
-
 
   const handleStockChange = (id: number, field: keyof Omit<StockItem, 'id' | 'name'>, value: string) => {
     setStockData(stockData.map(item =>
@@ -113,38 +110,37 @@ export default function StokProdukPage() {
           </div>
         </div>
 
-      {/* Desktop Table View */}
-      <div className="hidden md:block rounded-md border">
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50px]">NO</TableHead>
-              <TableHead>BARANG</TableHead>
-              <TableHead className="w-[120px]">PAGI</TableHead>
-              <TableHead className="w-[120px]">SORE</TableHead>
-              <TableHead className="w-[120px]">ORDER</TableHead>
+              <TableHead className="w-[50px] px-2 text-center">NO</TableHead>
+              <TableHead className="px-2">BARANG</TableHead>
+              <TableHead className="w-[120px] px-2">PAGI</TableHead>
+              <TableHead className="w-[120px] px-2">SORE</TableHead>
+              <TableHead className="w-[120px] px-2">ORDER</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {stockData.map((item, index) => (
               <TableRow key={item.id}>
-                <TableCell className="font-medium text-center">{index + 1}</TableCell>
-                <TableCell>{item.name}</TableCell>
-                <TableCell>
+                <TableCell className="font-medium text-center px-2">{index + 1}</TableCell>
+                <TableCell className="px-2">{item.name}</TableCell>
+                <TableCell className="px-2">
                   <Input 
                     value={item.morning} 
                     onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
                     className="h-8"
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className="px-2">
                   <Input 
                     value={item.afternoon} 
                     onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
                     className="h-8"
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className="px-2">
                     <Input 
                     value={item.order} 
                     onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
@@ -157,59 +153,16 @@ export default function StokProdukPage() {
         </Table>
       </div>
 
-      {/* Mobile Card View */}
-      <div className="block md:hidden space-y-3">
-        {stockData.map((item, index) => (
-          <Card key={item.id}>
-            <CardHeader className="flex flex-row items-center justify-between p-4">
-              <CardTitle className="text-lg">
-                {index + 1}. {item.name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor={`morning-${item.id}`}>Pagi</Label>
-                <Input 
-                  id={`morning-${item.id}`}
-                  value={item.morning}
-                  onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
-                  placeholder="Stok pagi"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`afternoon-${item.id}`}>Sore</Label>
-                <Input 
-                  id={`afternoon-${item.id}`}
-                  value={item.afternoon}
-                  onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
-                  placeholder="Stok sore"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`order-${item.id}`}>Order</Label>
-                <Input 
-                  id={`order-${item.id}`}
-                  value={item.order}
-                  onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
-                  placeholder="Jumlah order"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       <div className="flex justify-between gap-4 pt-4">
-        <Button variant="destructive" onClick={handleClear} className="w-full md:w-1/2">
+        <Button variant="destructive" onClick={handleClear} className="w-full md:w-auto">
           <Trash2 className="mr-2 h-4 w-4" />
           Hapus
         </Button>
-        <Button className="w-full md:w-1/2">
+        <Button className="w-full md:w-auto">
           <Save className="mr-2 h-4 w-4" />
           Simpan Stok
         </Button>
       </div>
     </div>
   );
-
-    
+}
