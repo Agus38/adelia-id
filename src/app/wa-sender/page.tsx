@@ -321,7 +321,7 @@ ${pemasukanText}
             </div>
           </div>
 
-          <Accordion type="multiple" defaultValue={['item-1', 'item-2']} className="w-full">
+          <Accordion type="multiple" className="w-full">
             <AccordionItem value="item-1">
               <AccordionTrigger>Pemasukan Online</AccordionTrigger>
               <AccordionContent className="space-y-4 pt-4">
