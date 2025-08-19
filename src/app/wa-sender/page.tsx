@@ -183,6 +183,48 @@ export default function DailyReportPage() {
     }).format(value);
   };
 
+  const formatCurrencyForWA = (value: number) => {
+    return new Intl.NumberFormat('id-ID').format(value);
+  };
+
+  const handleSendWhatsApp = () => {
+    const reportDate = date ? format(date, 'dd-MM-yyyy') : 'Belum diisi';
+    const reportShift = shift.charAt(0).toUpperCase() + shift.slice(1);
+
+    const pemasukanItems = [
+      { label: 'Go Food', value: goFood },
+      { label: 'Grab Food', value: grabFood },
+      { label: 'Shopee Food', value: shopeeFood },
+      { label: 'Qris Mandiri', value: qrisMandiri },
+      { label: 'Qris Bri', value: qrisBri },
+      { label: 'Debit Mandiri', value: debitMandiri },
+      { label: 'Debit Bri', value: debitBri },
+      ...extraPemasukan.map(item => ({ label: item.name, value: item.value }))
+    ]
+    .filter(item => item.value > 0);
+
+    const pemasukanText = pemasukanItems.map(item => 
+      `╠➢ \`\`\`${item.label.padEnd(14, ' ')}: Rp ${formatCurrencyForWA(item.value)}\`\`\``
+    ).join('\n');
+    
+    const message = `
+╔══════════════════════════╗
+║ *Tanggal       : ${reportDate}*
+║ *Shift            : ${reportShift}*
+║ *Omset         : Rp ${formatCurrencyForWA(omsetBersih)}*
+╠══════════════════════════╣
+${pemasukanText}
+╠══════════════════════════╣
+║ *Jumlah        : Rp ${formatCurrencyForWA(totalPemasukanOnline)}*
+╠══════════════════════════╣
+║                   ᶜᵒᵖʸʳⁱᵍʰᵗ ©ag64462
+╚══════════════════════════╝
+    `.trim();
+
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   const SummaryRow = ({ label, value, isBold = false, isDestructive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean }) => (
     <div className="flex justify-between items-center">
       <Label className={cn("text-sm", isBold && "font-semibold")}>{label}</Label>
@@ -351,7 +393,10 @@ export default function DailyReportPage() {
             <Save className="mr-2 h-4 w-4" />
             Simpan
           </Button>
-          <Button className="flex-1 bg-[#25d366] hover:bg-[#25d366]/90 text-white">
+          <Button 
+            className="flex-1 bg-[#25d366] hover:bg-[#25d366]/90 text-white"
+            onClick={handleSendWhatsApp}
+          >
              <Send className="mr-2 h-4 w-4" />
             Kirim WA
           </Button>
