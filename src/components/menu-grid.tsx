@@ -13,7 +13,7 @@ export function MenuGrid() {
               <div className="p-3 bg-primary/10 rounded-full">
                 <item.icon className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               </div>
-              <p className="text-xs sm:text-sm text-center font-semibold text-foreground">
+              <p className="text-[11px] leading-tight sm:text-sm text-center font-semibold text-foreground">
                 {item.title}
               </p>
                {item.comingSoon && (
