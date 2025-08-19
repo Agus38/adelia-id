@@ -39,9 +39,15 @@ const initialStockData = [
 type StockItem = typeof initialStockData[0];
 
 export default function StokProdukPage() {
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [date, setDate] = React.useState<Date | undefined>(undefined);
   const [shift, setShift] = React.useState('pagi');
   const [stockData, setStockData] = React.useState(initialStockData);
+  
+  React.useEffect(() => {
+    // Set date only on client-side to avoid hydration mismatch
+    setDate(new Date());
+  }, []);
+
 
   const handleStockChange = (id: number, field: keyof StockItem, value: string) => {
     setStockData(stockData.map(item =>
