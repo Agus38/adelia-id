@@ -259,7 +259,7 @@ export default function DailyReportPage() {
           {/* Totals */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Ringkasan Keuangan</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
                 <div className="space-y-2">
                   <Label>Total Pengeluaran (Online + Offline)</Label>
                   <Input value={formatCurrency(totalPengeluaran)} readOnly className="font-semibold text-destructive" />
@@ -286,5 +286,3 @@ export default function DailyReportPage() {
     </div>
   );
 }
-
-    
