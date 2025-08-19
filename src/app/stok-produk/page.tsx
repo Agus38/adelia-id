@@ -23,11 +23,11 @@ import {
 } from '@/components/ui/table';
 
 const initialStockData = [
-  { id: 1, name: 'Daging', morning: '', afternoon: '', order: 'Sendok bungkus' },
-  { id: 2, name: 'Babat', morning: '', afternoon: '', order: 'Cleo' },
-  { id: 3, name: 'Paru', morning: '', afternoon: '', order: 'Handtowel' },
-  { id: 4, name: 'Usus', morning: '', afternoon: '', order: 'Kopi hitam' },
-  { id: 5, name: 'Ati', morning: '', afternoon: '', order: 'Sunlight' },
+  { id: 1, name: 'Daging', morning: '', afternoon: '', order: '' },
+  { id: 2, name: 'Babat', morning: '', afternoon: '', order: '' },
+  { id: 3, name: 'Paru', morning: '', afternoon: '', order: '' },
+  { id: 4, name: 'Usus', morning: '', afternoon: '', order: '' },
+  { id: 5, name: 'Ati', morning: '', afternoon: '', order: '' },
   { id: 6, name: 'Otak', morning: '', afternoon: '', order: '' },
   { id: 7, name: 'Telur', morning: '', afternoon: '', order: '' },
   { id: 8, name: 'Kuah', morning: '', afternoon: '', order: '' },
@@ -54,8 +54,8 @@ export default function StokProdukPage() {
   }
 
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center space-x-2">
+    <div className="flex-1 space-y-4 pt-6 px-1.5 md:px-2">
+      <div className="flex items-center space-x-2 px-2">
         <Package className="h-8 w-8" />
         <h2 className="text-3xl font-bold tracking-tight">Stok Produk</h2>
       </div>
@@ -154,12 +154,12 @@ export default function StokProdukPage() {
             </Table>
           </div>
         </CardContent>
-         <CardFooter className="flex justify-end gap-4">
-          <Button variant="destructive" onClick={handleClear}>
+         <CardFooter className="flex justify-between gap-4">
+          <Button variant="destructive" onClick={handleClear} className="w-1/2">
             <Trash2 className="mr-2 h-4 w-4" />
             Hapus
           </Button>
-          <Button>
+          <Button className="w-1/2">
             <Save className="mr-2 h-4 w-4" />
             Simpan Stok
           </Button>
