@@ -54,9 +54,6 @@ export default function DailyReportPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [shift, setShift] = React.useState('pagi');
 
-  // Helper to parse formatted string to number
-  const parseCurrency = (value: string) => Number(value.replace(/\./g, '')) || 0;
-
   // Financial State
   const [modalAwal, setModalAwal] = React.useState(0);
   const [omsetBersih, setOmsetBersih] = React.useState(0);
@@ -370,3 +367,5 @@ export default function DailyReportPage() {
     </>
   );
 }
+
+    
