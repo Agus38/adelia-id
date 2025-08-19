@@ -37,7 +37,7 @@ export default function RootLayout({
           <SidebarProvider>
             <div className="flex min-h-screen w-full flex-col bg-muted/40">
               <AppSidebar />
-              <div className="flex flex-1 flex-col sm:pl-14">
+              <div className="flex flex-1 flex-col">
                 <Header />
                 <main className="flex-1 p-4 md:p-6">
                   {children}
