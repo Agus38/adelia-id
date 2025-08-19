@@ -126,23 +126,23 @@ export default function StokProdukPage() {
             <TableBody>
               {stockData.map((item, index) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium border-r">{index + 1}</TableCell>
-                  <TableCell className="border-r">{item.name}</TableCell>
-                  <TableCell className="border-r">
+                  <TableCell className="font-medium border-r py-1">{index + 1}</TableCell>
+                  <TableCell className="border-r py-1">{item.name}</TableCell>
+                  <TableCell className="border-r py-1">
                     <Input 
                       value={item.morning} 
                       onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
                       className="h-8"
                     />
                   </TableCell>
-                  <TableCell className="border-r">
+                  <TableCell className="border-r py-1">
                     <Input 
                       value={item.afternoon} 
                       onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
                       className="h-8"
                     />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-1">
                       <Input 
                       value={item.order} 
                       onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
