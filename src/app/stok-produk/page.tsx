@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, Save, Trash2, Package } from 'lucide-react';
+import { Calendar as CalendarIcon, Save, Trash2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -61,10 +61,6 @@ export default function StokProdukPage() {
 
   return (
     <div className="flex-1 space-y-4 pt-6 px-1.5 md:px-2">
-      <div className="flex items-center space-x-2 px-2">
-        <Package className="h-8 w-8" />
-        <h2 className="text-3xl font-bold tracking-tight">Stok Produk</h2>
-      </div>
       <Card>
         <CardHeader>
           <CardTitle>Manajemen Stok Harian</CardTitle>
