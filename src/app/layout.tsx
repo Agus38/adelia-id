@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import {SidebarProvider} from '@/components/ui/sidebar';
@@ -39,7 +40,7 @@ export default function RootLayout({
               <AppSidebar />
               <div className="flex flex-1 flex-col">
                 <Header />
-                <main className="flex-1 p-4 md:p-6">
+                <main className="flex-1">
                   {children}
                 </main>
                 <Footer />

@@ -62,7 +62,7 @@ export default function Home() {
 
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col p-4 md:p-6">
       {/* Top Banner Carousel */}
       <div className="mb-4">
         <Carousel 
@@ -109,7 +109,7 @@ export default function Home() {
           </div>
       </div>
 
-      <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+      <div className="flex-1 space-y-4 pt-6 md:pt-8">
         <MenuGrid />
       </div>
     </div>
