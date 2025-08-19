@@ -122,6 +122,14 @@ export const adminMenuItems: MenuItem[] = [
     description: 'Kelola pengguna, peran, dan hak akses.',
     access: 'admin',
   },
+   {
+    id: 'daily-report-management',
+    title: 'Laporan Harian',
+    href: '/admin/daily-reports',
+    icon: FileText,
+    description: 'Kelola semua laporan keuangan harian.',
+    access: 'admin',
+  },
   {
     id: 'menu-management',
     title: 'Manajemen Menu',

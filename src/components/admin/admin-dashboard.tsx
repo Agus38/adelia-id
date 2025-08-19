@@ -38,6 +38,12 @@ const managementLinks = [
     description: "Kelola pengguna, peran, dan hak akses.",
   },
   {
+    title: "Manajemen Laporan Harian",
+    href: "/admin/daily-reports",
+    icon: FileText,
+    description: "Kelola semua laporan keuangan harian.",
+  },
+  {
     title: "Manajemen Menu",
     href: "/admin/menus",
     icon: LayoutGrid,
