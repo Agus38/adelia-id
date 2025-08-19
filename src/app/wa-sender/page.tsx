@@ -23,6 +23,7 @@ import { Calendar as CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -154,7 +155,7 @@ export default function DailyReportPage() {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'dd MMMM yyyy') : <span>Pilih tanggal</span>}
+                    {date ? format(date, 'dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -163,6 +164,7 @@ export default function DailyReportPage() {
                     selected={date}
                     onSelect={setDate}
                     initialFocus
+                    locale={id}
                   />
                 </PopoverContent>
               </Popover>
