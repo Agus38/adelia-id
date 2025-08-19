@@ -1,3 +1,4 @@
+
 import {
   MessageSquare,
   Package,
@@ -53,7 +54,6 @@ export const menuItems: MenuItem[] = [
     title: 'Stok Produk',
     href: '/stok-produk',
     icon: Package,
-    comingSoon: true,
   },
   {
     id: 'kalkulator',
