@@ -59,7 +59,7 @@ export default function StokProdukPage() {
   }
 
   return (
-    <div className="flex-1 space-y-4 pt-6 px-1.5 md:px-2">
+    <div className="flex-1 space-y-4 pt-6 px-4 md:px-6">
       <div className="p-6 pt-0">
         <div className="flex flex-col space-y-1.5">
           <h2 className="text-2xl font-semibold leading-none tracking-tight">Manajemen Stok Harian</h2>
