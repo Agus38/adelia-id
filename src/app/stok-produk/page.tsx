@@ -132,21 +132,21 @@ export default function StokProdukPage() {
                     <Input 
                       value={item.morning} 
                       onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
-                      className="h-auto border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm p-2"
+                      className="h-auto border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm p-2 bg-transparent"
                     />
                   </TableCell>
                   <TableCell className="border-r py-0 px-2">
                     <Input 
                       value={item.afternoon} 
                       onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
-                      className="h-auto border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm p-2"
+                      className="h-auto border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm p-2 bg-transparent"
                     />
                   </TableCell>
                   <TableCell className="py-0 px-2">
                       <Input 
                       value={item.order} 
                       onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
-                      className="h-auto border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm p-2"
+                      className="h-auto border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-xs md:text-sm p-2 bg-transparent"
                     />
                   </TableCell>
                 </TableRow>
