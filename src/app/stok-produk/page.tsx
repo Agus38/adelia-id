@@ -130,7 +130,7 @@ export default function StokProdukPage() {
                     <Input 
                         value={item.morning} 
                         onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
-                        className="h-6 border-0 shadow-none focus-visible:ring-0 bg-transparent text-xs text-right"
+                        className="h-6 border-0 shadow-none focus-visible:ring-0 bg-transparent text-xs text-right focus-visible:outline-none"
                         maxLength={7}
                     />
                     </TableCell>
@@ -138,7 +138,7 @@ export default function StokProdukPage() {
                     <Input 
                         value={item.afternoon} 
                         onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
-                        className="h-6 border-0 shadow-none focus-visible:ring-0 bg-transparent text-xs text-right"
+                        className="h-6 border-0 shadow-none focus-visible:ring-0 bg-transparent text-xs text-right focus-visible:outline-none"
                         maxLength={7}
                     />
                     </TableCell>
@@ -146,7 +146,7 @@ export default function StokProdukPage() {
                         <Input 
                         value={item.order} 
                         onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
-                        className="h-6 border-0 shadow-none focus-visible:ring-0 bg-transparent text-xs text-right"
+                        className="h-6 border-0 shadow-none focus-visible:ring-0 bg-transparent text-xs text-right focus-visible:outline-none"
                         maxLength={15}
                     />
                     </TableCell>
