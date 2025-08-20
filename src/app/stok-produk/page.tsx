@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -116,9 +117,9 @@ export default function StokProdukPage() {
                 <TableRow>
                 <TableHead className="w-[50px] px-2 text-center border-r h-8">NO</TableHead>
                 <TableHead className="px-2 border-r h-8">BARANG</TableHead>
-                <TableHead className="px-2 border-r h-8 min-w-[100px]">PAGI</TableHead>
-                <TableHead className="px-2 border-r h-8 min-w-[100px]">SORE</TableHead>
-                <TableHead className="px-2 h-8 min-w-[100px]">ORDER</TableHead>
+                <TableHead className="px-2 border-r h-8">PAGI</TableHead>
+                <TableHead className="px-2 border-r h-8">SORE</TableHead>
+                <TableHead className="px-2 h-8">ORDER</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
