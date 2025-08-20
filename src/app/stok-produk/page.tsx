@@ -112,43 +112,40 @@ export default function StokProdukPage() {
         </div>
 
       <div className="rounded-md border overflow-x-auto">
-          <Table className="text-xs">
+          <Table>
             <TableHeader>
                 <TableRow>
-                <TableHead className="w-[50px] px-2 text-center border-r h-8">NO</TableHead>
-                <TableHead className="px-2 border-r h-8">BARANG</TableHead>
-                <TableHead className="px-2 border-r h-8">PAGI</TableHead>
-                <TableHead className="px-2 border-r h-8">SORE</TableHead>
-                <TableHead className="px-2 h-8">ORDER</TableHead>
+                <TableHead className="w-[50px] text-center border-r">NO</TableHead>
+                <TableHead className="border-r">BARANG</TableHead>
+                <TableHead className="border-r">PAGI</TableHead>
+                <TableHead className="border-r">SORE</TableHead>
+                <TableHead>ORDER</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {stockData.map((item, index) => (
                 <TableRow key={item.id}>
-                    <TableCell className="font-medium text-center px-2 border-r py-0">{index + 1}</TableCell>
-                    <TableCell className="px-2 border-r py-0">{item.name}</TableCell>
-                    <TableCell className="px-2 border-r py-0">
+                    <TableCell className="font-medium text-center border-r">{index + 1}</TableCell>
+                    <TableCell className="border-r">{item.name}</TableCell>
+                    <TableCell className="px-1 border-r">
                     <Input 
                         value={item.morning} 
                         onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
-                        className="h-6 border-0 shadow-none focus-visible:ring-0 bg-transparent text-xs text-right focus-visible:outline-none"
-                        maxLength={7}
+                        className="h-8"
                     />
                     </TableCell>
-                    <TableCell className="px-2 border-r py-0">
+                    <TableCell className="px-1 border-r">
                     <Input 
                         value={item.afternoon} 
                         onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
-                        className="h-6 border-0 shadow-none focus-visible:ring-0 bg-transparent text-xs text-right focus-visible:outline-none"
-                        maxLength={7}
+                        className="h-8"
                     />
                     </TableCell>
-                    <TableCell className="px-2 py-0">
+                    <TableCell className="px-1">
                         <Input 
                         value={item.order} 
                         onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
-                        className="h-6 border-0 shadow-none focus-visible:ring-0 bg-transparent text-xs text-right focus-visible:outline-none"
-                        maxLength={15}
+                        className="h-8"
                     />
                     </TableCell>
                 </TableRow>
