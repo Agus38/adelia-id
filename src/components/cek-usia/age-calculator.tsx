@@ -39,6 +39,7 @@ const westernZodiacs = [
 ];
 
 const chineseZodiacs = ['Tikus', 'Kerbau', 'Macan', 'Kelinci', 'Naga', 'Ular', 'Kuda', 'Kambing', 'Monyet', 'Ayam', 'Anjing', 'Babi'];
+const chineseElements = ['Logam', 'Air', 'Kayu', 'Api', 'Tanah'];
 
 export function AgeCalculator() {
   const [day, setDay] = useState('');
@@ -49,6 +50,7 @@ export function AgeCalculator() {
   const [birthdayCountdown, setBirthdayCountdown] = useState<BirthdayCountdown | null>(null);
   const [westernZodiac, setWesternZodiac] = useState<string | null>(null);
   const [chineseZodiac, setChineseZodiac] = useState<string | null>(null);
+  const [chineseZodiacElement, setChineseZodiacElement] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
@@ -88,6 +90,12 @@ export function AgeCalculator() {
       const startYear = 1924; // Year of the Rat
       return chineseZodiacs[(year - startYear) % 12];
   };
+
+  const calculateChineseZodiacElement = (year: number): string => {
+    const lastDigit = year % 10;
+    return chineseElements[Math.floor(lastDigit / 2)];
+  };
+
 
   const handleCalculateAge = () => {
     const dayNum = parseInt(day, 10);
@@ -191,6 +199,7 @@ export function AgeCalculator() {
     // Calculate zodiacs
     setWesternZodiac(calculateWesternZodiac(dayNum, monthNum));
     setChineseZodiac(calculateChineseZodiac(yearNum));
+    setChineseZodiacElement(calculateChineseZodiacElement(yearNum));
   };
 
   const resetResults = () => {
@@ -199,6 +208,7 @@ export function AgeCalculator() {
     setBirthdayCountdown(null);
     setWesternZodiac(null);
     setChineseZodiac(null);
+    setChineseZodiacElement(null);
   };
   
   const handleReset = () => {
@@ -308,7 +318,7 @@ export function AgeCalculator() {
                     <Card>
                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><PawPrint className="h-5 w-5"/>Shio Cina</CardTitle></CardHeader>
                         <CardContent className="text-center">
-                            <p className="text-3xl font-semibold">{chineseZodiac}</p>
+                           <p className="text-3xl font-semibold">{chineseZodiac} {chineseZodiacElement}</p>
                         </CardContent>
                     </Card>
                 </div>
