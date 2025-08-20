@@ -96,15 +96,40 @@ export function AgeCalculator() {
       resetResults();
       return;
     }
+    
+    if (dayNum < 1 || dayNum > 31) {
+        setError('Tanggal harus antara 1 dan 31.');
+        resetResults();
+        return;
+    }
+
+    if (monthNum < 1 || monthNum > 12) {
+        setError('Bulan harus antara 1 dan 12.');
+        resetResults();
+        return;
+    }
+
+    const today = new Date();
+    if (yearNum < 1900 || yearNum > today.getFullYear()) {
+        setError(`Tahun harus antara 1900 dan ${today.getFullYear()}.`);
+        resetResults();
+        return;
+    }
 
     const birthDate = new Date(yearNum, monthNum - 1, dayNum);
-    const today = new Date();
 
-    if (isNaN(birthDate.getTime()) || birthDate.getDate() !== dayNum || birthDate.getMonth() !== monthNum - 1 || birthDate.getFullYear() !== yearNum || yearNum < 1900 || birthDate > today) {
-      setError('Harap masukkan tanggal, bulan, dan tahun yang valid dan tidak di masa depan.');
+    if (isNaN(birthDate.getTime()) || birthDate.getDate() !== dayNum || birthDate.getMonth() !== monthNum - 1 || birthDate.getFullYear() !== yearNum) {
+      setError('Harap masukkan tanggal, bulan, dan tahun yang valid (contoh: tanggal 30 Februari tidak ada).');
       resetResults();
       return;
     }
+
+    if (birthDate > today) {
+       setError('Tanggal lahir tidak boleh di masa depan.');
+       resetResults();
+       return;
+    }
+
 
     setError(null);
 
@@ -308,5 +333,7 @@ export function AgeCalculator() {
     </div>
   );
 }
+
+    
 
     
