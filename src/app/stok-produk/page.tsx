@@ -133,6 +133,10 @@ export default function StokProdukPage() {
             </div>
         </div>
       </div>
+
+       <div className="text-center font-bold">
+        SOTO MERR
+      </div>
       
       <div className="flex-1 overflow-auto rounded-md border">
           <Table>
