@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { TriangleAlert, Gift, Calendar, Sparkles, Scale, PawPrint, Hourglass, RefreshCw } from 'lucide-react';
+import { TriangleAlert, Gift, Calendar, Sparkles, Scale, PawPrint, Hourglass, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 interface Age {
   years: number;
@@ -229,42 +229,75 @@ export function AgeCalculator() {
     </div>
   );
 
+  const FeatureListItem = ({ children }: { children: React.ReactNode }) => (
+    <li className="flex items-start gap-3">
+      <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+      <span>{children}</span>
+    </li>
+  );
+
   return (
     <div className="space-y-6">
       {!age && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Kalkulator Usia Lengkap</CardTitle>
-            <CardDescription>Masukkan tanggal lahir Anda untuk mendapatkan analisis usia yang mendetail.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="day">Tanggal</Label>
-                <Input id="day" type="text" inputMode='numeric' placeholder="DD" value={day} onChange={handleInputChange(setDay, 2, 31)} maxLength={2} />
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Kalkulator Usia Lengkap</CardTitle>
+              <CardDescription>Masukkan tanggal lahir Anda untuk mendapatkan analisis usia yang mendetail.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="day">Tanggal</Label>
+                  <Input id="day" type="text" inputMode='numeric' placeholder="DD" value={day} onChange={handleInputChange(setDay, 2, 31)} maxLength={2} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="month">Bulan</Label>
+                  <Input id="month" type="text" inputMode='numeric' placeholder="MM" value={month} onChange={handleInputChange(setMonth, 2, 12)} maxLength={2} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="year">Tahun</Label>
+                  <Input id="year" type="text" inputMode='numeric' placeholder="YYYY" value={year} onChange={handleInputChange(setYear, 4)} maxLength={4} />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="month">Bulan</Label>
-                <Input id="month" type="text" inputMode='numeric' placeholder="MM" value={month} onChange={handleInputChange(setMonth, 2, 12)} maxLength={2} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="year">Tahun</Label>
-                <Input id="year" type="text" inputMode='numeric' placeholder="YYYY" value={year} onChange={handleInputChange(setYear, 4)} maxLength={4} />
-              </div>
-            </div>
 
-            {error && (
-                <Alert variant="destructive">
-                    <TriangleAlert className="h-4 w-4" />
-                    <AlertTitle>Input Tidak Valid</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
-            )}
-          </CardContent>
-          <CardFooter className="flex flex-col sm:flex-row justify-end border-t pt-6 gap-4">
-            <Button onClick={handleCalculateAge} className="w-full sm:w-auto">Hitung Usia</Button>
-          </CardFooter>
-        </Card>
+              {error && (
+                  <Alert variant="destructive">
+                      <TriangleAlert className="h-4 w-4" />
+                      <AlertTitle>Input Tidak Valid</AlertTitle>
+                      <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+              )}
+            </CardContent>
+            <CardFooter className="flex flex-col sm:flex-row justify-end border-t pt-6 gap-4">
+              <Button onClick={handleCalculateAge} className="w-full sm:w-auto">Hitung Usia</Button>
+            </CardFooter>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Fitur & Informasi yang Akan Anda Dapatkan</CardTitle>
+              <CardDescription>
+                Bukan hanya kalkulator usia biasa, temukan berbagai informasi menarik seputar tanggal lahir Anda.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <FeatureListItem>
+                  <strong>Usia Akurat:</strong> Lihat usia Anda dalam format tahun, bulan, dan hari.
+                </FeatureListItem>
+                <FeatureListItem>
+                  <strong>Ringkasan Total:</strong> Konversi usia Anda ke total bulan, minggu, hari, jam, menit, bahkan detik.
+                </FeatureListItem>
+                <FeatureListItem>
+                  <strong>Hitung Mundur Ulang Tahun:</strong> Cari tahu berapa lama lagi menuju hari spesial Anda berikutnya.
+                </FeatureListItem>
+                <FeatureListItem>
+                  <strong>Zodiak & Shio:</strong> Temukan zodiak barat dan shio tionghoa Anda lengkap dengan elemennya.
+                </FeatureListItem>
+              </ul>
+            </CardContent>
+          </Card>
+        </>
       )}
 
       {age && (
