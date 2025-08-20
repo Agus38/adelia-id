@@ -21,6 +21,7 @@ import {
   User,
   Shield,
   ImageIcon,
+  Code,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -182,11 +183,11 @@ export const allMenuItems: MenuItem[] = [
     access: 'all',
   },
   {
-    id: 'reports',
-    title: 'Laporan',
-    href: '/reports',
-    icon: FileText,
-    description: 'Hasilkan dan lihat laporan sistem.',
+    id: 'developer',
+    title: 'Developer',
+    href: '/developer',
+    icon: Code,
+    description: 'Lihat informasi tentang pengembang aplikasi.',
     access: 'all',
   },
   {
