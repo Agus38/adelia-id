@@ -80,7 +80,6 @@ export const menuItems: MenuItem[] = [
     title: 'Cek Usia',
     href: '/cek-usia',
     icon: Cake,
-    comingSoon: true,
   },
   {
     id: 'convert',

@@ -1,5 +1,5 @@
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { AgeCalculator } from "@/components/cek-usia/age-calculator";
 import { Cake } from 'lucide-react';
 
 export default function CekUsiaPage() {
@@ -9,15 +9,12 @@ export default function CekUsiaPage() {
         <Cake className="h-8 w-8" />
         <h2 className="text-3xl font-bold tracking-tight">Cek Usia</h2>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Cek Usia</CardTitle>
-          <CardDescription>Hitung usia berdasarkan tanggal lahir.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p>Halaman ini sedang dalam pengembangan. Segera hadir!</p>
-        </CardContent>
-      </Card>
+       <p className="text-muted-foreground">
+        Masukkan tanggal lahir Anda untuk menghitung usia Anda secara akurat.
+      </p>
+       <div className="pt-4">
+        <AgeCalculator />
+      </div>
     </div>
   );
 }
