@@ -232,16 +232,16 @@ export function AgeCalculator() {
                 <CardContent>
                     <div className="flex flex-wrap items-baseline justify-center text-center gap-x-4 gap-y-2 p-4 rounded-lg bg-muted">
                         <div className="flex items-baseline">
-                            <span className="text-4xl md:text-5xl font-bold tracking-tighter">{age.years}</span>
-                            <span className="ml-2 text-lg md:text-xl text-muted-foreground">Tahun</span>
+                            <span className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter">{age.years}</span>
+                            <span className="ml-2 text-base sm:text-lg md:text-xl text-muted-foreground">Tahun</span>
                         </div>
                         <div className="flex items-baseline">
-                            <span className="text-4xl md:text-5xl font-bold tracking-tighter">{age.months}</span>
-                            <span className="ml-2 text-lg md:text-xl text-muted-foreground">Bulan</span>
+                            <span className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter">{age.months}</span>
+                            <span className="ml-2 text-base sm:text-lg md:text-xl text-muted-foreground">Bulan</span>
                         </div>
                         <div className="flex items-baseline">
-                            <span className="text-4xl md:text-5xl font-bold tracking-tighter">{age.days}</span>
-                            <span className="ml-2 text-lg md:text-xl text-muted-foreground">Hari</span>
+                            <span className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter">{age.days}</span>
+                            <span className="ml-2 text-base sm:text-lg md:text-xl text-muted-foreground">Hari</span>
                         </div>
                     </div>
                 </CardContent>
