@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -43,7 +44,7 @@ const DynamicWidthInput = React.memo(function DynamicWidthInput({ value, onChang
             <Input 
                 value={value} 
                 onChange={onChange}
-                className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-xs p-0 m-0 w-full"
+                className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-[11px] p-0 m-0 w-full"
                 maxLength={maxLength}
                 onFocus={(e) => e.target.scrollIntoView({ block: 'center', inline: 'nearest' })}
             />
@@ -117,7 +118,6 @@ export default function StokProdukPage() {
           <Table>
             <TableHeader>
                 <TableRow>
-                <TableHead className="w-[50px] text-center border-r px-2 py-2">NO</TableHead>
                 <TableHead className="text-left border-r px-2 py-2">BARANG</TableHead>
                 <TableHead className="text-center border-r px-2 py-2 w-auto">{header1}</TableHead>
                 <TableHead className="text-center border-r px-2 py-2 w-auto">{header2}</TableHead>
@@ -127,7 +127,6 @@ export default function StokProdukPage() {
             <TableBody>
                 {stockData.map((item, index) => (
                 <TableRow key={item.id}>
-                    <TableCell className="font-medium text-center border-r px-2 py-1">{index + 1}</TableCell>
                     <TableCell className="border-r px-2 py-1">{item.name}</TableCell>
                     <TableCell className="px-2 border-r py-1">
                       <DynamicWidthInput
