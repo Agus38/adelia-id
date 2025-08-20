@@ -106,24 +106,6 @@ export default function SupportPage() {
                     ))}
                 </CardContent>
             </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Pusat Pengetahuan</CardTitle>
-                    <CardDescription>Jelajahi dokumentasi dan panduan kami.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-start gap-4 p-4 rounded-md border">
-                        <BookOpen className="h-8 w-8 text-primary mt-1 flex-shrink-0" />
-                        <div>
-                            <h4 className="font-semibold">Panduan Pengaturan Sistem</h4>
-                            <p className="text-sm text-muted-foreground mt-1 mb-3">Pelajari cara mengintegrasikan aplikasi dengan layanan eksternal seperti database.</p>
-                            <Link href="/admin/setup">
-                                <Button>Lihat Panduan</Button>
-                            </Link>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
       </div>
     </div>
