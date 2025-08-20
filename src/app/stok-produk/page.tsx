@@ -116,26 +116,26 @@ export default function StokProdukPage() {
             <Table>
             <TableHeader>
                 <TableRow>
-                <TableHead className="w-[50px] px-2 text-center py-1">NO</TableHead>
-                <TableHead className="px-2 py-1">BARANG</TableHead>
-                <TableHead className="w-[120px] px-2 py-1">PAGI</TableHead>
-                <TableHead className="w-[120px] px-2 py-1">SORE</TableHead>
+                <TableHead className="w-[50px] px-2 text-center py-1 border-r">NO</TableHead>
+                <TableHead className="px-2 py-1 border-r">BARANG</TableHead>
+                <TableHead className="w-[120px] px-2 py-1 border-r">PAGI</TableHead>
+                <TableHead className="w-[120px] px-2 py-1 border-r">SORE</TableHead>
                 <TableHead className="w-[120px] px-2 py-1">ORDER</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {stockData.map((item, index) => (
                 <TableRow key={item.id}>
-                    <TableCell className="font-medium text-center px-2 py-1">{index + 1}</TableCell>
-                    <TableCell className="px-2 py-1">{item.name}</TableCell>
-                    <TableCell className="px-2 py-1">
+                    <TableCell className="font-medium text-center px-2 py-1 border-r">{index + 1}</TableCell>
+                    <TableCell className="px-2 py-1 border-r">{item.name}</TableCell>
+                    <TableCell className="px-2 py-1 border-r">
                     <Input 
                         value={item.morning} 
                         onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
                         className="h-7"
                     />
                     </TableCell>
-                    <TableCell className="px-2 py-1">
+                    <TableCell className="px-2 py-1 border-r">
                     <Input 
                         value={item.afternoon} 
                         onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
