@@ -111,10 +111,10 @@ export default function StokProdukPage() {
             <TableHeader>
                 <TableRow>
                 <TableHead className="w-[50px] text-center border-r px-1 py-0">NO</TableHead>
-                <TableHead className="border-r px-1 py-0">BARANG</TableHead>
-                <TableHead className="border-r px-1 py-0">PAGI</TableHead>
-                <TableHead className="border-r px-1 py-0">SORE</TableHead>
-                <TableHead className="w-[120px] px-1 py-0">ORDER</TableHead>
+                <TableHead className="text-center border-r px-1 py-0">BARANG</TableHead>
+                <TableHead className="text-center border-r px-1 py-0">PAGI</TableHead>
+                <TableHead className="text-center border-r px-1 py-0">SORE</TableHead>
+                <TableHead className="w-[120px] text-center px-1 py-0">ORDER</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
