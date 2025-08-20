@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -111,48 +112,46 @@ export default function StokProdukPage() {
         </div>
 
       <div className="rounded-md border">
-        <div className="relative w-full overflow-auto">
-            <Table>
+          <Table className="text-xs">
             <TableHeader>
                 <TableRow>
-                <TableHead className="w-[50px] px-2 text-center py-1 border-r">NO</TableHead>
-                <TableHead className="px-2 py-1 border-r">BARANG</TableHead>
-                <TableHead className="w-[120px] px-2 py-1 border-r">PAGI</TableHead>
-                <TableHead className="w-[120px] px-2 py-1 border-r">SORE</TableHead>
-                <TableHead className="w-[120px] px-2 py-1">ORDER</TableHead>
+                <TableHead className="w-[50px] px-2 text-center border-r">NO</TableHead>
+                <TableHead className="px-2 border-r">BARANG</TableHead>
+                <TableHead className="w-[120px] px-2 border-r">PAGI</TableHead>
+                <TableHead className="w-[120px] px-2 border-r">SORE</TableHead>
+                <TableHead className="w-[120px] px-2">ORDER</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {stockData.map((item, index) => (
                 <TableRow key={item.id}>
-                    <TableCell className="font-medium text-center px-2 py-1 border-r">{index + 1}</TableCell>
-                    <TableCell className="px-2 py-1 border-r">{item.name}</TableCell>
-                    <TableCell className="px-2 py-1 border-r">
+                    <TableCell className="font-medium text-center px-2 border-r">{index + 1}</TableCell>
+                    <TableCell className="px-2 border-r">{item.name}</TableCell>
+                    <TableCell className="px-2 border-r py-0">
                     <Input 
                         value={item.morning} 
                         onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
-                        className="h-7 border-0 shadow-none focus-visible:ring-0 bg-transparent"
+                        className="h-6 border-0 shadow-none focus-visible:ring-0 bg-transparent text-xs"
                     />
                     </TableCell>
-                    <TableCell className="px-2 py-1 border-r">
+                    <TableCell className="px-2 border-r py-0">
                     <Input 
                         value={item.afternoon} 
                         onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
-                        className="h-7 border-0 shadow-none focus-visible:ring-0 bg-transparent"
+                        className="h-6 border-0 shadow-none focus-visible:ring-0 bg-transparent text-xs"
                     />
                     </TableCell>
-                    <TableCell className="px-2 py-1">
+                    <TableCell className="px-2 py-0">
                         <Input 
                         value={item.order} 
                         onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
-                        className="h-7 border-0 shadow-none focus-visible:ring-0 bg-transparent"
+                        className="h-6 border-0 shadow-none focus-visible:ring-0 bg-transparent text-xs"
                     />
                     </TableCell>
                 </TableRow>
                 ))}
             </TableBody>
             </Table>
-        </div>
       </div>
 
       <div className="flex justify-between gap-4 pt-4">
