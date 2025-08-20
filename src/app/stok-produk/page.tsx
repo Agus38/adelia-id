@@ -5,13 +5,10 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, Save, Trash2 } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
+import { Save, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
 import {
   Table,
   TableBody,
@@ -116,9 +113,6 @@ export default function StokProdukPage() {
   return (
     <div className="flex flex-col flex-1 p-4 pt-6 md:p-8 space-y-4">
       <div className="flex-shrink-0">
-        <div className="flex flex-col space-y-1.5">
-        </div>
-        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 pb-4">
             <div className="space-y-2 md:col-span-2">
                 <Label>Pilih Shift</Label>
