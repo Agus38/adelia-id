@@ -127,6 +127,7 @@ export default function StokProdukPage() {
                         value={item.morning} 
                         onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
                         className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0"
+                        maxLength={8}
                     />
                     </TableCell>
                     <TableCell className="px-1 border-r py-0">
@@ -134,6 +135,7 @@ export default function StokProdukPage() {
                         value={item.afternoon} 
                         onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
                         className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0"
+                        maxLength={8}
                     />
                     </TableCell>
                     <TableCell className="px-1 py-0">
@@ -141,6 +143,7 @@ export default function StokProdukPage() {
                         value={item.order} 
                         onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
                         className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0"
+                        maxLength={15}
                     />
                     </TableCell>
                 </TableRow>
