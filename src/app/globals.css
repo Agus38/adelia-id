@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -92,5 +93,29 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .dynamic-input-wrapper {
+    display: inline-grid;
+    vertical-align: top;
+    align-items: center;
+    position: relative;
+  }
+  .dynamic-input-wrapper::after,
+  .dynamic-input-wrapper input,
+  .dynamic-input-sizer {
+    grid-area: 1 / 1 / 2 / 2;
+    font: inherit !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: none !important;
+    text-align: inherit;
+  }
+  .dynamic-input-wrapper .dynamic-input-sizer {
+    visibility: hidden;
+    white-space: pre;
   }
 }

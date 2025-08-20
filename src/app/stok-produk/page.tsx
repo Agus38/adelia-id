@@ -56,6 +56,18 @@ export default function StokProdukPage() {
   const handleClear = () => {
     setStockData(initialStockData.map(item => ({...item, morning: '', afternoon: '', order: ''})));
   }
+  
+  const DynamicWidthInput = ({ value, onChange, maxLength, placeholder }: { value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, maxLength: number, placeholder: string }) => (
+    <div className="dynamic-input-wrapper">
+      <Input 
+        value={value} 
+        onChange={onChange}
+        className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-xs p-0 m-0 w-full"
+        maxLength={maxLength}
+      />
+      <span className="dynamic-input-sizer">{value || placeholder}</span>
+    </div>
+  );
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -110,41 +122,41 @@ export default function StokProdukPage() {
           <Table>
             <TableHeader>
                 <TableRow>
-                <TableHead className="w-[50px] text-center border-r px-1 py-0">NO</TableHead>
-                <TableHead className="text-center border-r px-1 py-0">BARANG</TableHead>
-                <TableHead className="text-center border-r px-1 py-0">PAGI</TableHead>
-                <TableHead className="text-center border-r px-1 py-0">SORE</TableHead>
-                <TableHead className="text-center px-1 py-0">ORDER</TableHead>
+                <TableHead className="w-[50px] text-center border-r px-2 py-2">NO</TableHead>
+                <TableHead className="text-left border-r px-2 py-2">BARANG</TableHead>
+                <TableHead className="text-center border-r px-2 py-2 w-auto">PAGI</TableHead>
+                <TableHead className="text-center border-r px-2 py-2 w-auto">SORE</TableHead>
+                <TableHead className="text-center px-2 py-2 w-auto">ORDER</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {stockData.map((item, index) => (
                 <TableRow key={item.id}>
-                    <TableCell className="font-medium text-center border-r px-1 py-0">{index + 1}</TableCell>
-                    <TableCell className="border-r px-1 py-0">{item.name}</TableCell>
-                    <TableCell className="px-1 border-r py-0">
-                    <Input 
-                        value={item.morning} 
+                    <TableCell className="font-medium text-center border-r px-2 py-1">{index + 1}</TableCell>
+                    <TableCell className="border-r px-2 py-1">{item.name}</TableCell>
+                    <TableCell className="px-2 border-r py-1">
+                      <DynamicWidthInput
+                        value={item.morning}
                         onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
-                        className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-xs"
                         maxLength={8}
-                    />
+                        placeholder="PAGI"
+                      />
                     </TableCell>
-                    <TableCell className="px-1 border-r py-0">
-                    <Input 
-                        value={item.afternoon} 
+                    <TableCell className="px-2 border-r py-1">
+                      <DynamicWidthInput
+                        value={item.afternoon}
                         onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
-                        className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-xs"
                         maxLength={8}
-                    />
+                        placeholder="SORE"
+                      />
                     </TableCell>
-                    <TableCell className="px-1 py-0">
-                        <Input 
-                        value={item.order} 
+                    <TableCell className="px-2 py-1">
+                      <DynamicWidthInput
+                        value={item.order}
                         onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
-                        className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-xs"
                         maxLength={15}
-                    />
+                        placeholder="ORDER"
+                      />
                     </TableCell>
                 </TableRow>
                 ))}
