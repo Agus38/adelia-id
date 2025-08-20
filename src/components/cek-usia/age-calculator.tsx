@@ -67,6 +67,10 @@ export function AgeCalculator() {
             zodiacSign = zodiac.sign;
         }
     }
+    // Capricorn edge case for year end
+    if (dateStr >= '12-22') {
+        zodiacSign = 'Capricorn';
+    }
     return zodiacSign;
   };
   
@@ -125,20 +129,29 @@ export function AgeCalculator() {
     });
 
     // Calculate birthday countdown
-    const nextBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+    let nextBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
     if (nextBirthday < today) {
         nextBirthday.setFullYear(today.getFullYear() + 1);
     }
-    let bMonths = nextBirthday.getMonth() - today.getMonth();
-    let bDays = nextBirthday.getDate() - today.getDate();
-    if (bDays < 0) {
-      bMonths--;
-      const prevMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      bDays += prevMonth.getDate();
+    
+    let timeDiff = nextBirthday.getTime() - today.getTime();
+    
+    let bMonths = 0;
+    let bDays = 0;
+
+    let tempDate = new Date(today);
+    while (tempDate < nextBirthday) {
+      let monthBefore = tempDate.getMonth();
+      tempDate.setMonth(tempDate.getMonth() + 1);
+      if(tempDate > nextBirthday) {
+          tempDate.setMonth(tempDate.getMonth() - 1);
+          let daysInMonth = (new Date(tempDate.getFullYear(), tempDate.getMonth() + 1, 0)).getDate();
+          bDays = Math.floor((nextBirthday.getTime() - tempDate.getTime())/(1000 * 3600 * 24));
+          break;
+      }
+      bMonths++;
     }
-    if (bMonths < 0) {
-      bMonths += 12;
-    }
+
     setBirthdayCountdown({ months: bMonths, days: bDays });
 
     // Calculate zodiacs
@@ -217,16 +230,16 @@ export function AgeCalculator() {
                     <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary"/>Usia Anda Saat Ini</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex items-baseline justify-center text-center p-4 rounded-lg bg-muted">
+                    <div className="flex flex-wrap items-baseline justify-center text-center gap-x-4 gap-y-2 p-4 rounded-lg bg-muted">
                         <div className="flex items-baseline">
                             <span className="text-4xl md:text-5xl font-bold tracking-tighter">{age.years}</span>
                             <span className="ml-2 text-lg md:text-xl text-muted-foreground">Tahun</span>
                         </div>
-                        <div className="flex items-baseline ml-4">
+                        <div className="flex items-baseline">
                             <span className="text-4xl md:text-5xl font-bold tracking-tighter">{age.months}</span>
                             <span className="ml-2 text-lg md:text-xl text-muted-foreground">Bulan</span>
                         </div>
-                        <div className="flex items-baseline ml-4">
+                        <div className="flex items-baseline">
                             <span className="text-4xl md:text-5xl font-bold tracking-tighter">{age.days}</span>
                             <span className="ml-2 text-lg md:text-xl text-muted-foreground">Hari</span>
                         </div>
@@ -240,7 +253,7 @@ export function AgeCalculator() {
                     <Card>
                         <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Gift className="h-5 w-5"/>Ulang Tahun Berikutnya</CardTitle></CardHeader>
                         <CardContent className="text-center">
-                            <div className="text-4xl font-bold">{birthdayCountdown.months}<span className="text-xl font-medium text-muted-foreground"> bulan </span>{birthdayCountdown.days}<span className="text-xl font-medium text-muted-foreground"> hari lagi</span></div>
+                            <div className="text-3xl font-bold">{birthdayCountdown.months}<span className="text-lg font-medium text-muted-foreground"> bulan </span>{birthdayCountdown.days}<span className="text-lg font-medium text-muted-foreground"> hari lagi</span></div>
                         </CardContent>
                     </Card>
                 )}
@@ -280,4 +293,3 @@ export function AgeCalculator() {
     </div>
   );
 }
-
