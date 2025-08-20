@@ -131,21 +131,21 @@ export default function StokProdukPage() {
                     <Input 
                         value={item.morning} 
                         onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
-                        className="h-7 border-0 shadow-none focus-visible:ring-0"
+                        className="h-7 border-0 shadow-none focus-visible:ring-0 bg-transparent"
                     />
                     </TableCell>
                     <TableCell className="px-2 py-1 border-r">
                     <Input 
                         value={item.afternoon} 
                         onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
-                        className="h-7 border-0 shadow-none focus-visible:ring-0"
+                        className="h-7 border-0 shadow-none focus-visible:ring-0 bg-transparent"
                     />
                     </TableCell>
                     <TableCell className="px-2 py-1">
                         <Input 
                         value={item.order} 
                         onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
-                        className="h-7 border-0 shadow-none focus-visible:ring-0"
+                        className="h-7 border-0 shadow-none focus-visible:ring-0 bg-transparent"
                     />
                     </TableCell>
                 </TableRow>
