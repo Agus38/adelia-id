@@ -115,33 +115,33 @@ export default function StokProdukPage() {
           <Table>
             <TableHeader>
                 <TableRow>
-                <TableHead className="w-[50px] text-center border-r">NO</TableHead>
-                <TableHead className="border-r">BARANG</TableHead>
-                <TableHead className="border-r">PAGI</TableHead>
-                <TableHead className="border-r">SORE</TableHead>
-                <TableHead>ORDER</TableHead>
+                <TableHead className="w-[50px] text-center border-r px-1 py-0">NO</TableHead>
+                <TableHead className="border-r px-1 py-0">BARANG</TableHead>
+                <TableHead className="border-r px-1 py-0">PAGI</TableHead>
+                <TableHead className="border-r px-1 py-0">SORE</TableHead>
+                <TableHead className="w-[120px] px-1 py-0">ORDER</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {stockData.map((item, index) => (
                 <TableRow key={item.id}>
-                    <TableCell className="font-medium text-center border-r">{index + 1}</TableCell>
-                    <TableCell className="border-r">{item.name}</TableCell>
-                    <TableCell className="px-1 border-r">
+                    <TableCell className="font-medium text-center border-r px-1 py-0">{index + 1}</TableCell>
+                    <TableCell className="border-r px-1 py-0">{item.name}</TableCell>
+                    <TableCell className="px-1 border-r py-0">
                     <Input 
                         value={item.morning} 
                         onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
                         className="h-8"
                     />
                     </TableCell>
-                    <TableCell className="px-1 border-r">
+                    <TableCell className="px-1 border-r py-0">
                     <Input 
                         value={item.afternoon} 
                         onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
                         className="h-8"
                     />
                     </TableCell>
-                    <TableCell className="px-1">
+                    <TableCell className="px-1 py-0">
                         <Input 
                         value={item.order} 
                         onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
