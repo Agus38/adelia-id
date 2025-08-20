@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -111,46 +112,48 @@ export default function StokProdukPage() {
         </div>
 
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px] px-2 text-center">NO</TableHead>
-              <TableHead className="px-2">BARANG</TableHead>
-              <TableHead className="w-[120px] px-2">PAGI</TableHead>
-              <TableHead className="w-[120px] px-2">SORE</TableHead>
-              <TableHead className="w-[120px] px-2">ORDER</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {stockData.map((item, index) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium text-center px-2">{index + 1}</TableCell>
-                <TableCell className="px-2">{item.name}</TableCell>
-                <TableCell className="px-2">
-                  <Input 
-                    value={item.morning} 
-                    onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
-                    className="h-8"
-                  />
-                </TableCell>
-                <TableCell className="px-2">
-                  <Input 
-                    value={item.afternoon} 
-                    onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
-                    className="h-8"
-                  />
-                </TableCell>
-                <TableCell className="px-2">
+        <div className="relative w-full overflow-auto">
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead className="w-[50px] px-2 text-center py-1">NO</TableHead>
+                <TableHead className="px-2 py-1">BARANG</TableHead>
+                <TableHead className="w-[120px] px-2 py-1">PAGI</TableHead>
+                <TableHead className="w-[120px] px-2 py-1">SORE</TableHead>
+                <TableHead className="w-[120px] px-2 py-1">ORDER</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {stockData.map((item, index) => (
+                <TableRow key={item.id}>
+                    <TableCell className="font-medium text-center px-2 py-1">{index + 1}</TableCell>
+                    <TableCell className="px-2 py-1">{item.name}</TableCell>
+                    <TableCell className="px-2 py-1">
                     <Input 
-                    value={item.order} 
-                    onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
-                    className="h-8"
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                        value={item.morning} 
+                        onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
+                        className="h-7"
+                    />
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
+                    <Input 
+                        value={item.afternoon} 
+                        onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
+                        className="h-7"
+                    />
+                    </TableCell>
+                    <TableCell className="px-2 py-1">
+                        <Input 
+                        value={item.order} 
+                        onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
+                        className="h-7"
+                    />
+                    </TableCell>
+                </TableRow>
+                ))}
+            </TableBody>
+            </Table>
+        </div>
       </div>
 
       <div className="flex justify-between gap-4 pt-4">
