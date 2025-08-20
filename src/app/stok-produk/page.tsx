@@ -61,7 +61,6 @@ export default function StokProdukPage() {
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex flex-col space-y-1.5">
         <h2 className="text-2xl font-semibold leading-none tracking-tight">Manajemen Stok Harian</h2>
-        <p className="text-sm text-muted-foreground">Catat stok pagi, sore, dan pesanan untuk setiap barang.</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
