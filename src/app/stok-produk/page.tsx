@@ -111,22 +111,22 @@ export default function StokProdukPage() {
           </div>
         </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
           <Table className="text-xs">
             <TableHeader>
                 <TableRow>
-                <TableHead className="w-[50px] px-2 text-center border-r">NO</TableHead>
-                <TableHead className="px-2 border-r">BARANG</TableHead>
-                <TableHead className="w-[120px] px-2 border-r">PAGI</TableHead>
-                <TableHead className="w-[120px] px-2 border-r">SORE</TableHead>
-                <TableHead className="w-[120px] px-2">ORDER</TableHead>
+                <TableHead className="w-[50px] px-2 text-center border-r h-8">NO</TableHead>
+                <TableHead className="px-2 border-r h-8">BARANG</TableHead>
+                <TableHead className="w-[120px] px-2 border-r h-8">PAGI</TableHead>
+                <TableHead className="w-[120px] px-2 border-r h-8">SORE</TableHead>
+                <TableHead className="w-[120px] px-2 h-8">ORDER</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {stockData.map((item, index) => (
                 <TableRow key={item.id}>
-                    <TableCell className="font-medium text-center px-2 border-r">{index + 1}</TableCell>
-                    <TableCell className="px-2 border-r">{item.name}</TableCell>
+                    <TableCell className="font-medium text-center px-2 border-r py-0">{index + 1}</TableCell>
+                    <TableCell className="px-2 border-r py-0">{item.name}</TableCell>
                     <TableCell className="px-2 border-r py-0">
                     <Input 
                         value={item.morning} 
