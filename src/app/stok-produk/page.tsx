@@ -64,10 +64,20 @@ export default function StokProdukPage() {
         onChange={onChange}
         className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-xs p-0 m-0 w-full"
         maxLength={maxLength}
+        onFocus={(e) => e.target.scrollIntoView({ block: 'center' })}
       />
       <span className="dynamic-input-sizer">{value || placeholder}</span>
     </div>
   );
+
+  const getTableHeaders = () => {
+    if (shift === 'pagi') {
+      return { header1: 'KULKAS', header2: 'PAGI' };
+    }
+    return { header1: 'PAGI', header2: 'SORE' };
+  };
+
+  const { header1, header2 } = getTableHeaders();
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -124,8 +134,8 @@ export default function StokProdukPage() {
                 <TableRow>
                 <TableHead className="w-[50px] text-center border-r px-2 py-2">NO</TableHead>
                 <TableHead className="text-left border-r px-2 py-2">BARANG</TableHead>
-                <TableHead className="text-center border-r px-2 py-2 w-auto">PAGI</TableHead>
-                <TableHead className="text-center border-r px-2 py-2 w-auto">SORE</TableHead>
+                <TableHead className="text-center border-r px-2 py-2 w-auto">{header1}</TableHead>
+                <TableHead className="text-center border-r px-2 py-2 w-auto">{header2}</TableHead>
                 <TableHead className="text-center px-2 py-2 w-auto">ORDER</TableHead>
                 </TableRow>
             </TableHeader>
@@ -139,7 +149,7 @@ export default function StokProdukPage() {
                         value={item.morning}
                         onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
                         maxLength={8}
-                        placeholder="PAGI"
+                        placeholder={header1}
                       />
                     </TableCell>
                     <TableCell className="px-2 border-r py-1">
@@ -147,7 +157,7 @@ export default function StokProdukPage() {
                         value={item.afternoon}
                         onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
                         maxLength={8}
-                        placeholder="SORE"
+                        placeholder={header2}
                       />
                     </TableCell>
                     <TableCell className="px-2 py-1">
