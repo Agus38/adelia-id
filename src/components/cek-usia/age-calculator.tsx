@@ -200,7 +200,7 @@ export function AgeCalculator() {
             <CardDescription>Masukkan tanggal lahir Anda untuk mendapatkan analisis usia yang mendetail.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="day">Tanggal</Label>
                 <Input id="day" type="text" inputMode='numeric' placeholder="DD" value={day} onChange={handleInputChange(setDay, 2)} maxLength={2} />
