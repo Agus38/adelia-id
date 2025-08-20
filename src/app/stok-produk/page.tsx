@@ -80,55 +80,57 @@ export default function StokProdukPage() {
   const { header1, header2 } = getTableHeaders();
 
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex flex-col space-y-1.5">
-        <h2 className="text-2xl font-semibold leading-none tracking-tight">Manajemen Stok Harian</h2>
+    <div className="flex flex-col flex-1 p-4 pt-6 md:p-8 space-y-4">
+      <div className="flex-shrink-0">
+        <div className="flex flex-col space-y-1.5">
+            <h2 className="text-2xl font-semibold leading-none tracking-tight">Manajemen Stok Harian</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 pb-4">
+            <div className="space-y-2">
+                <Label>Pilih Tanggal</Label>
+                <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                    variant={'outline'}
+                    className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !date && 'text-muted-foreground'
+                    )}
+                    >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, 'dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                    <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                    locale={id}
+                    />
+                </PopoverContent>
+                </Popover>
+            </div>
+            <div className="space-y-2">
+                <Label>Pilih Shift</Label>
+                <Tabs
+                defaultValue="pagi"
+                className="w-full"
+                onValueChange={setShift}
+                value={shift}
+                >
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="pagi">Pagi</TabsTrigger>
+                    <TabsTrigger value="sore">Sore</TabsTrigger>
+                </TabsList>
+                </Tabs>
+            </div>
+        </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
-          <div className="space-y-2">
-            <Label>Pilih Tanggal</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={'outline'}
-                  className={cn(
-                    'w-full justify-start text-left font-normal',
-                    !date && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, 'dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
-                  locale={id}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="space-y-2">
-            <Label>Pilih Shift</Label>
-            <Tabs
-              defaultValue="pagi"
-              className="w-full"
-              onValueChange={setShift}
-              value={shift}
-            >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="pagi">Pagi</TabsTrigger>
-                <TabsTrigger value="sore">Sore</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </div>
-
-      <div className="rounded-md border">
+      <div className="flex-1 overflow-auto rounded-md border">
           <Table>
             <TableHeader>
                 <TableRow>
@@ -174,7 +176,7 @@ export default function StokProdukPage() {
             </Table>
       </div>
 
-      <div className="flex justify-between gap-4 pt-4">
+      <div className="flex-shrink-0 flex justify-between gap-4 pt-4">
         <Button variant="destructive" onClick={handleClear} className="w-full md:w-auto">
           <Trash2 className="mr-2 h-4 w-4" />
           Hapus
