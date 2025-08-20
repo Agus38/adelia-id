@@ -37,6 +37,23 @@ const initialStockData = [
 
 type StockItem = typeof initialStockData[0];
 
+// Memoize the input component to prevent unnecessary re-renders causing focus loss.
+const DynamicWidthInput = React.memo(function DynamicWidthInput({ value, onChange, maxLength, placeholder }: { value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, maxLength: number, placeholder: string }) {
+    return (
+        <div className="dynamic-input-wrapper">
+            <Input 
+                value={value} 
+                onChange={onChange}
+                className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-xs p-0 m-0 w-full"
+                maxLength={maxLength}
+                onFocus={(e) => e.target.scrollIntoView({ block: 'center', inline: 'nearest' })}
+            />
+            <span className="dynamic-input-sizer">{value || placeholder}</span>
+        </div>
+    );
+});
+
+
 export default function StokProdukPage() {
   const [date, setDate] = React.useState<Date | undefined>(undefined);
   const [shift, setShift] = React.useState('pagi');
@@ -57,19 +74,6 @@ export default function StokProdukPage() {
     setStockData(initialStockData.map(item => ({...item, morning: '', afternoon: '', order: ''})));
   }
   
-  const DynamicWidthInput = ({ value, onChange, maxLength, placeholder }: { value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, maxLength: number, placeholder: string }) => (
-    <div className="dynamic-input-wrapper">
-      <Input 
-        value={value} 
-        onChange={onChange}
-        className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-xs p-0 m-0 w-full"
-        maxLength={maxLength}
-        onFocus={(e) => e.target.scrollIntoView({ block: 'center', inline: 'nearest' })}
-      />
-      <span className="dynamic-input-sizer">{value || placeholder}</span>
-    </div>
-  );
-
   const getTableHeaders = () => {
     if (shift === 'pagi') {
       return { header1: 'KULKAS', header2: 'PAGI' };
