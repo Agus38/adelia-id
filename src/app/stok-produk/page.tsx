@@ -106,7 +106,7 @@ export default function StokProdukPage() {
           </div>
         </div>
 
-      <div className="rounded-md border overflow-x-auto">
+      <div className="rounded-md border">
           <Table>
             <TableHeader>
                 <TableRow>
