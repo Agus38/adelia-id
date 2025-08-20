@@ -64,7 +64,7 @@ export default function StokProdukPage() {
         onChange={onChange}
         className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-xs p-0 m-0 w-full"
         maxLength={maxLength}
-        onFocus={(e) => e.target.scrollIntoView({ block: 'center' })}
+        onFocus={(e) => e.target.scrollIntoView({ block: 'center', inline: 'nearest' })}
       />
       <span className="dynamic-input-sizer">{value || placeholder}</span>
     </div>
