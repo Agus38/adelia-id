@@ -36,14 +36,32 @@ const initialStockData = [
 ];
 
 type StockItem = typeof initialStockData[0];
+type StockField = 'morning' | 'afternoon' | 'order';
+
 
 // Memoize the input component to prevent unnecessary re-renders causing focus loss.
-const DynamicWidthInput = React.memo(function DynamicWidthInput({ value, onChange, maxLength, placeholder }: { value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, maxLength: number, placeholder: string }) {
+const DynamicWidthInput = React.memo(function DynamicWidthInput({ 
+    value, 
+    onChange, 
+    onKeyDown,
+    maxLength, 
+    placeholder,
+    id,
+}: { 
+    value: string, 
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, 
+    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void,
+    maxLength: number, 
+    placeholder: string,
+    id: string,
+}) {
     return (
         <div className="dynamic-input-wrapper">
             <Input 
+                id={id}
                 value={value} 
                 onChange={onChange}
+                onKeyDown={onKeyDown}
                 className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-[11px] p-0 m-0 w-full"
                 maxLength={maxLength}
                 onFocus={(e) => e.target.scrollIntoView({ block: 'center', inline: 'nearest' })}
@@ -82,6 +100,18 @@ export default function StokProdukPage() {
   };
 
   const { header1, header2 } = getTableHeaders();
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, field: StockField) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const nextRowIndex = rowIndex + 1;
+      if (nextRowIndex < stockData.length) {
+        const nextInput = document.getElementById(`input-${nextRowIndex}-${field}`);
+        nextInput?.focus();
+      }
+    }
+  };
+
 
   return (
     <div className="flex flex-col flex-1 p-4 pt-6 md:p-8 space-y-4">
@@ -130,24 +160,30 @@ export default function StokProdukPage() {
                     <TableCell className="border-r px-2 py-1">{item.name}</TableCell>
                     <TableCell className="px-2 border-r py-1">
                       <DynamicWidthInput
+                        id={`input-${index}-morning`}
                         value={item.morning}
                         onChange={(e) => handleStockChange(item.id, 'morning', e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(e, index, 'morning')}
                         maxLength={8}
                         placeholder={header1}
                       />
                     </TableCell>
                     <TableCell className="px-2 border-r py-1">
                       <DynamicWidthInput
+                        id={`input-${index}-afternoon`}
                         value={item.afternoon}
                         onChange={(e) => handleStockChange(item.id, 'afternoon', e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(e, index, 'afternoon')}
                         maxLength={8}
                         placeholder={header2}
                       />
                     </TableCell>
                     <TableCell className="px-2 py-1">
                       <DynamicWidthInput
+                        id={`input-${index}-order`}
                         value={item.order}
                         onChange={(e) => handleStockChange(item.id, 'order', e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(e, index, 'order')}
                         maxLength={15}
                         placeholder="ORDER"
                       />
