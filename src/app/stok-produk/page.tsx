@@ -137,6 +137,9 @@ export default function StokProdukPage() {
        <div className="text-center font-bold">
         SOTO MERR
       </div>
+       <div className="text-center text-sm text-muted-foreground -mt-3">
+        {date ? format(date, 'eeee, dd MMMM yyyy', { locale: id }) : 'Memuat tanggal...'}
+      </div>
       
       <div className="flex-1 overflow-auto rounded-md border">
           <Table>
