@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { TriangleAlert, Gift, Calendar, Sparkles, Scale, PawPrint, Hourglass } from 'lucide-react';
+import { TriangleAlert, Gift, Calendar, Sparkles, Scale, PawPrint, Hourglass, RefreshCw } from 'lucide-react';
 
 interface Age {
   years: number;
@@ -58,6 +58,13 @@ export function AgeCalculator() {
     const timer = setInterval(() => setCurrentDate(new Date()), 1000 * 60); // Update every minute
     return () => clearInterval(timer);
   }, []);
+
+  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, maxLength: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (/^\d*$/.test(value) && value.length <= maxLength) {
+        setter(value);
+    }
+  };
 
   const calculateWesternZodiac = (day: number, month: number): string => {
     const dateStr = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -145,7 +152,6 @@ export function AgeCalculator() {
       tempDate.setMonth(tempDate.getMonth() + 1);
       if(tempDate > nextBirthday) {
           tempDate.setMonth(tempDate.getMonth() - 1);
-          let daysInMonth = (new Date(tempDate.getFullYear(), tempDate.getMonth() + 1, 0)).getDate();
           bDays = Math.floor((nextBirthday.getTime() - tempDate.getTime())/(1000 * 3600 * 24));
           break;
       }
@@ -187,109 +193,120 @@ export function AgeCalculator() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Kalkulator Usia Lengkap</CardTitle>
-          <CardDescription>Masukkan tanggal lahir Anda untuk mendapatkan analisis usia yang mendetail.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="day">Tanggal</Label>
-              <Input id="day" type="number" placeholder="DD" value={day} onChange={(e) => setDay(e.target.value)} />
+      {!age && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Kalkulator Usia Lengkap</CardTitle>
+            <CardDescription>Masukkan tanggal lahir Anda untuk mendapatkan analisis usia yang mendetail.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="day">Tanggal</Label>
+                <Input id="day" type="text" inputMode='numeric' placeholder="DD" value={day} onChange={handleInputChange(setDay, 2)} maxLength={2} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="month">Bulan</Label>
+                <Input id="month" type="text" inputMode='numeric' placeholder="MM" value={month} onChange={handleInputChange(setMonth, 2)} maxLength={2} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="year">Tahun</Label>
+                <Input id="year" type="text" inputMode='numeric' placeholder="YYYY" value={year} onChange={handleInputChange(setYear, 4)} maxLength={4} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="month">Bulan</Label>
-              <Input id="month" type="number" placeholder="MM" value={month} onChange={(e) => setMonth(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="year">Tahun</Label>
-              <Input id="year" type="number" placeholder="YYYY" value={year} onChange={(e) => setYear(e.target.value)} />
-            </div>
-          </div>
 
-          {error && (
-              <Alert variant="destructive">
-                  <TriangleAlert className="h-4 w-4" />
-                  <AlertTitle>Input Tidak Valid</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-              </Alert>
-          )}
-        </CardContent>
-        <CardFooter className="flex flex-col sm:flex-row justify-between border-t pt-6 gap-4">
-          <Button variant="outline" onClick={handleReset}>Reset</Button>
-          <Button onClick={handleCalculateAge} className="w-full sm:w-auto">Hitung Usia</Button>
-        </CardFooter>
-      </Card>
+            {error && (
+                <Alert variant="destructive">
+                    <TriangleAlert className="h-4 w-4" />
+                    <AlertTitle>Input Tidak Valid</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+          </CardContent>
+          <CardFooter className="flex flex-col sm:flex-row justify-end border-t pt-6 gap-4">
+            <Button onClick={handleCalculateAge} className="w-full sm:w-auto">Hitung Usia</Button>
+          </CardFooter>
+        </Card>
+      )}
 
       {age && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Age Summary */}
-            <Card className="lg:col-span-3">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary"/>Usia Anda Saat Ini</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-wrap items-baseline justify-center text-center gap-x-4 gap-y-2 p-4 rounded-lg bg-muted">
-                        <div className="flex items-baseline">
-                            <span className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter">{age.years}</span>
-                            <span className="ml-2 text-base sm:text-lg md:text-xl text-muted-foreground">Tahun</span>
+        <div className="space-y-6">
+            <div className="flex justify-end">
+                <Button variant="outline" onClick={handleReset}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Hitung Ulang
+                </Button>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Age Summary */}
+                <Card className="lg:col-span-3">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary"/>Usia Anda Saat Ini</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-wrap items-baseline justify-center text-center gap-x-4 gap-y-2 p-4 rounded-lg bg-muted">
+                            <div className="flex items-baseline">
+                                <span className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter">{age.years}</span>
+                                <span className="ml-2 text-base sm:text-lg md:text-xl text-muted-foreground">Tahun</span>
+                            </div>
+                            <div className="flex items-baseline">
+                                <span className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter">{age.months}</span>
+                                <span className="ml-2 text-base sm:text-lg md:text-xl text-muted-foreground">Bulan</span>
+                            </div>
+                            <div className="flex items-baseline">
+                                <span className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter">{age.days}</span>
+                                <span className="ml-2 text-base sm:text-lg md:text-xl text-muted-foreground">Hari</span>
+                            </div>
                         </div>
-                        <div className="flex items-baseline">
-                            <span className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter">{age.months}</span>
-                            <span className="ml-2 text-base sm:text-lg md:text-xl text-muted-foreground">Bulan</span>
-                        </div>
-                        <div className="flex items-baseline">
-                            <span className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tighter">{age.days}</span>
-                            <span className="ml-2 text-base sm:text-lg md:text-xl text-muted-foreground">Hari</span>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
 
-            {/* Birthday & Zodiac */}
-            <div className="lg:col-span-1 space-y-6">
-                {birthdayCountdown && (
+                {/* Birthday & Zodiac */}
+                <div className="lg:col-span-1 space-y-6">
+                    {birthdayCountdown && (
+                        <Card>
+                            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Gift className="h-5 w-5"/>Ulang Tahun Berikutnya</CardTitle></CardHeader>
+                            <CardContent className="text-center">
+                                <div className="text-3xl font-bold">{birthdayCountdown.months}<span className="text-lg font-medium text-muted-foreground"> bulan </span>{birthdayCountdown.days}<span className="text-lg font-medium text-muted-foreground"> hari lagi</span></div>
+                            </CardContent>
+                        </Card>
+                    )}
                     <Card>
-                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Gift className="h-5 w-5"/>Ulang Tahun Berikutnya</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Scale className="h-5 w-5"/>Zodiak Barat</CardTitle></CardHeader>
                         <CardContent className="text-center">
-                            <div className="text-3xl font-bold">{birthdayCountdown.months}<span className="text-lg font-medium text-muted-foreground"> bulan </span>{birthdayCountdown.days}<span className="text-lg font-medium text-muted-foreground"> hari lagi</span></div>
+                            <p className="text-3xl font-semibold">{westernZodiac}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><PawPrint className="h-5 w-5"/>Shio Cina</CardTitle></CardHeader>
+                        <CardContent className="text-center">
+                            <p className="text-3xl font-semibold">{chineseZodiac}</p>
+                        </CardContent>
+                    </Card>
+                </div>
+                
+                {/* Detailed Summary */}
+                {detailedAge && (
+                    <Card className="lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Hourglass className="h-5 w-5 text-primary"/>Ringkasan Lengkap</CardTitle>
+                            <CardDescription>Usia Anda dikonversi ke dalam berbagai satuan waktu.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <InfoCard icon={Calendar} title="Total Bulan" value={detailedAge.totalMonths.toLocaleString('id-ID')} unit="bulan" />
+                        <InfoCard icon={Calendar} title="Total Minggu" value={detailedAge.totalWeeks.toLocaleString('id-ID')} unit="minggu" />
+                        <InfoCard icon={Calendar} title="Total Hari" value={detailedAge.totalDays.toLocaleString('id-ID')} unit="hari" />
+                        <InfoCard icon={Hourglass} title="Total Jam" value={detailedAge.totalHours.toLocaleString('id-ID')} unit="jam" />
+                        <InfoCard icon={Hourglass} title="Total Menit" value={detailedAge.totalMinutes.toLocaleString('id-ID')} unit="menit" />
+                        <InfoCard icon={Hourglass} title="Total Detik" value={detailedAge.totalSeconds.toLocaleString('id-ID')} unit="detik" />
                         </CardContent>
                     </Card>
                 )}
-                 <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Scale className="h-5 w-5"/>Zodiak Barat</CardTitle></CardHeader>
-                    <CardContent className="text-center">
-                        <p className="text-3xl font-semibold">{westernZodiac}</p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><PawPrint className="h-5 w-5"/>Shio Cina</CardTitle></CardHeader>
-                    <CardContent className="text-center">
-                        <p className="text-3xl font-semibold">{chineseZodiac}</p>
-                    </CardContent>
-                </Card>
             </div>
-            
-            {/* Detailed Summary */}
-            {detailedAge && (
-                <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Hourglass className="h-5 w-5 text-primary"/>Ringkasan Lengkap</CardTitle>
-                        <CardDescription>Usia Anda dikonversi ke dalam berbagai satuan waktu.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <InfoCard icon={Calendar} title="Total Bulan" value={detailedAge.totalMonths.toLocaleString('id-ID')} unit="bulan" />
-                       <InfoCard icon={Calendar} title="Total Minggu" value={detailedAge.totalWeeks.toLocaleString('id-ID')} unit="minggu" />
-                       <InfoCard icon={Calendar} title="Total Hari" value={detailedAge.totalDays.toLocaleString('id-ID')} unit="hari" />
-                       <InfoCard icon={Hourglass} title="Total Jam" value={detailedAge.totalHours.toLocaleString('id-ID')} unit="jam" />
-                       <InfoCard icon={Hourglass} title="Total Menit" value={detailedAge.totalMinutes.toLocaleString('id-ID')} unit="menit" />
-                       <InfoCard icon={Hourglass} title="Total Detik" value={detailedAge.totalSeconds.toLocaleString('id-ID')} unit="detik" />
-                    </CardContent>
-                </Card>
-            )}
         </div>
       )}
     </div>
   );
 }
+
+    
