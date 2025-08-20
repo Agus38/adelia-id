@@ -1,14 +1,13 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { TriangleAlert } from 'lucide-react';
+import { TriangleAlert, Gift, Calendar, Sparkles, Scale, PawPrint, Hourglass } from 'lucide-react';
 
 interface Age {
   years: number;
@@ -16,112 +15,269 @@ interface Age {
   days: number;
 }
 
+interface DetailedAge {
+  totalMonths: number;
+  totalWeeks: number;
+  totalDays: number;
+  totalHours: number;
+  totalMinutes: number;
+  totalSeconds: number;
+}
+
+interface BirthdayCountdown {
+  months: number;
+  days: number;
+}
+
+const westernZodiacs = [
+  { sign: 'Capricorn', start: '12-22' }, { sign: 'Aquarius', start: '01-20' },
+  { sign: 'Pisces', start: '02-19' }, { sign: 'Aries', start: '03-21' },
+  { sign: 'Taurus', start: '04-20' }, { sign: 'Gemini', start: '05-21' },
+  { sign: 'Cancer', start: '06-21' }, { sign: 'Leo', start: '07-23' },
+  { sign: 'Virgo', start: '08-23' }, { sign: 'Libra', start: '09-23' },
+  { sign: 'Scorpio', start: '10-23' }, { sign: 'Sagittarius', start: '11-22' },
+];
+
+const chineseZodiacs = ['Tikus', 'Kerbau', 'Macan', 'Kelinci', 'Naga', 'Ular', 'Kuda', 'Kambing', 'Monyet', 'Ayam', 'Anjing', 'Babi'];
+
 export function AgeCalculator() {
   const [day, setDay] = useState('');
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
   const [age, setAge] = useState<Age | null>(null);
+  const [detailedAge, setDetailedAge] = useState<DetailedAge | null>(null);
+  const [birthdayCountdown, setBirthdayCountdown] = useState<BirthdayCountdown | null>(null);
+  const [westernZodiac, setWesternZodiac] = useState<string | null>(null);
+  const [chineseZodiac, setChineseZodiac] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    // Ensure this runs only on the client
+    setCurrentDate(new Date());
+    const timer = setInterval(() => setCurrentDate(new Date()), 1000 * 60); // Update every minute
+    return () => clearInterval(timer);
+  }, []);
+
+  const calculateWesternZodiac = (day: number, month: number): string => {
+    const dateStr = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    let zodiacSign = westernZodiacs[0].sign; // Default to Capricorn
+    for (const zodiac of westernZodiacs) {
+        if (dateStr >= zodiac.start) {
+            zodiacSign = zodiac.sign;
+        }
+    }
+    return zodiacSign;
+  };
+  
+  const calculateChineseZodiac = (year: number): string => {
+      const startYear = 1924; // Year of the Rat
+      return chineseZodiacs[(year - startYear) % 12];
+  };
 
   const handleCalculateAge = () => {
     const dayNum = parseInt(day, 10);
     const monthNum = parseInt(month, 10);
     const yearNum = parseInt(year, 10);
 
-    const birthDate = new Date(yearNum, monthNum - 1, dayNum);
+    if (!day || !month || !year) {
+      setError('Harap isi semua kolom tanggal, bulan, dan tahun.');
+      resetResults();
+      return;
+    }
 
-    if (isNaN(birthDate.getTime()) || birthDate.getDate() !== dayNum || birthDate.getMonth() !== monthNum - 1 || birthDate.getFullYear() !== yearNum || yearNum < 1900 || yearNum > new Date().getFullYear()) {
-      setError('Harap masukkan tanggal, bulan, dan tahun yang valid.');
-      setAge(null);
+    const birthDate = new Date(yearNum, monthNum - 1, dayNum);
+    const today = new Date();
+
+    if (isNaN(birthDate.getTime()) || birthDate.getDate() !== dayNum || birthDate.getMonth() !== monthNum - 1 || birthDate.getFullYear() !== yearNum || yearNum < 1900 || birthDate > today) {
+      setError('Harap masukkan tanggal, bulan, dan tahun yang valid dan tidak di masa depan.');
+      resetResults();
       return;
     }
 
     setError(null);
-    const today = new Date();
+
+    // Calculate age
     let years = today.getFullYear() - birthDate.getFullYear();
     let months = today.getMonth() - birthDate.getMonth();
     let days = today.getDate() - birthDate.getDate();
 
-    if (months < 0 || (months === 0 && days < 0)) {
-      years--;
-      months += 12;
-    }
-    
     if (days < 0) {
-        const prevMonthLastDay = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
-        days += prevMonthLastDay;
         months--;
-        if (months < 0) {
-            months += 12;
-            years--;
-        }
+        const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+        days += prevMonth.getDate();
     }
-
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
     setAge({ years, months, days });
+
+    // Calculate detailed age
+    const totalDays = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
+    setDetailedAge({
+        totalMonths: years * 12 + months,
+        totalWeeks: Math.floor(totalDays / 7),
+        totalDays,
+        totalHours: totalDays * 24,
+        totalMinutes: totalDays * 24 * 60,
+        totalSeconds: totalDays * 24 * 60 * 60
+    });
+
+    // Calculate birthday countdown
+    const nextBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+    if (nextBirthday < today) {
+        nextBirthday.setFullYear(today.getFullYear() + 1);
+    }
+    let bMonths = nextBirthday.getMonth() - today.getMonth();
+    let bDays = nextBirthday.getDate() - today.getDate();
+    if (bDays < 0) {
+      bMonths--;
+      const prevMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      bDays += prevMonth.getDate();
+    }
+    if (bMonths < 0) {
+      bMonths += 12;
+    }
+    setBirthdayCountdown({ months: bMonths, days: bDays });
+
+    // Calculate zodiacs
+    setWesternZodiac(calculateWesternZodiac(dayNum, monthNum));
+    setChineseZodiac(calculateChineseZodiac(yearNum));
+  };
+
+  const resetResults = () => {
+    setAge(null);
+    setDetailedAge(null);
+    setBirthdayCountdown(null);
+    setWesternZodiac(null);
+    setChineseZodiac(null);
   };
   
   const handleReset = () => {
     setDay('');
     setMonth('');
     setYear('');
-    setAge(null);
     setError(null);
+    resetResults();
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Kalkulator Usia</CardTitle>
-        <CardDescription>Masukkan tanggal lahir Anda di bawah ini.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="day">Tanggal</Label>
-            <Input id="day" type="number" placeholder="DD" value={day} onChange={(e) => setDay(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="month">Bulan</Label>
-            <Input id="month" type="number" placeholder="MM" value={month} onChange={(e) => setMonth(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="year">Tahun</Label>
-            <Input id="year" type="number" placeholder="YYYY" value={year} onChange={(e) => setYear(e.target.value)} />
-          </div>
+  const InfoCard = ({ icon: Icon, title, value, unit }: { icon: React.ElementType, title: string, value: string | number, unit: string }) => (
+    <div className="flex items-center space-x-3 rounded-md bg-muted/50 p-3">
+        <Icon className="h-6 w-6 text-primary" />
+        <div>
+            <p className="text-xs text-muted-foreground">{title}</p>
+            <p className="font-semibold text-sm">{value} <span className="font-normal">{unit}</span></p>
         </div>
+    </div>
+  );
 
-        {error && (
-            <Alert variant="destructive">
-                <TriangleAlert className="h-4 w-4" />
-                <AlertTitle>Input Tidak Valid</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-            </Alert>
-        )}
-
-        {age && (
-            <div>
-                <Label>Usia Anda Saat Ini Adalah:</Label>
-                <div className="flex items-baseline justify-center text-center p-6 mt-2 rounded-lg bg-muted">
-                    <div className="flex items-baseline">
-                        <span className="text-5xl font-bold tracking-tighter">{age.years}</span>
-                        <span className="ml-2 text-xl text-muted-foreground">Tahun</span>
-                    </div>
-                    <div className="flex items-baseline ml-4">
-                        <span className="text-5xl font-bold tracking-tighter">{age.months}</span>
-                         <span className="ml-2 text-xl text-muted-foreground">Bulan</span>
-                    </div>
-                    <div className="flex items-baseline ml-4">
-                        <span className="text-5xl font-bold tracking-tighter">{age.days}</span>
-                        <span className="ml-2 text-xl text-muted-foreground">Hari</span>
-                    </div>
-                </div>
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Kalkulator Usia Lengkap</CardTitle>
+          <CardDescription>Masukkan tanggal lahir Anda untuk mendapatkan analisis usia yang mendetail.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="day">Tanggal</Label>
+              <Input id="day" type="number" placeholder="DD" value={day} onChange={(e) => setDay(e.target.value)} />
             </div>
-        )}
-      </CardContent>
-      <CardFooter className="flex justify-between border-t pt-6">
-        <Button variant="outline" onClick={handleReset}>Reset</Button>
-        <Button onClick={handleCalculateAge}>Hitung Usia</Button>
-      </CardFooter>
-    </Card>
+            <div className="space-y-2">
+              <Label htmlFor="month">Bulan</Label>
+              <Input id="month" type="number" placeholder="MM" value={month} onChange={(e) => setMonth(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="year">Tahun</Label>
+              <Input id="year" type="number" placeholder="YYYY" value={year} onChange={(e) => setYear(e.target.value)} />
+            </div>
+          </div>
+
+          {error && (
+              <Alert variant="destructive">
+                  <TriangleAlert className="h-4 w-4" />
+                  <AlertTitle>Input Tidak Valid</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+              </Alert>
+          )}
+        </CardContent>
+        <CardFooter className="flex flex-col sm:flex-row justify-between border-t pt-6 gap-4">
+          <Button variant="outline" onClick={handleReset}>Reset</Button>
+          <Button onClick={handleCalculateAge} className="w-full sm:w-auto">Hitung Usia</Button>
+        </CardFooter>
+      </Card>
+
+      {age && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Age Summary */}
+            <Card className="lg:col-span-3">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary"/>Usia Anda Saat Ini</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-baseline justify-center text-center p-4 rounded-lg bg-muted">
+                        <div className="flex items-baseline">
+                            <span className="text-4xl md:text-5xl font-bold tracking-tighter">{age.years}</span>
+                            <span className="ml-2 text-lg md:text-xl text-muted-foreground">Tahun</span>
+                        </div>
+                        <div className="flex items-baseline ml-4">
+                            <span className="text-4xl md:text-5xl font-bold tracking-tighter">{age.months}</span>
+                            <span className="ml-2 text-lg md:text-xl text-muted-foreground">Bulan</span>
+                        </div>
+                        <div className="flex items-baseline ml-4">
+                            <span className="text-4xl md:text-5xl font-bold tracking-tighter">{age.days}</span>
+                            <span className="ml-2 text-lg md:text-xl text-muted-foreground">Hari</span>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Birthday & Zodiac */}
+            <div className="lg:col-span-1 space-y-6">
+                {birthdayCountdown && (
+                    <Card>
+                        <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Gift className="h-5 w-5"/>Ulang Tahun Berikutnya</CardTitle></CardHeader>
+                        <CardContent className="text-center">
+                            <div className="text-4xl font-bold">{birthdayCountdown.months}<span className="text-xl font-medium text-muted-foreground"> bulan </span>{birthdayCountdown.days}<span className="text-xl font-medium text-muted-foreground"> hari lagi</span></div>
+                        </CardContent>
+                    </Card>
+                )}
+                 <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Scale className="h-5 w-5"/>Zodiak Barat</CardTitle></CardHeader>
+                    <CardContent className="text-center">
+                        <p className="text-3xl font-semibold">{westernZodiac}</p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><PawPrint className="h-5 w-5"/>Shio Cina</CardTitle></CardHeader>
+                    <CardContent className="text-center">
+                        <p className="text-3xl font-semibold">{chineseZodiac}</p>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            {/* Detailed Summary */}
+            {detailedAge && (
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Hourglass className="h-5 w-5 text-primary"/>Ringkasan Lengkap</CardTitle>
+                        <CardDescription>Usia Anda dikonversi ke dalam berbagai satuan waktu.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <InfoCard icon={Calendar} title="Total Bulan" value={detailedAge.totalMonths.toLocaleString('id-ID')} unit="bulan" />
+                       <InfoCard icon={Calendar} title="Total Minggu" value={detailedAge.totalWeeks.toLocaleString('id-ID')} unit="minggu" />
+                       <InfoCard icon={Calendar} title="Total Hari" value={detailedAge.totalDays.toLocaleString('id-ID')} unit="hari" />
+                       <InfoCard icon={Hourglass} title="Total Jam" value={detailedAge.totalHours.toLocaleString('id-ID')} unit="jam" />
+                       <InfoCard icon={Hourglass} title="Total Menit" value={detailedAge.totalMinutes.toLocaleString('id-ID')} unit="menit" />
+                       <InfoCard icon={Hourglass} title="Total Detik" value={detailedAge.totalSeconds.toLocaleString('id-ID')} unit="detik" />
+                    </CardContent>
+                </Card>
+            )}
+        </div>
+      )}
+    </div>
   );
 }
+
