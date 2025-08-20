@@ -59,10 +59,13 @@ export function AgeCalculator() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, maxLength: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, maxLength: number, maxValue?: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
     if (/^\d*$/.test(value) && value.length <= maxLength) {
-        setter(value);
+      if (maxValue && parseInt(value, 10) > maxValue) {
+        value = String(maxValue);
+      }
+      setter(value);
     }
   };
 
@@ -228,11 +231,11 @@ export function AgeCalculator() {
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="day">Tanggal</Label>
-                <Input id="day" type="text" inputMode='numeric' placeholder="DD" value={day} onChange={handleInputChange(setDay, 2)} maxLength={2} />
+                <Input id="day" type="text" inputMode='numeric' placeholder="DD" value={day} onChange={handleInputChange(setDay, 2, 31)} maxLength={2} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="month">Bulan</Label>
-                <Input id="month" type="text" inputMode='numeric' placeholder="MM" value={month} onChange={handleInputChange(setMonth, 2)} maxLength={2} />
+                <Input id="month" type="text" inputMode='numeric' placeholder="MM" value={month} onChange={handleInputChange(setMonth, 2, 12)} maxLength={2} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="year">Tahun</Label>
@@ -333,7 +336,3 @@ export function AgeCalculator() {
     </div>
   );
 }
-
-    
-
-    
