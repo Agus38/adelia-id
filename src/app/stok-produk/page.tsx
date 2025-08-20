@@ -37,26 +37,26 @@ type StockField = 'morning' | 'afternoon' | 'order';
 
 
 // Memoize the input component to prevent unnecessary re-renders causing focus loss.
-const DynamicWidthInput = React.memo(function DynamicWidthInput({ 
-    value, 
-    onChange, 
+const DynamicWidthInput = React.memo(function DynamicWidthInput({
+    value,
+    onChange,
     onKeyDown,
-    maxLength, 
+    maxLength,
     placeholder,
     id,
-}: { 
-    value: string, 
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, 
+}: {
+    value: string,
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
     onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void,
-    maxLength: number, 
+    maxLength: number,
     placeholder: string,
     id: string,
 }) {
     return (
         <div className="dynamic-input-wrapper">
-            <Input 
+            <Input
                 id={id}
-                value={value} 
+                value={value}
                 onChange={onChange}
                 onKeyDown={onKeyDown}
                 className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-[11px] p-0 m-0 w-full"
@@ -73,22 +73,25 @@ export default function StokProdukPage() {
   const [date, setDate] = React.useState<Date | undefined>(undefined);
   const [shift, setShift] = React.useState('pagi');
   const [stockData, setStockData] = React.useState(initialStockData);
-  
+
   React.useEffect(() => {
     // Set date only on client-side to avoid hydration mismatch
     setDate(new Date());
   }, []);
 
-  const handleStockChange = (id: number, field: keyof Omit<StockItem, 'id' | 'name'>, value: string) => {
-    setStockData(stockData.map(item =>
-      item.id === id ? { ...item, [field]: value } : item
-    ));
-  };
-  
+  const handleStockChange = React.useCallback((id: number, field: StockField, value: string) => {
+    setStockData(prevStockData =>
+      prevStockData.map(item =>
+        item.id === id ? { ...item, [field]: value } : item
+      )
+    );
+  }, []);
+
+
   const handleClear = () => {
     setStockData(initialStockData.map(item => ({...item, morning: '', afternoon: '', order: ''})));
   }
-  
+
   const getTableHeaders = () => {
     if (shift === 'pagi') {
       return { header1: 'KULKAS', header2: 'PAGI' };
@@ -97,8 +100,8 @@ export default function StokProdukPage() {
   };
 
   const { header1, header2 } = getTableHeaders();
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, field: StockField) => {
+
+  const handleKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, field: StockField) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const nextRowIndex = rowIndex + 1;
@@ -107,7 +110,7 @@ export default function StokProdukPage() {
         nextInput?.focus();
       }
     }
-  };
+  }, [stockData.length]);
 
 
   return (
@@ -137,7 +140,7 @@ export default function StokProdukPage() {
        <div className="text-center text-sm text-muted-foreground -mt-3">
         {date ? format(date, 'eeee, dd MMMM yyyy', { locale: id }) : 'Memuat tanggal...'}
       </div>
-      
+
       <div className="flex-1 overflow-auto rounded-md border">
           <Table>
             <TableHeader>
