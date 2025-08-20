@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { TriangleAlert, Gift, Calendar, Sparkles, Scale, PawPrint, Hourglass, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { TriangleAlert, Gift, Calendar, Sparkles, Scale, PawPrint, Hourglass, RefreshCw, CheckCircle2, Loader2 } from 'lucide-react';
 
 interface Age {
   years: number;
@@ -52,14 +52,7 @@ export function AgeCalculator() {
   const [chineseZodiac, setChineseZodiac] = useState<string | null>(null);
   const [chineseZodiacElement, setChineseZodiacElement] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [currentDate, setCurrentDate] = useState<Date | null>(null);
-
-  useEffect(() => {
-    // Ensure this runs only on the client
-    setCurrentDate(new Date());
-    const timer = setInterval(() => setCurrentDate(new Date()), 1000 * 60); // Update every minute
-    return () => clearInterval(timer);
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, maxLength: number, maxValue?: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
@@ -143,63 +136,66 @@ export function AgeCalculator() {
 
 
     setError(null);
+    setIsLoading(true);
 
-    // Calculate age
-    let years = today.getFullYear() - birthDate.getFullYear();
-    let months = today.getMonth() - birthDate.getMonth();
-    let days = today.getDate() - birthDate.getDate();
+    setTimeout(() => {
+        // Calculate age
+        let years = today.getFullYear() - birthDate.getFullYear();
+        let months = today.getMonth() - birthDate.getMonth();
+        let days = today.getDate() - birthDate.getDate();
 
-    if (days < 0) {
-        months--;
-        const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
-        days += prevMonth.getDate();
-    }
-    if (months < 0) {
-        years--;
-        months += 12;
-    }
-    setAge({ years, months, days });
+        if (days < 0) {
+            months--;
+            const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+            days += prevMonth.getDate();
+        }
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+        setAge({ years, months, days });
 
-    // Calculate detailed age
-    const totalDays = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
-    setDetailedAge({
-        totalMonths: years * 12 + months,
-        totalWeeks: Math.floor(totalDays / 7),
-        totalDays,
-        totalHours: totalDays * 24,
-        totalMinutes: totalDays * 24 * 60,
-        totalSeconds: totalDays * 24 * 60 * 60
-    });
+        // Calculate detailed age
+        const totalDays = Math.floor((today.getTime() - birthDate.getTime()) / (1000 * 60 * 60 * 24));
+        setDetailedAge({
+            totalMonths: years * 12 + months,
+            totalWeeks: Math.floor(totalDays / 7),
+            totalDays,
+            totalHours: totalDays * 24,
+            totalMinutes: totalDays * 24 * 60,
+            totalSeconds: totalDays * 24 * 60 * 60
+        });
 
-    // Calculate birthday countdown
-    let nextBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
-    if (nextBirthday < today) {
-        nextBirthday.setFullYear(today.getFullYear() + 1);
-    }
-    
-    let timeDiff = nextBirthday.getTime() - today.getTime();
-    
-    let bMonths = 0;
-    let bDays = 0;
+        // Calculate birthday countdown
+        let nextBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+        if (nextBirthday < today) {
+            nextBirthday.setFullYear(today.getFullYear() + 1);
+        }
+        
+        let bMonths = 0;
+        let bDays = 0;
 
-    let tempDate = new Date(today);
-    while (tempDate < nextBirthday) {
-      let monthBefore = tempDate.getMonth();
-      tempDate.setMonth(tempDate.getMonth() + 1);
-      if(tempDate > nextBirthday) {
-          tempDate.setMonth(tempDate.getMonth() - 1);
-          bDays = Math.floor((nextBirthday.getTime() - tempDate.getTime())/(1000 * 3600 * 24));
-          break;
-      }
-      bMonths++;
-    }
+        let tempDate = new Date(today);
+        while (tempDate < nextBirthday) {
+          let monthBefore = tempDate.getMonth();
+          tempDate.setMonth(tempDate.getMonth() + 1);
+          if(tempDate > nextBirthday) {
+              tempDate.setMonth(tempDate.getMonth() - 1);
+              bDays = Math.floor((nextBirthday.getTime() - tempDate.getTime())/(1000 * 3600 * 24));
+              break;
+          }
+          bMonths++;
+        }
 
-    setBirthdayCountdown({ months: bMonths, days: bDays });
+        setBirthdayCountdown({ months: bMonths, days: bDays });
 
-    // Calculate zodiacs
-    setWesternZodiac(calculateWesternZodiac(dayNum, monthNum));
-    setChineseZodiac(calculateChineseZodiac(yearNum));
-    setChineseZodiacElement(calculateChineseZodiacElement(yearNum));
+        // Calculate zodiacs
+        setWesternZodiac(calculateWesternZodiac(dayNum, monthNum));
+        setChineseZodiac(calculateChineseZodiac(yearNum));
+        setChineseZodiacElement(calculateChineseZodiacElement(yearNum));
+        
+        setIsLoading(false);
+    }, 700);
   };
 
   const resetResults = () => {
@@ -240,7 +236,12 @@ export function AgeCalculator() {
     <div className="space-y-6">
       {!age && (
         <>
-          <Card>
+          <Card className="relative">
+            {isLoading && (
+              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-lg z-10">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              </div>
+            )}
             <CardHeader>
               <CardTitle>Kalkulator Usia Lengkap</CardTitle>
               <CardDescription>Masukkan tanggal lahir Anda untuk mendapatkan analisis usia yang mendetail.</CardDescription>
@@ -249,15 +250,15 @@ export function AgeCalculator() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="day">Tanggal</Label>
-                  <Input id="day" type="text" inputMode='numeric' placeholder="DD" value={day} onChange={handleInputChange(setDay, 2, 31)} maxLength={2} />
+                  <Input id="day" type="text" inputMode='numeric' placeholder="DD" value={day} onChange={handleInputChange(setDay, 2, 31)} maxLength={2} disabled={isLoading} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="month">Bulan</Label>
-                  <Input id="month" type="text" inputMode='numeric' placeholder="MM" value={month} onChange={handleInputChange(setMonth, 2, 12)} maxLength={2} />
+                  <Input id="month" type="text" inputMode='numeric' placeholder="MM" value={month} onChange={handleInputChange(setMonth, 2, 12)} maxLength={2} disabled={isLoading} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="year">Tahun</Label>
-                  <Input id="year" type="text" inputMode='numeric' placeholder="YYYY" value={year} onChange={handleInputChange(setYear, 4)} maxLength={4} />
+                  <Input id="year" type="text" inputMode='numeric' placeholder="YYYY" value={year} onChange={handleInputChange(setYear, 4)} maxLength={4} disabled={isLoading} />
                 </div>
               </div>
 
@@ -270,7 +271,10 @@ export function AgeCalculator() {
               )}
             </CardContent>
             <CardFooter className="flex flex-col sm:flex-row justify-end border-t pt-6 gap-4">
-              <Button onClick={handleCalculateAge} className="w-full sm:w-auto">Hitung Usia</Button>
+              <Button onClick={handleCalculateAge} className="w-full sm:w-auto" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading ? 'Menghitung...' : 'Hitung Usia'}
+              </Button>
             </CardFooter>
           </Card>
           <Card>
@@ -301,7 +305,7 @@ export function AgeCalculator() {
       )}
 
       {age && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in duration-500">
             <div className="flex justify-end">
                 <Button variant="outline" onClick={handleReset}>
                     <RefreshCw className="mr-2 h-4 w-4" />
@@ -379,5 +383,3 @@ export function AgeCalculator() {
     </div>
   );
 }
-
-    
