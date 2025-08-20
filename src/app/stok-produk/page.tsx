@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -87,37 +86,10 @@ export default function StokProdukPage() {
     <div className="flex flex-col flex-1 p-4 pt-6 md:p-8 space-y-4">
       <div className="flex-shrink-0">
         <div className="flex flex-col space-y-1.5">
-            <h2 className="text-2xl font-semibold leading-none tracking-tight">Manajemen Stok Harian</h2>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 pb-4">
-            <div className="space-y-2">
-                <Label>Pilih Tanggal</Label>
-                <Popover>
-                <PopoverTrigger asChild>
-                    <Button
-                    variant={'outline'}
-                    className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !date && 'text-muted-foreground'
-                    )}
-                    >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                    <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                    locale={id}
-                    />
-                </PopoverContent>
-                </Popover>
-            </div>
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
                 <Label>Pilih Shift</Label>
                 <Tabs
                 defaultValue="pagi"
