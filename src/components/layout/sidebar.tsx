@@ -21,10 +21,16 @@ import { useSidebar } from '../ui/sidebar';
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const isAdminPage = pathname.startsWith('/admin');
 
   const itemsToDisplay = isAdminPage ? adminMenuItems : allMenuItems.filter(item => item.access !== 'admin');
+
+  const handleMenuItemClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <Sidebar>
@@ -48,7 +54,7 @@ export function AppSidebar() {
 
         <SidebarMenu>
           {itemsToDisplay.map((item) => (
-            <SidebarMenuItem key={item.id}>
+            <SidebarMenuItem key={item.id} onClick={handleMenuItemClick}>
               <Link href={item.href}>
                 <SidebarMenuButton
                   asChild
