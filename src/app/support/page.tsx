@@ -11,16 +11,16 @@ const faqItems = [
     answer: "Anda dapat mengubah kata sandi Anda dengan membuka halaman 'Profil' dari menu dropdown pengguna di kanan atas. Di sana, Anda akan menemukan bagian 'Ubah Kata Sandi'. Masukkan kata sandi Anda saat ini dan kata sandi baru untuk memperbaruinya."
   },
   {
-    question: "Bagaimana cara menambahkan pengguna baru di panel admin?",
-    answer: "Untuk menambahkan pengguna baru, navigasikan ke 'Panel Admin', lalu pilih 'Manajemen Pengguna'. Di halaman tersebut, klik tombol 'Tambah Pengguna Baru' dan isi detail yang diperlukan."
-  },
-  {
     question: "Apa yang harus dilakukan jika saya lupa kata sandi?",
     answer: "Jika Anda lupa kata sandi, silakan hubungi administrator sistem Anda secara langsung. Saat ini, fitur pemulihan kata sandi mandiri belum tersedia dan memerlukan bantuan admin untuk mereset akun Anda."
   },
   {
-    question: "Bagaimana cara melihat dan mengelola laporan harian?",
-    answer: "Semua laporan harian dapat diakses melalui Panel Admin. Pilih menu 'Manajemen Laporan Harian' untuk melihat, menyetujui, atau menolak laporan yang telah dikirimkan oleh pengguna."
+    question: "Untuk apa halaman 'Laporan Harian' digunakan?",
+    answer: "Halaman 'Laporan Harian' digunakan untuk mencatat dan mengirimkan laporan keuangan harian Anda dengan mudah. Anda bisa memasukkan data seperti omset, pengeluaran, dan pemasukan online, lalu mengirimkannya via WhatsApp atau menyimpannya."
+  },
+  {
+    question: "Bagaimana cara menggunakan fitur 'Cek Usia'?",
+    answer: "Cukup masukkan tanggal, bulan, dan tahun lahir Anda pada kolom yang tersedia di halaman 'Cek Usia', lalu klik tombol 'Hitung Usia'. Aplikasi akan secara otomatis menampilkan usia akurat Anda, zodiak, shio, dan informasi menarik lainnya."
   }
 ];
 
