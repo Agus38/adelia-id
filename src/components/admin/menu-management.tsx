@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { menuItems as initialMenuItems, allMenuItems as allIconsMap } from '@/lib/menu-items-v2';
+import { menuItems as initialMenuItems, allIconsMap } from '@/lib/menu-items-v2';
 import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
@@ -24,7 +24,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import type { MenuItem } from '@/lib/menu-items-v2';
-import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon } from 'lucide-react';
+import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon, Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   Select,
@@ -45,14 +45,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '../ui/alert-dialog';
+import { ScrollArea } from '../ui/scroll-area';
 
 // Create a map for quick icon lookup
 const iconList = allIconsMap.reduce((acc, item) => {
-    if (!acc.find(i => i.name === item.icon.displayName)) {
-        acc.push({ name: item.icon.displayName as string, component: item.icon });
+    if (item.icon && typeof item.icon.displayName === 'string' && !acc.find(i => i.name === item.icon.displayName)) {
+        acc.push({ name: item.icon.displayName, component: item.icon });
     }
     return acc;
-}, [] as { name: string, component: LucideIcon }[]);
+}, [] as { name: string, component: LucideIcon }[]).sort((a,b) => a.name.localeCompare(b.name));
 
 
 export function MenuManagement() {
@@ -60,6 +61,10 @@ export function MenuManagement() {
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isNew, setIsNew] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
+  
+  // Icon Picker State
+  const [isIconPickerOpen, setIconPickerOpen] = useState(false);
+  const [iconSearchTerm, setIconSearchTerm] = useState("");
 
   const handleEdit = (item: MenuItem) => {
     setSelectedMenuItem(item);
@@ -141,6 +146,15 @@ export function MenuManagement() {
         description: "Konfigurasi menu telah berhasil diperbarui."
     })
   }
+
+  const handleIconSelect = (icon: {name: string, component: LucideIcon}) => {
+    setSelectedMenuItem(prev => prev ? {...prev, icon: icon.component} : null);
+    setIconPickerOpen(false);
+  }
+  
+  const filteredIcons = iconList.filter(icon => 
+    icon.name.toLowerCase().includes(iconSearchTerm.toLowerCase())
+  );
 
   return (
     <div>
@@ -267,25 +281,11 @@ export function MenuManagement() {
                     />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="icon" className="text-right">Ikon</Label>
-                     <Select
-                        value={selectedMenuItem.icon.displayName}
-                        onValueChange={(value) => {
-                            const selectedIcon = iconList.find(icon => icon.name === value);
-                            if(selectedIcon) {
-                                setSelectedMenuItem(prev => prev ? {...prev, icon: selectedIcon.component } : null)
-                            }
-                        }}
-                    >
-                        <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder="Pilih ikon" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {iconList.map(icon => (
-                                <SelectItem key={icon.name} value={icon.name}>{icon.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Label className="text-right">Ikon</Label>
+                    <Button variant="outline" className="col-span-3 justify-start" onClick={() => setIconPickerOpen(true)}>
+                       {selectedMenuItem.icon && <selectedMenuItem.icon className="mr-2 h-4 w-4" />}
+                       <span>{selectedMenuItem.icon.displayName}</span>
+                    </Button>
                 </div>
             </div>
           )}
@@ -293,6 +293,44 @@ export function MenuManagement() {
              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Batal</Button>
             <Button type="submit" onClick={handleSaveMenu}>Simpan Perubahan</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isIconPickerOpen} onOpenChange={setIconPickerOpen}>
+        <DialogContent className="max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>Pilih Ikon</DialogTitle>
+                <DialogDescription>Klik sebuah ikon untuk memilihnya.</DialogDescription>
+            </DialogHeader>
+            <div className="relative pt-4">
+                <Input 
+                    placeholder="Cari ikon..." 
+                    value={iconSearchTerm}
+                    onChange={(e) => setIconSearchTerm(e.target.value)}
+                    className="pl-10"
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 mt-2 h-4 w-4 text-muted-foreground" />
+            </div>
+            <ScrollArea className="h-72 border rounded-md mt-4">
+                <div className="grid grid-cols-6 gap-2 p-4">
+                    {filteredIcons.map(icon => (
+                        <Button 
+                            key={icon.name}
+                            variant="outline"
+                            className="flex flex-col items-center justify-center h-20 gap-2"
+                            onClick={() => handleIconSelect(icon)}
+                        >
+                            <icon.component className="h-6 w-6" />
+                            <span className="text-xs text-muted-foreground truncate w-full px-1">{icon.name}</span>
+                        </Button>
+                    ))}
+                </div>
+                 {filteredIcons.length === 0 && (
+                    <div className="text-center text-muted-foreground py-10">
+                        Ikon tidak ditemukan.
+                    </div>
+                )}
+            </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
