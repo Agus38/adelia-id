@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { menuItems } from '@/lib/menu-items-v2';
+import { menuItems as initialMenuItems } from '@/lib/menu-items-v2';
 import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
@@ -24,9 +24,12 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import type { MenuItem } from '@/lib/menu-items-v2';
+import { ArrowDown, ArrowUp } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 
 export function MenuManagement() {
+  const [menuState, setMenuState] = useState<MenuItem[]>(initialMenuItems);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
 
@@ -34,32 +37,62 @@ export function MenuManagement() {
     setSelectedMenuItem(item);
     setEditDialogOpen(true);
   };
+  
+  const handleMove = (index: number, direction: 'up' | 'down') => {
+    const newMenuState = [...menuState];
+    const item = newMenuState[index];
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+
+    if (swapIndex < 0 || swapIndex >= newMenuState.length) {
+      return;
+    }
+
+    newMenuState.splice(index, 1);
+    newMenuState.splice(swapIndex, 0, item);
+
+    setMenuState(newMenuState);
+  };
+  
+  const handleSaveChanges = () => {
+    // NOTE: Mock implementation. In a real app, you would save the new order.
+    toast({
+        title: "Perubahan Disimpan!",
+        description: "Urutan menu telah berhasil diperbarui."
+    })
+  }
 
   return (
     <div>
+        <div className="flex justify-end mb-4">
+            <Button onClick={handleSaveChanges}>Simpan Urutan Menu</Button>
+        </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Ikon</TableHead>
               <TableHead>Label</TableHead>
-              <TableHead>Path</TableHead>
               <TableHead>Visibilitas</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {menuItems.map((item) => (
+            {menuState.map((item, index) => (
               <TableRow key={item.id}>
                 <TableCell>
                   <item.icon className="h-5 w-5" />
                 </TableCell>
                 <TableCell className="font-medium">{item.title}</TableCell>
-                <TableCell>{item.href}</TableCell>
                 <TableCell>
                   <Switch defaultChecked={!item.comingSoon} aria-label="Visibilitas menu" />
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right space-x-1">
+                   <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'up')} disabled={index === 0}>
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'down')} disabled={index === menuState.length - 1}>
+                    <ArrowDown className="h-4 w-4" />
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
                     Edit
                   </Button>
