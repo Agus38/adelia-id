@@ -155,6 +155,14 @@ export const adminMenuItems: MenuItem[] = [
     access: 'admin',
   },
   {
+    id: 'terms-settings',
+    title: 'Syarat & Ketentuan',
+    href: '/admin/terms',
+    icon: FileText,
+    description: 'Kelola konten halaman Syarat & Ketentuan.',
+    access: 'admin',
+  },
+  {
     id: 'system-settings',
     title: 'Pengaturan Sistem',
     href: '/admin/setup',
