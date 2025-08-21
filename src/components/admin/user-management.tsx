@@ -565,7 +565,7 @@ export function UserManagement() {
                 </Select>
             </div>
              <div className="space-y-2">
-                <Label>Hak Akses & Visibilitas Menu</Label>
+                <Label>Hak Akses Menu</Label>
                  <ScrollArea className="h-48 rounded-md border p-4">
                   <div className="space-y-4">
                   {allMenuItems
@@ -636,7 +636,7 @@ export function UserManagement() {
                 </Button>
             </DialogFooter>
         </DialogContent>
-    </Dialog>
+      </Dialog>
 
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
