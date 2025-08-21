@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Send, Trash2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const sisaIkanItems = [
   { id: 'daging', label: 'DAGING' },
@@ -64,7 +65,26 @@ export function SmwManyarReportForm() {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const formatCurrency = (value: number) => {
+  const handleNumericInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    const rawValue = value.replace(/\./g, '');
+      if (/^\d*$/.test(rawValue) && rawValue.length <= 9) {
+          const numValue = Number(rawValue);
+          setFormData(prev => ({ ...prev, [id]: numValue === 0 ? '' : numValue.toString() }));
+      }
+  };
+
+  const formatDisplayValue = (value: string | undefined) => {
+    if (!value) return '';
+    return Number(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  const formatCurrencyForDisplay = (value: string | undefined) => {
+    if (!value) return '';
+    return `Rp ${formatDisplayValue(value)}`;
+  };
+  
+  const formatCurrencyForWA = (value: number) => {
     return new Intl.NumberFormat('id-ID').format(value);
   };
 
@@ -91,7 +111,7 @@ export function SmwManyarReportForm() {
       .join('\n');
 
     const onlineSalesText = onlineSalesItems
-      .map(item => `${item.label.padEnd(14, ' ')}: Rp ${formatCurrency(Number(formData[item.id]) || 0)}`)
+      .map(item => `${item.label.padEnd(14, ' ')}: Rp ${formatCurrencyForWA(Number(formData[item.id]) || 0)}`)
       .join('\n');
 
     const message = `
@@ -112,7 +132,7 @@ ${terjualText.length > 0 ? terjualText : 'Tidak ada'}\`\`\`
 -------------------------------
 ${onlineSalesText}\`\`\`
 \`\`\`-------------------------------\`\`\`
-*Gross Total               : Rp ${formatCurrency(grossTotal)}*
+*Gross Total               : Rp ${formatCurrencyForWA(grossTotal)}*
     `.trim().replace(/^\s+/gm, '');
 
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
@@ -128,34 +148,33 @@ ${onlineSalesText}\`\`\`
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
-        {/* Sisa Ikan */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-lg">Sisa Ikan</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {sisaIkanItems.map(item => (
-              <div key={item.id} className="space-y-1.5">
-                <Label htmlFor={item.id}>{item.label}</Label>
-                <Input id={item.id} type="text" value={formData[item.id] || ''} onChange={handleInputChange} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Terjual */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-lg">Terjual</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {terjualItems.map(item => (
-              <div key={item.id} className="space-y-1.5">
-                <Label htmlFor={item.id}>{item.label}</Label>
-                <Input id={item.id} type="number" value={formData[item.id] || ''} onChange={handleInputChange} />
-              </div>
-            ))}
-          </div>
-        </div>
-
+        <Tabs defaultValue="sisa-ikan">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="sisa-ikan">Sisa Ikan</TabsTrigger>
+            <TabsTrigger value="terjual">Terjual</TabsTrigger>
+          </TabsList>
+          <TabsContent value="sisa-ikan" className="pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {sisaIkanItems.map(item => (
+                <div key={item.id} className="space-y-1.5">
+                  <Label htmlFor={item.id}>{item.label}</Label>
+                  <Input id={item.id} type="text" value={formData[item.id] || ''} onChange={handleInputChange} maxLength={7} />
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+          <TabsContent value="terjual" className="pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {terjualItems.map(item => (
+                <div key={item.id} className="space-y-1.5">
+                  <Label htmlFor={item.id}>{item.label}</Label>
+                  <Input id={item.id} type="number" value={formData[item.id] || ''} onChange={handleInputChange} maxLength={7} />
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+        
         <Separator />
         
         {/* Total Online Sales */}
@@ -165,7 +184,13 @@ ${onlineSalesText}\`\`\`
             {onlineSalesItems.map(item => (
               <div key={item.id} className="space-y-1.5">
                 <Label htmlFor={item.id}>{item.label}</Label>
-                <Input id={item.id} type="number" placeholder="Rp" value={formData[item.id] || ''} onChange={handleInputChange} />
+                <Input 
+                  id={item.id} 
+                  type="text" 
+                  inputMode="numeric"
+                  placeholder="Rp 0" 
+                  value={formatDisplayValue(formData[item.id])} 
+                  onChange={handleNumericInputChange} />
               </div>
             ))}
           </div>
@@ -183,18 +208,18 @@ ${onlineSalesText}\`\`\`
                 </div>
                  <div className="flex justify-between items-center">
                     <Label className="text-base font-semibold">Gross Total</Label>
-                    <div className="text-base font-bold text-right">Rp {formatCurrency(grossTotal)}</div>
+                    <div className="text-base font-bold text-right">{formatCurrencyForDisplay(String(grossTotal)) || 'Rp 0'}</div>
                 </div>
             </div>
         </div>
 
       </CardContent>
-      <CardFooter className="flex justify-between gap-4 border-t pt-6">
-        <Button variant="destructive" onClick={handleClear} className="w-full md:w-auto">
+      <CardFooter className="flex flex-col-reverse sm:flex-row justify-between gap-4 border-t pt-6">
+        <Button variant="destructive" onClick={handleClear} className="w-full sm:w-auto">
           <Trash2 className="mr-2 h-4 w-4" />
           Hapus Semua
         </Button>
-        <Button onClick={handleSendWhatsApp} className="w-full md:w-auto bg-green-600 hover:bg-green-700">
+        <Button onClick={handleSendWhatsApp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
           <Send className="mr-2 h-4 w-4" />
           Kirim Laporan
         </Button>
