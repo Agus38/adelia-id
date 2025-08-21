@@ -90,9 +90,9 @@ export function SmwManyarReportForm() {
 
   const totalPorsi = terjualItems
     .filter(item => item.id !== 'telur' && item.id !== 'nasi')
-    .reduce((sum, item) => sum + (Number(formData[item.id]) || 0), 0);
+    .reduce((sum, item) => sum + (Number(formData[`terjual-${item.id}`]) || 0), 0);
   
-  const grossTotal = onlineSalesItems.reduce((sum, item) => sum + (Number(formData[item.id]) || 0), 0);
+  const grossTotal = onlineSalesItems.reduce((sum, item) => sum + (Number(formData[`online-${item.id}`]) || 0), 0);
 
   const handleClear = () => {
     setFormData({});
@@ -102,16 +102,16 @@ export function SmwManyarReportForm() {
     const reportDate = date ? format(date, 'eeee, dd-MM-yyyy', { locale: id }) : 'Belum diisi';
     
     const sisaIkanText = sisaIkanItems
-      .map(item => `${item.label.padEnd(14, ' ')}: ${formData[item.id] || ' '}`)
+      .map(item => `${item.label.padEnd(14, ' ')}: ${formData[`sisa-${item.id}`] || ' '}`)
       .join('\n');
       
     const terjualText = terjualItems
-      .filter(item => formData[item.id] && Number(formData[item.id]) > 0)
-      .map(item => `${item.label.padEnd(14, ' ')}: ${formData[item.id]}`)
+      .filter(item => formData[`terjual-${item.id}`] && Number(formData[`terjual-${item.id}`]) > 0)
+      .map(item => `${item.label.padEnd(14, ' ')}: ${formData[`terjual-${item.id}`]}`)
       .join('\n');
 
     const onlineSalesText = onlineSalesItems
-      .map(item => `${item.label.padEnd(14, ' ')}: Rp ${formatCurrencyForWA(Number(formData[item.id]) || 0)}`)
+      .map(item => `${item.label.padEnd(14, ' ')}: Rp ${formatCurrencyForWA(Number(formData[`online-${item.id}`]) || 0)}`)
       .join('\n');
 
     const message = `
@@ -157,9 +157,9 @@ ${onlineSalesText}\`\`\`
           <TabsContent value="sisa-ikan" className="pt-4">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {sisaIkanItems.map(item => (
-                <div key={item.id} className="space-y-1.5">
-                  <Label htmlFor={item.id}>{item.label}</Label>
-                  <Input id={item.id} type="text" value={formData[item.id] || ''} onChange={handleInputChange} maxLength={7} />
+                <div key={`sisa-${item.id}`} className="space-y-1.5">
+                  <Label htmlFor={`sisa-${item.id}`}>{item.label}</Label>
+                  <Input id={`sisa-${item.id}`} type="text" value={formData[`sisa-${item.id}`] || ''} onChange={handleInputChange} maxLength={7} />
                 </div>
               ))}
             </div>
@@ -167,9 +167,9 @@ ${onlineSalesText}\`\`\`
           <TabsContent value="terjual" className="pt-4">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {terjualItems.map(item => (
-                <div key={item.id} className="space-y-1.5">
-                  <Label htmlFor={item.id}>{item.label}</Label>
-                  <Input id={item.id} type="number" value={formData[item.id] || ''} onChange={handleInputChange} maxLength={7} />
+                <div key={`terjual-${item.id}`} className="space-y-1.5">
+                  <Label htmlFor={`terjual-${item.id}`}>{item.label}</Label>
+                  <Input id={`terjual-${item.id}`} type="number" value={formData[`terjual-${item.id}`] || ''} onChange={handleInputChange} maxLength={7} />
                 </div>
               ))}
             </div>
@@ -183,14 +183,14 @@ ${onlineSalesText}\`\`\`
           <h3 className="font-semibold text-lg">Total Online Sales</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {onlineSalesItems.map(item => (
-              <div key={item.id} className="space-y-1.5">
-                <Label htmlFor={item.id}>{item.label}</Label>
+              <div key={`online-${item.id}`} className="space-y-1.5">
+                <Label htmlFor={`online-${item.id}`}>{item.label}</Label>
                 <Input 
-                  id={item.id} 
+                  id={`online-${item.id}`}
                   type="text" 
                   inputMode="numeric"
                   placeholder="Rp 0" 
-                  value={formatDisplayValue(formData[item.id])} 
+                  value={formatDisplayValue(formData[`online-${item.id}`])} 
                   onChange={handleNumericInputChange} />
               </div>
             ))}
