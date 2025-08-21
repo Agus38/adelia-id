@@ -24,7 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -279,21 +279,17 @@ ${pemasukanText}
             </div>
             <div className="space-y-2">
               <Label>Pilih Shift</Label>
-              <RadioGroup
+              <Tabs
                 defaultValue="pagi"
-                className="flex items-center space-x-4 pt-2"
+                className="w-full pt-2"
                 onValueChange={setShift}
                 value={shift}
               >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="pagi" id="pagi" />
-                  <Label htmlFor="pagi">Pagi</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="sore" id="sore" />
-                  <Label htmlFor="sore">Sore</Label>
-                </div>
-              </RadioGroup>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="pagi">Pagi</TabsTrigger>
+                  <TabsTrigger value="sore">Sore</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </div>
 
