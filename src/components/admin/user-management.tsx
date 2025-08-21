@@ -56,22 +56,34 @@ import {
 } from '../ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
+import { allMenuItems, type MenuItem } from '@/lib/menu-items-v2';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { ScrollArea } from '../ui/scroll-area';
 
 type UserStatus = 'Aktif' | 'Diblokir';
 type UserRole = 'Admin' | 'Pengguna' | 'Editor';
 
-const initialUsers = [
-  { id: 1, name: 'Adelia', email: 'adelia@example.com', role: 'Admin' as UserRole, joined: '2023-01-15', status: 'Aktif' as UserStatus },
-  { id: 2, name: 'Budi', email: 'budi@example.com', role: 'Pengguna' as UserRole, joined: '2023-02-20', status: 'Aktif' as UserStatus },
-  { id: 3, name: 'Citra', email: 'citra@example.com', role: 'Pengguna' as UserRole, joined: '2023-03-10', status: 'Aktif' as UserStatus },
-  { id: 4, name: 'Dewi', email: 'dewi@example.com', role: 'Editor' as UserRole, joined: '2023-04-05', status: 'Diblokir' as UserStatus },
-  { id: 5, name: 'Eka', email: 'eka@example.com', role: 'Pengguna' as UserRole, joined: '2023-05-21', status: 'Aktif' as UserStatus },
-  { id: 6, name: 'Fajar', email: 'fajar@example.com', role: 'Pengguna' as UserRole, joined: '2023-06-12', status: 'Aktif' as UserStatus },
-  { id: 7, name: 'Gita', email: 'gita@example.com', role: 'Admin' as UserRole, joined: '2023-07-01', status: 'Aktif' as UserStatus },
-  { id: 8, name: 'Hadi', email: 'hadi@example.com', role: 'Editor' as UserRole, joined: '2023-08-18', status: 'Diblokir' as UserStatus },
-];
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  joined: string; // YYYY-MM-DD
+  status: UserStatus;
+  menuAccess: Record<string, boolean>;
+};
 
-type User = (typeof initialUsers)[0];
+
+const initialUsers: User[] = [
+  { id: 1, name: 'Adelia', email: 'adelia@example.com', role: 'Admin', joined: '2023-01-15', status: 'Aktif', menuAccess: {} },
+  { id: 2, name: 'Budi', email: 'budi@example.com', role: 'Pengguna', joined: '2023-02-20', status: 'Aktif', menuAccess: {} },
+  { id: 3, name: 'Citra', email: 'citra@example.com', role: 'Pengguna', joined: '2023-03-10', status: 'Aktif', menuAccess: {} },
+  { id: 4, name: 'Dewi', email: 'dewi@example.com', role: 'Editor', joined: '2023-04-05', status: 'Diblokir', menuAccess: {} },
+  { id: 5, name: 'Eka', email: 'eka@example.com', role: 'Pengguna', joined: '2023-05-21', status: 'Aktif', menuAccess: {} },
+  { id: 6, name: 'Fajar', email: 'fajar@example.com', role: 'Pengguna', joined: '2023-06-12', status: 'Aktif', menuAccess: {} },
+  { id: 7, name: 'Gita', email: 'gita@example.com', role: 'Admin', joined: '2023-07-01', status: 'Aktif', menuAccess: {} },
+  { id: 8, name: 'Hadi', email: 'hadi@example.com', role: 'Editor', joined: '2023-08-18', status: 'Diblokir', menuAccess: {} },
+];
 
 const roleBadgeVariant: { [key in UserRole]: 'destructive' | 'secondary' | 'default' } = {
   'Admin': 'destructive',
@@ -85,7 +97,15 @@ const statusBadgeVariant: { [key in UserStatus]: 'default' | 'destructive' } = {
 };
 
 export function UserManagement() {
-  const [users, setUsers] = React.useState(initialUsers);
+  const [users, setUsers] = React.useState(initialUsers.map(user => ({
+    ...user,
+    // Initialize menu access based on default menu item access
+    menuAccess: allMenuItems.reduce((acc, item) => {
+      acc[item.id] = item.access === 'all' || user.role === 'Admin';
+      return acc;
+    }, {} as Record<string, boolean>)
+  })));
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -99,14 +119,29 @@ export function UserManagement() {
   const [isDetailModalOpen, setDetailModalOpen] = React.useState(false);
   
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
+  const [editedUserData, setEditedUserData] = React.useState<Partial<User>>({});
 
   const handleEdit = (user: User) => {
     setSelectedUser(user);
+    setEditedUserData(user);
     setAddEditDialogOpen(true);
   };
 
   const handleAdd = () => {
     setSelectedUser(null);
+    const newUserTemplate: User = {
+        id: Math.max(...users.map(u => u.id), 0) + 1,
+        name: '',
+        email: '',
+        role: 'Pengguna',
+        joined: new Date().toISOString().split('T')[0],
+        status: 'Aktif',
+        menuAccess: allMenuItems.reduce((acc, item) => {
+          acc[item.id] = item.access === 'all';
+          return acc;
+        }, {} as Record<string, boolean>)
+    };
+    setEditedUserData(newUserTemplate);
     setAddEditDialogOpen(true);
   };
 
@@ -129,6 +164,31 @@ export function UserManagement() {
     setSelectedUser(user);
     setDetailModalOpen(true);
   };
+  
+  const handleSaveUser = () => {
+    if (selectedUser) { // Editing existing user
+      setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...editedUserData } as User : u));
+    } else { // Adding new user
+      setUsers([...users, editedUserData as User]);
+    }
+    setAddEditDialogOpen(false);
+    setSelectedUser(null);
+    setEditedUserData({});
+  };
+
+  const handleAccessChange = (menuId: string, checked: boolean) => {
+    setEditedUserData(prev => ({
+        ...prev,
+        menuAccess: {
+            ...prev?.menuAccess,
+            [menuId]: checked
+        }
+    }));
+  }
+  
+  const handleRoleChange = (role: UserRole) => {
+    setEditedUserData(prev => ({ ...prev, role }));
+  }
 
   const confirmDelete = () => {
     if (selectedUser) {
@@ -215,6 +275,15 @@ export function UserManagement() {
     {
       accessorKey: 'joined',
       header: 'Tanggal Bergabung',
+      cell: ({ row }) => {
+        const date = row.getValue('joined') as string;
+        try {
+          const [year, month, day] = date.split('-');
+          return `${day}-${month}-${year}`;
+        } catch (e) {
+          return date; // Fallback for invalid format
+        }
+      },
     },
     {
       id: 'actions',
@@ -462,28 +531,66 @@ export function UserManagement() {
 
       {/* Dialogs */}
       <Dialog open={isAddEditDialogOpen} onOpenChange={setAddEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{selectedUser ? 'Edit Pengguna' : 'Tambah Pengguna Baru'}</DialogTitle>
             <DialogDescription>
               {selectedUser
-                ? 'Ubah detail pengguna di bawah ini.'
+                ? 'Ubah detail pengguna, peran, dan hak akses menu di bawah ini.'
                 : 'Isi formulir untuk menambahkan pengguna baru.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">Nama</Label>
-              <Input id="name" defaultValue={selectedUser?.name || ''} className="col-span-3" />
+          <div className="grid gap-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nama</Label>
+                <Input id="name" value={editedUserData?.name || ''} onChange={(e) => setEditedUserData(prev => ({...prev, name: e.target.value}))} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={editedUserData?.email || ''} onChange={(e) => setEditedUserData(prev => ({...prev, email: e.target.value}))} />
+              </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">Email</Label>
-              <Input id="email" defaultValue={selectedUser?.email || ''} className="col-span-3" />
+             <div className="space-y-2">
+                <Label htmlFor="role">Peran</Label>
+                <Select value={editedUserData?.role} onValueChange={handleRoleChange}>
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Pilih peran" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pengguna">Pengguna</SelectItem>
+                    <SelectItem value="Editor">Editor</SelectItem>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
             </div>
+             <div className="space-y-2">
+                <Label>Hak Akses & Visibilitas Menu</Label>
+                 <ScrollArea className="h-48 rounded-md border p-4">
+                  <div className="space-y-4">
+                  {allMenuItems
+                    .filter(item => item.id !== 'home')
+                    .map(item => (
+                    <div key={item.id} className="flex items-center justify-between">
+                      <Label htmlFor={`menu-${item.id}`} className="flex items-center gap-2 font-normal">
+                          <item.icon className="h-4 w-4" />
+                          {item.title}
+                      </Label>
+                      <Checkbox
+                        id={`menu-${item.id}`}
+                        checked={editedUserData.menuAccess?.[item.id] ?? false}
+                        onCheckedChange={(checked) => handleAccessChange(item.id, !!checked)}
+                        disabled={item.access === 'admin' && editedUserData.role !== 'Admin'}
+                      />
+                    </div>
+                  ))}
+                  </div>
+                </ScrollArea>
+             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddEditDialogOpen(false)}>Batal</Button>
-            <Button type="submit" onClick={() => setAddEditDialogOpen(false)}>Simpan</Button>
+            <Button type="submit" onClick={handleSaveUser}>Simpan</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -519,7 +626,7 @@ export function UserManagement() {
                         </div>
 
                          <p className="text-muted-foreground col-span-1">Bergabung:</p>
-                        <p className="font-semibold col-span-2">{selectedUser.joined}</p>
+                        <p className="font-semibold col-span-2">{selectedUser.joined.split('-').reverse().join('-')}</p>
                     </div>
                 </div>
             )}
