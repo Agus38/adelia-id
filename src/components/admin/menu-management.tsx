@@ -26,6 +26,14 @@ import { Label } from '../ui/label';
 import type { MenuItem } from '@/lib/menu-items-v2';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '../ui/badge';
 
 
 export function MenuManagement() {
@@ -52,19 +60,32 @@ export function MenuManagement() {
 
     setMenuState(newMenuState);
   };
+
+  const handleVisibilityChange = (id: string, isComingSoon: boolean) => {
+    setMenuState(prevState => 
+        prevState.map(item => item.id === id ? {...item, comingSoon: !isComingSoon} : item)
+    );
+  }
+
+  const handleAccessChange = (id: string, access: 'all' | 'admin') => {
+     setMenuState(prevState => 
+        prevState.map(item => item.id === id ? {...item, access} : item)
+    );
+  }
   
   const handleSaveChanges = () => {
     // NOTE: Mock implementation. In a real app, you would save the new order.
+    console.log("Saving new menu state:", menuState);
     toast({
         title: "Perubahan Disimpan!",
-        description: "Urutan menu telah berhasil diperbarui."
+        description: "Konfigurasi menu telah berhasil diperbarui."
     })
   }
 
   return (
     <div>
         <div className="flex justify-end mb-4">
-            <Button onClick={handleSaveChanges}>Simpan Urutan Menu</Button>
+            <Button onClick={handleSaveChanges}>Simpan Perubahan</Button>
         </div>
       <div className="rounded-md border">
         <Table>
@@ -73,6 +94,7 @@ export function MenuManagement() {
               <TableHead>Ikon</TableHead>
               <TableHead>Label</TableHead>
               <TableHead>Visibilitas</TableHead>
+              <TableHead>Hak Akses</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
@@ -84,7 +106,29 @@ export function MenuManagement() {
                 </TableCell>
                 <TableCell className="font-medium">{item.title}</TableCell>
                 <TableCell>
-                  <Switch defaultChecked={!item.comingSoon} aria-label="Visibilitas menu" />
+                   <div className="flex flex-col items-center gap-1.5">
+                    <Switch 
+                        checked={!item.comingSoon} 
+                        onCheckedChange={(checked) => handleVisibilityChange(item.id, checked)}
+                        aria-label="Visibilitas menu" />
+                    <Badge variant={item.comingSoon ? 'secondary' : 'default'} className="text-[10px] px-1.5 py-0.5">
+                        {item.comingSoon ? 'Segera' : 'Terlihat'}
+                    </Badge>
+                   </div>
+                </TableCell>
+                <TableCell>
+                  <Select 
+                    value={item.access || 'all'} 
+                    onValueChange={(value: 'all' | 'admin') => handleAccessChange(item.id, value)}
+                  >
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Pilih akses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell className="text-right space-x-1">
                    <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'up')} disabled={index === 0}>
@@ -111,18 +155,36 @@ export function MenuManagement() {
               Ubah detail item menu di bawah ini. Perubahan ikon memerlukan intervensi kode.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="label" className="text-right">Label</Label>
-              <Input id="label" defaultValue={selectedMenuItem?.title || ''} className="col-span-3" />
+          {selectedMenuItem && (
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="label" className="text-right">Label</Label>
+                <Input 
+                    id="label" 
+                    value={selectedMenuItem.title} 
+                    onChange={(e) => setSelectedMenuItem(prev => prev ? {...prev, title: e.target.value} : null)}
+                    className="col-span-3" 
+                />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="path" className="text-right">Path</Label>
+                <Input 
+                    id="path" 
+                    value={selectedMenuItem.href} 
+                    onChange={(e) => setSelectedMenuItem(prev => prev ? {...prev, href: e.target.value} : null)}
+                    className="col-span-3" 
+                />
+                </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="path" className="text-right">Path</Label>
-              <Input id="path" defaultValue={selectedMenuItem?.href || ''} className="col-span-3" />
-            </div>
-          </div>
+          )}
           <DialogFooter>
-            <Button type="submit" onClick={() => setEditDialogOpen(false)}>Simpan</Button>
+             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Batal</Button>
+            <Button type="submit" onClick={() => {
+                 if (selectedMenuItem) {
+                    setMenuState(menuState.map(item => item.id === selectedMenuItem.id ? selectedMenuItem : item));
+                 }
+                setEditDialogOpen(false)
+            }}>Simpan Perubahan</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
