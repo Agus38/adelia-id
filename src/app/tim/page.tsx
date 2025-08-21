@@ -1,9 +1,7 @@
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Github, Linkedin, Mail, Users } from 'lucide-react';
-import Link from 'next/link';
+import { Users } from 'lucide-react';
 
 const teamMembers = [
   {
@@ -11,44 +9,24 @@ const teamMembers = [
     title: 'Project Manager',
     avatarUrl: 'https://placehold.co/150x150.png',
     avatarFallback: 'AD',
-    socialLinks: [
-      { name: 'GitHub', url: '#', icon: Github },
-      { name: 'LinkedIn', url: '#', icon: Linkedin },
-      { name: 'Email', url: '#', icon: Mail },
-    ],
   },
   {
     name: 'Budi',
     title: 'Lead Developer',
     avatarUrl: 'https://placehold.co/150x150.png',
     avatarFallback: 'BU',
-    socialLinks: [
-      { name: 'GitHub', url: '#', icon: Github },
-      { name: 'LinkedIn', url: '#', icon: Linkedin },
-      { name: 'Email', url: '#', icon: Mail },
-    ],
   },
   {
     name: 'Citra',
     title: 'UI/UX Designer',
     avatarUrl: 'https://placehold.co/150x150.png',
     avatarFallback: 'CI',
-    socialLinks: [
-      { name: 'GitHub', url: '#', icon: Github },
-      { name: 'LinkedIn', url: '#', icon: Linkedin },
-      { name: 'Email', url: '#', icon: Mail },
-    ],
   },
   {
     name: 'Dewi',
     title: 'QA Engineer',
     avatarUrl: 'https://placehold.co/150x150.png',
     avatarFallback: 'DE',
-    socialLinks: [
-      { name: 'GitHub', url: '#', icon: Github },
-      { name: 'LinkedIn', url: '#', icon: Linkedin },
-      { name: 'Email', url: '#', icon: Mail },
-    ],
   },
 ];
 
@@ -73,21 +51,9 @@ export default function TimPage() {
                     </Avatar>
                 </CardHeader>
                 <CardContent>
-                    <CardTitle className="text-xl">{member.title}</CardTitle>
-                    <p className="text-primary font-medium">{member.name}</p>
+                    <CardTitle className="text-xl">{member.name}</CardTitle>
+                    <p className="text-primary font-medium">{member.title}</p>
                 </CardContent>
-                <CardFooter className="justify-center">
-                    <div className="flex gap-2">
-                        {member.socialLinks.map((link) => (
-                           <Link href={link.url} key={link.name} target="_blank" rel="noopener noreferrer">
-                             <Button variant="outline" size="icon">
-                               <link.icon className="h-5 w-5" />
-                               <span className="sr-only">{link.name}</span>
-                             </Button>
-                           </Link>
-                        ))}
-                    </div>
-                </CardFooter>
             </Card>
         ))}
       </div>
