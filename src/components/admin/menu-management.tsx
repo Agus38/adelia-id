@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { menuItems as initialMenuItems } from '@/lib/menu-items-v2';
+import { menuItems as initialMenuItems, allMenuItems as allIconsMap } from '@/lib/menu-items-v2';
 import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
@@ -24,7 +24,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import type { MenuItem } from '@/lib/menu-items-v2';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   Select,
@@ -34,18 +34,61 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '../ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../ui/alert-dialog';
+
+// Create a map for quick icon lookup
+const iconList = allIconsMap.reduce((acc, item) => {
+    if (!acc.find(i => i.name === item.icon.displayName)) {
+        acc.push({ name: item.icon.displayName as string, component: item.icon });
+    }
+    return acc;
+}, [] as { name: string, component: LucideIcon }[]);
 
 
 export function MenuManagement() {
   const [menuState, setMenuState] = useState<MenuItem[]>(initialMenuItems);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+  const [isNew, setIsNew] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
 
   const handleEdit = (item: MenuItem) => {
     setSelectedMenuItem(item);
+    setIsNew(false);
     setEditDialogOpen(true);
   };
   
+  const handleAddNew = () => {
+    setSelectedMenuItem({
+      id: '',
+      title: '',
+      href: '/',
+      icon: iconList[0].component,
+      access: 'all',
+      comingSoon: false,
+    });
+    setIsNew(true);
+    setEditDialogOpen(true);
+  }
+
+  const handleDelete = (id: string) => {
+    setMenuState(menuState.filter(item => item.id !== id));
+    toast({
+        title: "Menu Dihapus",
+        description: `Menu dengan ID "${id}" telah berhasil dihapus.`,
+        variant: "destructive"
+    });
+  }
+
   const handleMove = (index: number, direction: 'up' | 'down') => {
     const newMenuState = [...menuState];
     const item = newMenuState[index];
@@ -61,9 +104,9 @@ export function MenuManagement() {
     setMenuState(newMenuState);
   };
 
-  const handleVisibilityChange = (id: string, isComingSoon: boolean) => {
+  const handleVisibilityChange = (id: string, isVisible: boolean) => {
     setMenuState(prevState => 
-        prevState.map(item => item.id === id ? {...item, comingSoon: !isComingSoon} : item)
+        prevState.map(item => item.id === id ? {...item, comingSoon: !isVisible} : item)
     );
   }
 
@@ -73,6 +116,23 @@ export function MenuManagement() {
     );
   }
   
+  const handleSaveMenu = () => {
+    if (!selectedMenuItem) return;
+
+    if (isNew) {
+        if (!selectedMenuItem.id) {
+            toast({ title: "Error", description: "ID menu tidak boleh kosong.", variant: "destructive"});
+            return;
+        }
+        setMenuState([...menuState, selectedMenuItem]);
+        toast({ title: "Menu Ditambahkan", description: "Item menu baru telah berhasil ditambahkan." });
+    } else {
+        setMenuState(menuState.map(item => item.id === selectedMenuItem.id ? selectedMenuItem : item));
+        toast({ title: "Menu Diperbarui", description: "Item menu telah berhasil diperbarui." });
+    }
+    setEditDialogOpen(false);
+  }
+
   const handleSaveChanges = () => {
     // NOTE: Mock implementation. In a real app, you would save the new order.
     console.log("Saving new menu state:", menuState);
@@ -84,8 +144,9 @@ export function MenuManagement() {
 
   return (
     <div>
-        <div className="flex justify-end mb-4">
-            <Button onClick={handleSaveChanges}>Simpan Perubahan</Button>
+        <div className="flex justify-between mb-4">
+            <Button variant="outline" onClick={handleAddNew}><PlusCircle className="mr-2" /> Tambah Menu Baru</Button>
+            <Button onClick={handleSaveChanges}>Simpan Semua Perubahan</Button>
         </div>
       <div className="rounded-md border">
         <Table>
@@ -130,7 +191,7 @@ export function MenuManagement() {
                     </SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell className="text-right space-x-1">
+                <TableCell className="text-right space-x-0.5">
                    <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'up')} disabled={index === 0}>
                     <ArrowUp className="h-4 w-4" />
                   </Button>
@@ -140,6 +201,23 @@ export function MenuManagement() {
                   <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
                     Edit
                   </Button>
+                   <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                         <Button variant="destructive" size="sm">Hapus</Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Anda yakin ingin menghapus menu "{item.title}"?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tindakan ini tidak dapat dibatalkan. Ini akan menghapus item menu secara permanen.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Batal</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(item.id)}>Lanjutkan</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                 </TableCell>
               </TableRow>
             ))}
@@ -150,41 +228,70 @@ export function MenuManagement() {
       <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Menu Item: {selectedMenuItem?.title}</DialogTitle>
+            <DialogTitle>{isNew ? 'Tambah Menu Baru' : `Edit Menu: ${selectedMenuItem?.title}`}</DialogTitle>
             <DialogDescription>
-              Ubah detail item menu di bawah ini. Perubahan ikon memerlukan intervensi kode.
+             {isNew ? "Buat item menu baru untuk aplikasi." : "Ubah detail item menu di bawah ini."}
             </DialogDescription>
           </DialogHeader>
           {selectedMenuItem && (
             <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="label" className="text-right">Label</Label>
-                <Input 
-                    id="label" 
-                    value={selectedMenuItem.title} 
-                    onChange={(e) => setSelectedMenuItem(prev => prev ? {...prev, title: e.target.value} : null)}
-                    className="col-span-3" 
-                />
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="id" className="text-right">ID</Label>
+                    <Input 
+                        id="id"
+                        value={selectedMenuItem.id} 
+                        onChange={(e) => setSelectedMenuItem(prev => prev ? {...prev, id: e.target.value.toLowerCase().replace(/\s/g, '-')} : null)}
+                        className="col-span-3"
+                        disabled={!isNew}
+                        placeholder="cth: menu-baru"
+                    />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="path" className="text-right">Path</Label>
-                <Input 
-                    id="path" 
-                    value={selectedMenuItem.href} 
-                    onChange={(e) => setSelectedMenuItem(prev => prev ? {...prev, href: e.target.value} : null)}
-                    className="col-span-3" 
-                />
+                    <Label htmlFor="title" className="text-right">Label</Label>
+                    <Input 
+                        id="title" 
+                        value={selectedMenuItem.title} 
+                        onChange={(e) => setSelectedMenuItem(prev => prev ? {...prev, title: e.target.value} : null)}
+                        className="col-span-3" 
+                        placeholder="Nama menu"
+                    />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="href" className="text-right">Path</Label>
+                    <Input 
+                        id="href" 
+                        value={selectedMenuItem.href} 
+                        onChange={(e) => setSelectedMenuItem(prev => prev ? {...prev, href: e.target.value} : null)}
+                        className="col-span-3" 
+                        placeholder="/path-url"
+                    />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="icon" className="text-right">Ikon</Label>
+                     <Select
+                        value={selectedMenuItem.icon.displayName}
+                        onValueChange={(value) => {
+                            const selectedIcon = iconList.find(icon => icon.name === value);
+                            if(selectedIcon) {
+                                setSelectedMenuItem(prev => prev ? {...prev, icon: selectedIcon.component } : null)
+                            }
+                        }}
+                    >
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Pilih ikon" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {iconList.map(icon => (
+                                <SelectItem key={icon.name} value={icon.name}>{icon.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
           )}
           <DialogFooter>
              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Batal</Button>
-            <Button type="submit" onClick={() => {
-                 if (selectedMenuItem) {
-                    setMenuState(menuState.map(item => item.id === selectedMenuItem.id ? selectedMenuItem : item));
-                 }
-                setEditDialogOpen(false)
-            }}>Simpan Perubahan</Button>
+            <Button type="submit" onClick={handleSaveMenu}>Simpan Perubahan</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
