@@ -73,8 +73,8 @@ export default function TimPage() {
                     </Avatar>
                 </CardHeader>
                 <CardContent>
-                    <CardTitle className="text-xl">{member.name}</CardTitle>
-                    <p className="text-primary font-medium">{member.title}</p>
+                    <CardTitle className="text-xl">{member.title}</CardTitle>
+                    <p className="text-primary font-medium">{member.name}</p>
                 </CardContent>
                 <CardFooter className="justify-center">
                     <div className="flex gap-2">
