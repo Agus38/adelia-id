@@ -38,6 +38,12 @@ const managementLinks = [
     description: "Kelola pengguna, peran, dan hak akses.",
   },
   {
+    title: "Manajemen Tim",
+    href: "/admin/tim",
+    icon: Users2,
+    description: "Kelola anggota tim yang ditampilkan.",
+  },
+  {
     title: "Manajemen Laporan Harian",
     href: "/admin/daily-reports",
     icon: FileText,

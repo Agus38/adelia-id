@@ -127,13 +127,13 @@ ${sisaIkanText}\`\`\`
 -------------------------------
 ${terjualText.length > 0 ? terjualText : 'Tidak ada'}\`\`\`
 \`\`\`-------------------------------\`\`\`
-*Porsi                         : ${totalPorsi}*
+*Porsi                        : ${totalPorsi}*
 
 *TOTAL ONLINE SALES* \`\`\`
 -------------------------------
 ${onlineSalesText}\`\`\`
 \`\`\`-------------------------------\`\`\`
-*Gross Total              : Rp ${formatCurrencyForWA(grossTotal)}*
+*Gross Total             : Rp ${formatCurrencyForWA(grossTotal)}*
     `.trim().replace(/^\s+/gm, '');
 
     const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;

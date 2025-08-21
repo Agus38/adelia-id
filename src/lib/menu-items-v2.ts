@@ -62,7 +62,8 @@ import {
   UserPlus,
   Truck,
   ThumbsUp,
-  CreditCard
+  CreditCard,
+  Users2
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -170,6 +171,14 @@ export const adminMenuItems: MenuItem[] = [
     access: 'admin',
   },
    {
+    id: 'team-management',
+    title: 'Manajemen Tim',
+    href: '/admin/tim',
+    icon: Users2,
+    description: 'Kelola anggota tim yang ditampilkan.',
+    access: 'admin',
+  },
+   {
     id: 'daily-report-management',
     title: 'Laporan Harian',
     href: '/admin/daily-reports',
@@ -251,6 +260,14 @@ export const allMenuItems: MenuItem[] = [
     href: '/analytics',
     icon: BarChart,
     description: 'Lihat dasbor dan laporan analitik.',
+    access: 'all',
+  },
+   {
+    id: 'tim',
+    title: 'Tim',
+    href: '/tim',
+    icon: Users,
+    description: 'Lihat anggota tim kami.',
     access: 'all',
   },
   {
@@ -358,6 +375,7 @@ export const allIconsMap: { id: string, icon: LucideIcon }[] = [
   { id: 'user', icon: User },
   { id: 'user-plus', icon: UserPlus },
   { id: 'users', icon: Users },
+  { id: 'users-2', icon: Users2 },
   { id: 'wallet', icon: Wallet },
   { id: 'wand-2', icon: Wand2 },
 ];
