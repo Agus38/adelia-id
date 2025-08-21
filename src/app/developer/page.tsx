@@ -40,20 +40,22 @@ export default function DeveloperPage() {
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8 flex items-center justify-center">
        <Card className="w-full max-w-2xl">
          <CardHeader className="text-center">
-           <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-              <Code className="h-10 w-10 text-primary" />
-           </div>
            <CardTitle className="text-3xl">Informasi Developer</CardTitle>
            <CardDescription>
              Mengenal lebih dekat sosok di balik pengembangan aplikasi ini.
            </CardDescription>
          </CardHeader>
          <CardContent className="flex flex-col md:flex-row items-center gap-8 pt-4">
-           <div className="flex-shrink-0">
+           <div className="flex-shrink-0 relative">
              <Avatar className="h-32 w-32 border-4 border-primary/20">
                <AvatarImage src={developerInfo.avatarUrl} alt={developerInfo.name} data-ai-hint="developer portrait" />
                <AvatarFallback>{developerInfo.avatarFallback}</AvatarFallback>
              </Avatar>
+              <div className="absolute -bottom-2 -right-2 bg-background p-2 rounded-full shadow-md">
+                <div className="bg-primary/10 p-2 rounded-full">
+                  <Code className="h-6 w-6 text-primary" />
+                </div>
+              </div>
            </div>
            <div className="text-center md:text-left">
              <h2 className="text-2xl font-bold">{developerInfo.name}</h2>
