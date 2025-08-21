@@ -147,6 +147,14 @@ export const adminMenuItems: MenuItem[] = [
     access: 'admin',
   },
   {
+    id: 'developer-settings',
+    title: 'Pengaturan Developer',
+    href: '/admin/developer',
+    icon: Code,
+    description: 'Kelola informasi pada halaman developer.',
+    access: 'admin',
+  },
+  {
     id: 'system-settings',
     title: 'Pengaturan Sistem',
     href: '/admin/setup',
