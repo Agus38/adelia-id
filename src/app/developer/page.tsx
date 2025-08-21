@@ -41,7 +41,7 @@ export default function DeveloperPage() {
        <Card className="w-full max-w-2xl">
          <CardHeader className="text-center">
            <CardTitle className="text-2xl md:text-3xl">Informasi Developer</CardTitle>
-           <CardDescription>
+           <CardDescription className="text-xs sm:text-sm">
              Mengenal lebih dekat sosok di balik pengembangan aplikasi ini.
            </CardDescription>
          </CardHeader>
