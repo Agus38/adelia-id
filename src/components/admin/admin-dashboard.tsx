@@ -43,6 +43,12 @@ const managementLinks = [
     icon: FileText,
     description: "Kelola semua laporan keuangan harian.",
   },
+   {
+    title: "Manajemen SMW Manyar",
+    href: "/admin/smw-manyar",
+    icon: FileText,
+    description: "Kelola item dan pengaturan untuk laporan SMW.",
+  },
   {
     title: "Manajemen Menu",
     href: "/admin/menus",
@@ -64,29 +70,29 @@ const managementLinks = [
 ];
 
 const recentActivities = [
+   {
+    user: { name: "Adelia", avatar: "https://placehold.co/100x100.png" },
+    action: "mengirimkan laporan",
+    target: "Laporan Harian",
+    time: "2 menit yang lalu",
+  },
+  {
+    user: { name: "Budi", avatar: "https://placehold.co/100x100.png" },
+    action: "menambahkan pengguna baru",
+    target: "Citra",
+    time: "5 menit yang lalu",
+  },
   {
     user: { name: "Adelia", avatar: "https://placehold.co/100x100.png" },
-    action: "menambahkan pengguna baru",
-    target: "Budi",
-    time: "5 menit yang lalu",
+    action: "mengirimkan laporan",
+    target: "SMW Manyar",
+    time: "15 menit yang lalu",
   },
   {
     user: { name: "Citra", avatar: "https://placehold.co/100x100.png" },
     action: "memperbarui item menu",
     target: "Stok Produk",
     time: "1 jam yang lalu",
-  },
-  {
-    user: { name: "Adelia", avatar: "https://placehold.co/100x100.png" },
-    action: "menghapus laporan",
-    target: "Laporan Penjualan Q2",
-    time: "3 jam yang lalu",
-  },
-  {
-    user: { name: "Dewi", avatar: "https://placehold.co/100x100.png" },
-    action: "mengubah pengaturan",
-    target: "Notifikasi Email",
-    time: "1 hari yang lalu",
   },
 ];
 
@@ -97,12 +103,32 @@ export function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pendapatan</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Pendapatan (Harian)</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rp45.231.890</div>
-            <p className="text-xs text-muted-foreground">+20.1% dari bulan lalu</p>
+            <div className="text-2xl font-bold">Rp5.231.890</div>
+            <p className="text-xs text-muted-foreground">+2.5% dari kemarin</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Laporan Harian (Hari Ini)</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">2 Laporan</div>
+            <p className="text-xs text-muted-foreground">1 Menunggu Persetujuan</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Laporan SMW (Hari Ini)</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">1 Laporan</div>
+            <p className="text-xs text-muted-foreground">Terkirim pukul 08:30</p>
           </CardContent>
         </Card>
         <Card>
@@ -111,28 +137,8 @@ export function AdminDashboard() {
             <Users2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+2350</div>
-            <p className="text-xs text-muted-foreground">+180.1% dari bulan lalu</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Penjualan</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+12,234</div>
-            <p className="text-xs text-muted-foreground">+19% dari bulan lalu</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Laporan Dibuat</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+573</div>
-            <p className="text-xs text-muted-foreground">+21 sejak jam terakhir</p>
+            <div className="text-2xl font-bold">+8</div>
+            <p className="text-xs text-muted-foreground">+2 baru bulan ini</p>
           </CardContent>
         </Card>
       </div>
