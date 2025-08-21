@@ -57,6 +57,12 @@ export const menuItems: MenuItem[] = [
     icon: Package,
   },
   {
+    id: 'smw-manyar',
+    title: 'SMW Manyar',
+    href: '/smw-manyar',
+    icon: FileText,
+  },
+  {
     id: 'kalkulator',
     title: 'Kalkulator',
     href: '/kalkulator',
