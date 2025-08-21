@@ -63,7 +63,7 @@ export default function TimPage() {
             Kenali orang-orang hebat di balik Adelia-ID. Kami adalah tim yang bersemangat dalam menciptakan solusi inovatif untuk Anda.
         </p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 pt-8">
         {teamMembers.map((member, index) => (
             <Card key={index} className="text-center hover:shadow-lg transition-shadow">
                 <CardHeader>
