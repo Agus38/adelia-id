@@ -206,6 +206,14 @@ export const allMenuItems: MenuItem[] = [
     description: 'Hubungi dukungan atau lihat FAQ.',
     access: 'all',
   },
+    {
+    id: 'terms-and-conditions',
+    title: 'Syarat & Ketentuan',
+    href: '/terms-and-conditions',
+    icon: FileText,
+    description: 'Baca syarat dan ketentuan layanan.',
+    access: 'all',
+  },
   {
     id: 'profile',
     title: 'Profil',
