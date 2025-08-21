@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Ban, Trash2, Edit } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Ban, Trash2, Edit, CheckCircle } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import {
   Dialog,
@@ -71,6 +71,7 @@ export function UserManagement() {
   const [isAddEditDialogOpen, setAddEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isBlockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [isUnblockDialogOpen, setUnblockDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const handleEdit = (user: User) => {
@@ -93,6 +94,11 @@ export function UserManagement() {
     setBlockDialogOpen(true);
   };
 
+  const handleUnblock = (user: User) => {
+    setSelectedUser(user);
+    setUnblockDialogOpen(true);
+  };
+
   const confirmDelete = () => {
     if (selectedUser) {
       setUsers(users.filter(u => u.id !== selectedUser.id));
@@ -108,6 +114,15 @@ export function UserManagement() {
     setBlockDialogOpen(false);
     setSelectedUser(null);
   }
+
+  const confirmUnblock = () => {
+    if (selectedUser) {
+        setUsers(users.map(u => u.id === selectedUser.id ? {...u, status: 'Aktif'} : u));
+    }
+    setUnblockDialogOpen(false);
+    setSelectedUser(null);
+  }
+
 
   return (
     <div>
@@ -156,10 +171,17 @@ export function UserManagement() {
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                       <DropdownMenuItem onClick={() => handleBlock(user)} disabled={user.status === 'Diblokir'}>
-                        <Ban className="mr-2 h-4 w-4" />
-                        Blokir
-                      </DropdownMenuItem>
+                       {user.status === 'Aktif' ? (
+                          <DropdownMenuItem onClick={() => handleBlock(user)}>
+                            <Ban className="mr-2 h-4 w-4" />
+                            Blokir
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem onClick={() => handleUnblock(user)}>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Buka Blokir
+                          </DropdownMenuItem>
+                        )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => handleDelete(user)} className="text-destructive focus:text-destructive">
                          <Trash2 className="mr-2 h-4 w-4" />
@@ -229,6 +251,22 @@ export function UserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={isUnblockDialogOpen} onOpenChange={setUnblockDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Buka Blokir Pengguna: {selectedUser?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan mengizinkan pengguna untuk mengakses aplikasi kembali.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedUser(null)}>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmUnblock}>Ya, Buka Blokir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
