@@ -137,6 +137,14 @@ export const adminMenuItems: MenuItem[] = [
     access: 'admin',
   },
   {
+    id: 'smw-manyar-management',
+    title: 'Manajemen SMW Manyar',
+    href: '/admin/smw-manyar',
+    icon: FileText,
+    description: 'Kelola item dan pengaturan untuk laporan SMW Manyar.',
+    access: 'admin',
+  },
+  {
     id: 'menu-management',
     title: 'Manajemen Menu',
     href: '/admin/menus',
