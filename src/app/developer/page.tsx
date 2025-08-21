@@ -51,9 +51,9 @@ export default function DeveloperPage() {
                <AvatarImage src={developerInfo.avatarUrl} alt={developerInfo.name} data-ai-hint="developer portrait" />
                <AvatarFallback>{developerInfo.avatarFallback}</AvatarFallback>
              </Avatar>
-              <div className="absolute -bottom-1 -right-1 bg-background p-1.5 rounded-full shadow-md">
-                <div className="bg-primary/10 p-1.5 rounded-full">
-                  <Code className="h-5 w-5 text-primary" />
+              <div className="absolute -bottom-1 -right-1 bg-background p-1 rounded-full shadow-md">
+                <div className="bg-primary/10 p-1 rounded-full">
+                  <Code className="h-4 w-4 text-primary" />
                 </div>
               </div>
            </div>
