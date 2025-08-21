@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { menuItems } from '@/lib/menu-items';
+import { menuItems } from '@/lib/menu-items-v2';
 import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
@@ -23,6 +23,8 @@ import {
 } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import type { MenuItem } from '@/lib/menu-items-v2';
+
 
 export function MenuManagement() {
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
@@ -55,7 +57,7 @@ export function MenuManagement() {
                 <TableCell className="font-medium">{item.title}</TableCell>
                 <TableCell>{item.href}</TableCell>
                 <TableCell>
-                  <Switch defaultChecked={true} aria-label="Visibilitas menu" />
+                  <Switch defaultChecked={!item.comingSoon} aria-label="Visibilitas menu" />
                 </TableCell>
                 <TableCell className="text-right">
                   <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
