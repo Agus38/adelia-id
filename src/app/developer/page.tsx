@@ -40,7 +40,7 @@ export default function DeveloperPage() {
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8 flex items-center justify-center">
        <Card className="w-full max-w-2xl">
          <CardHeader className="text-center">
-           <CardTitle className="text-3xl">Informasi Developer</CardTitle>
+           <CardTitle className="text-2xl md:text-3xl">Informasi Developer</CardTitle>
            <CardDescription>
              Mengenal lebih dekat sosok di balik pengembangan aplikasi ini.
            </CardDescription>
