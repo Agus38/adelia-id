@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Settings, User, Shield } from 'lucide-react';
+import { LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users } from 'lucide-react';
 import Link from 'next/link';
 
 export function UserNav() {
@@ -42,12 +43,6 @@ export function UserNav() {
               <span>Profil</span>
             </DropdownMenuItem>
           </Link>
-          <Link href="/admin">
-            <DropdownMenuItem>
-              <Shield className="mr-2 h-4 w-4" />
-              <span>Panel Admin</span>
-            </DropdownMenuItem>
-          </Link>
           <Link href="/settings">
             <DropdownMenuItem>
               <Settings className="mr-2 h-4 w-4" />
@@ -55,6 +50,40 @@ export function UserNav() {
             </DropdownMenuItem>
           </Link>
         </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+         <DropdownMenuGroup>
+          <Link href="/tim">
+            <DropdownMenuItem>
+              <Users className="mr-2 h-4 w-4" />
+              <span>Tim Kami</span>
+            </DropdownMenuItem>
+          </Link>
+           <Link href="/developer">
+            <DropdownMenuItem>
+              <Code className="mr-2 h-4 w-4" />
+              <span>Developer</span>
+            </DropdownMenuItem>
+          </Link>
+           <Link href="/support">
+            <DropdownMenuItem>
+              <LifeBuoy className="mr-2 h-4 w-4" />
+              <span>Bantuan & Dukungan</span>
+            </DropdownMenuItem>
+          </Link>
+          <Link href="/terms-and-conditions">
+            <DropdownMenuItem>
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Syarat & Ketentuan</span>
+            </DropdownMenuItem>
+          </Link>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+         <Link href="/admin">
+            <DropdownMenuItem className="text-primary focus:text-primary">
+              <Shield className="mr-2 h-4 w-4" />
+              <span>Panel Admin</span>
+            </DropdownMenuItem>
+          </Link>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <LogOut className="mr-2 h-4 w-4" />

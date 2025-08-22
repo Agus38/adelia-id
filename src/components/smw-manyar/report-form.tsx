@@ -117,18 +117,17 @@ export function SmwManyarReportForm() {
     const message = `
 *Laporan: Smw Manyar*
 *Tanggal: ${reportDate}*
-
-
+\n\n
 *SISA IKAN* \`\`\`
 -------------------------------
 ${sisaIkanText}\`\`\`
-
+\n\n
 *TERJUAL* \`\`\`
 -------------------------------
 ${terjualText.length > 0 ? terjualText : 'Tidak ada'}\`\`\`
 \`\`\`-------------------------------\`\`\`
 *Porsi                        : ${totalPorsi}*
-
+\n\n
 *TOTAL ONLINE SALES* \`\`\`
 -------------------------------
 ${onlineSalesText}\`\`\`
