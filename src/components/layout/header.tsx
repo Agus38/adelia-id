@@ -2,7 +2,6 @@
 'use client';
 
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Clock } from '@/components/clock';
 import { UserNav } from './user-nav';
 import { ThemeToggle } from '../theme-toggle';
 import { Logo } from '../icons';
@@ -18,9 +17,17 @@ export function Header() {
             <span className="text-primary text-lg">Adelia-ID</span>
           </Link>
       </div>
-      <div className="flex-1" />
-      <div className="flex items-center gap-4">
-        <Clock />
+      
+      {/* Centered Logo for Mobile */}
+      <div className="flex-1 flex justify-center md:hidden">
+         <Link href="/" className="items-center gap-2 font-semibold flex">
+            <Logo />
+            <span className="text-primary text-lg">Adelia-ID</span>
+          </Link>
+      </div>
+
+
+      <div className="flex items-center gap-4 md:flex-1 md:justify-end">
         <ThemeToggle />
         <UserNav />
       </div>
