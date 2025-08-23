@@ -1,9 +1,7 @@
 
 'use client';
 
-import { type DailyReport, type ReportStatus } from '@/components/admin/daily-report-management';
-
-type NewReport = Omit<DailyReport, 'id'>;
+import type { DailyReport, ReportStatus } from '@/components/admin/daily-report-management';
 
 let reports: DailyReport[] = [
     {
@@ -14,6 +12,20 @@ let reports: DailyReport[] = [
         totalSetor: 4850000,
         createdBy: 'Adelia',
         status: 'approved',
+        details: {
+            modalAwal: 500000,
+            pajak: 525000,
+            pemasukan: [
+                { name: 'GoFood', value: 1200000 },
+                { name: 'GrabFood', value: 1100000 },
+                { name: 'ShopeeFood', value: 950000 },
+                { name: 'Qris Mandiri', value: 800000 },
+            ],
+            pengeluaran: [
+                { name: 'Transport', value: 50000 },
+                { name: 'Lembur', value: 150000 },
+            ],
+        },
     },
     {
         id: 'RPT-002',
@@ -23,6 +35,18 @@ let reports: DailyReport[] = [
         totalSetor: 5950000,
         createdBy: 'Budi',
         status: 'pending',
+        details: {
+            modalAwal: 1000000,
+            pajak: 610000,
+            pemasukan: [
+                { name: 'GoFood', value: 2200000 },
+                { name: 'GrabFood', value: 2100000 },
+                { name: 'Qris Bri', value: 1000000 },
+            ],
+            pengeluaran: [
+                 { name: 'Transport', value: 50000 },
+            ],
+        },
     },
     {
         id: 'RPT-003',
@@ -32,6 +56,17 @@ let reports: DailyReport[] = [
         totalSetor: 4500000,
         createdBy: 'Adelia',
         status: 'rejected',
+        details: {
+            modalAwal: 500000,
+            pajak: 480000,
+            pemasukan: [
+                 { name: 'GoFood', value: 1800000 },
+                 { name: 'GrabFood', value: 1500000 },
+            ],
+            pengeluaran: [
+                { name: 'Iuran Bulanan', value: 150000 },
+            ],
+        },
     },
 ];
 
@@ -53,8 +88,11 @@ export const listeners = {
 };
 
 const generateId = (): string => {
-    const lastId = reports.length > 0 ? parseInt(reports[reports.length - 1].id.split('-')[1], 10) : 0;
-    const newId = (lastId + 1).toString().padStart(3, '0');
+    const lastIdNumber = reports.reduce((maxId, report) => {
+        const currentId = parseInt(report.id.split('-')[1], 10);
+        return Math.max(maxId, currentId);
+    }, 0);
+    const newId = (lastIdNumber + 1).toString().padStart(3, '0');
     return `RPT-${newId}`;
 }
 
@@ -63,10 +101,11 @@ export const getReports = (): DailyReport[] => {
   return reports;
 };
 
-export const addReport = (reportData: NewReport) => {
+export const addReport = (reportData: Omit<DailyReport, 'id' | 'status'>) => {
   const newReport: DailyReport = {
     ...reportData,
     id: generateId(),
+    status: 'pending',
   };
   reports.push(newReport);
   listeners.notify();

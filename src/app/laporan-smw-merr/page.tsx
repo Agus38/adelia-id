@@ -124,13 +124,39 @@ export default function DailyReportPage() {
       return;
     }
     
+    const pemasukanDetails = [
+        { name: 'GoFood', value: goFood },
+        { name: 'GrabFood', value: grabFood },
+        { name: 'ShopeeFood', value: shopeeFood },
+        { name: 'Qris Mandiri', value: qrisMandiri },
+        { name: 'Qris Bri', value: qrisBri },
+        { name: 'Debit Mandiri', value: debitMandiri },
+        { name: 'Debit Bri', value: debitBri },
+        ...extraPemasukan,
+    ].filter(item => item.value > 0);
+
+    const pengeluaranDetails = [
+        { name: 'Transport', value: transport },
+        { name: 'GoSend', value: goSend },
+        { name: 'Iuran Bulanan', value: iuranBulanan },
+        { name: 'Bonus', value: bonus },
+        { name: 'Lembur', value: lembur },
+        ...extraPengeluaran
+    ].filter(item => item.value > 0);
+
+
     addReport({
       date,
       shift,
       omsetBersih,
       totalSetor: totalAkhir,
       createdBy: 'Adelia', // Placeholder, replace with actual user later
-      status: 'pending',
+      details: {
+          modalAwal,
+          pajak,
+          pemasukan: pemasukanDetails,
+          pengeluaran: pengeluaranDetails,
+      }
     });
     
     toast({
@@ -419,14 +445,14 @@ ${pemasukanText}
         </CardContent>
         <CardFooter className="flex justify-between gap-4">
           <Button
-            className="flex-1 bg-[#4560ec] hover:bg-[#4560ec]/90 text-white"
+            className="flex-1 bg-primary text-white hover:bg-primary/90"
             onClick={handleSaveReport}
           >
             <Save className="mr-2 h-4 w-4" />
             Simpan
           </Button>
           <Button 
-            className="flex-1 bg-[#25d366] hover:bg-[#25d366]/90 text-white"
+            className="flex-1 bg-green-600 text-white hover:bg-green-700"
             onClick={handleSendWhatsApp}
           >
              <Send className="mr-2 h-4 w-4" />

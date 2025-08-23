@@ -57,6 +57,7 @@ import { id } from 'date-fns/locale';
 import { getReports, deleteReport, updateReportStatus, listeners } from '@/lib/report-store';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import Link from 'next/link';
+import { Separator } from '../ui/separator';
 
 export type ReportStatus = 'pending' | 'approved' | 'rejected';
 
@@ -68,7 +69,13 @@ export interface DailyReport {
   totalSetor: number;
   createdBy: string;
   status: ReportStatus;
-};
+  details: {
+    modalAwal: number;
+    pajak: number;
+    pemasukan: { name: string; value: number }[];
+    pengeluaran: { name: string; value: number }[];
+  };
+}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('id-ID', {
@@ -403,42 +410,97 @@ export function DailyReportManagement() {
     </div>
 
     <Dialog open={isDetailModalOpen} onOpenChange={setDetailModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-2xl">
             <DialogHeader>
                 <DialogTitle>Detail Laporan: {selectedReport?.id}</DialogTitle>
                 <DialogDescription>
-                    Informasi lengkap untuk laporan yang dipilih.
+                    Informasi lengkap untuk laporan yang dibuat oleh {selectedReport?.createdBy} pada <ClientDate date={selectedReport?.date || new Date()} /> (Shift {selectedReport?.shift}).
                 </DialogDescription>
             </DialogHeader>
             {selectedReport && (
-                <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                        <p className="text-muted-foreground">ID Laporan:</p>
-                        <p className="font-semibold">{selectedReport.id}</p>
+                <div className="space-y-6 pt-4 max-h-[60vh] overflow-y-auto pr-4">
+                    {/* Financial Summary */}
+                    <div className="space-y-2">
+                        <h3 className="font-semibold text-base">Ringkasan Finansial</h3>
+                         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm p-4 border rounded-lg">
+                            <p className="text-muted-foreground">Status:</p>
+                            <p className="font-semibold text-right"><Badge variant={statusBadgeVariant[selectedReport.status]}>{statusText[selectedReport.status]}</Badge></p>
+                            <p className="text-muted-foreground">Omset Bersih:</p>
+                            <p className="font-semibold text-right">{formatCurrency(selectedReport.omsetBersih)}</p>
+                             <p className="text-muted-foreground">Modal Awal:</p>
+                            <p className="font-semibold text-right">{formatCurrency(selectedReport.details.modalAwal)}</p>
+                             <p className="text-muted-foreground">Pajak:</p>
+                            <p className="font-semibold text-right">{formatCurrency(selectedReport.details.pajak)}</p>
+                            <Separator className="col-span-2 my-1"/>
+                             <p className="text-muted-foreground font-bold">Total Setor:</p>
+                            <p className="font-bold text-lg text-right">{formatCurrency(selectedReport.totalSetor)}</p>
+                        </div>
+                    </div>
 
-                        <p className="text-muted-foreground">Tanggal:</p>
-                        <p className="font-semibold"><ClientDate date={selectedReport.date} /></p>
-
-                        <p className="text-muted-foreground">Shift:</p>
-                        <p className="font-semibold capitalize">{selectedReport.shift}</p>
-
-                        <p className="text-muted-foreground">Omset Bersih:</p>
-                        <p className="font-semibold">{formatCurrency(selectedReport.omsetBersih)}</p>
-
-                        <p className="text-muted-foreground">Total Setor:</p>
-                        <p className="font-semibold">{formatCurrency(selectedReport.totalSetor)}</p>
-
-                        <p className="text-muted-foreground">Dibuat Oleh:</p>
-                        <p className="font-semibold">{selectedReport.createdBy}</p>
-
-                        <p className="text-muted-foreground">Status:</p>
-                        <Badge variant={statusBadgeVariant[selectedReport.status]}>
-                            {statusText[selectedReport.status]}
-                        </Badge>
+                     {/* Income Details */}
+                    <div className="space-y-2">
+                        <h3 className="font-semibold text-base">Rincian Pemasukan Online</h3>
+                        <div className="p-4 border rounded-lg">
+                           <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                    <TableHead>Sumber</TableHead>
+                                    <TableHead className="text-right">Jumlah</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {selectedReport.details.pemasukan.map((item, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell>{item.name || '-'}</TableCell>
+                                            <TableCell className="text-right font-medium">{formatCurrency(item.value)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                    <TableRow className="bg-muted hover:bg-muted font-bold">
+                                         <TableCell>Total Pemasukan</TableCell>
+                                         <TableCell className="text-right">{formatCurrency(selectedReport.details.pemasukan.reduce((sum, item) => sum + item.value, 0))}</TableCell>
+                                    </TableRow>
+                                </TableBody>
+                           </Table>
+                        </div>
+                    </div>
+                    
+                     {/* Expense Details */}
+                    <div className="space-y-2">
+                        <h3 className="font-semibold text-base">Rincian Pengeluaran Offline</h3>
+                        <div className="p-4 border rounded-lg">
+                           <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                    <TableHead>Item</TableHead>
+                                    <TableHead className="text-right">Jumlah</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                     {selectedReport.details.pengeluaran.length > 0 ? (
+                                        <>
+                                            {selectedReport.details.pengeluaran.map((item, index) => (
+                                                <TableRow key={index}>
+                                                    <TableCell>{item.name || '-'}</TableCell>
+                                                    <TableCell className="text-right font-medium">{formatCurrency(item.value)}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                            <TableRow className="bg-muted hover:bg-muted font-bold">
+                                                <TableCell>Total Pengeluaran</TableCell>
+                                                <TableCell className="text-right">{formatCurrency(selectedReport.details.pengeluaran.reduce((sum, item) => sum + item.value, 0))}</TableCell>
+                                            </TableRow>
+                                        </>
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={2} className="text-center text-muted-foreground">Tidak ada pengeluaran.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                           </Table>
+                        </div>
                     </div>
                 </div>
             )}
-            <DialogFooter>
+            <DialogFooter className="pt-4 border-t">
                 <Button variant="secondary" onClick={() => setDetailModalOpen(false)}>
                     Tutup
                 </Button>
