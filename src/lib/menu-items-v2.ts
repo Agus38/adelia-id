@@ -63,7 +63,8 @@ import {
   Truck,
   ThumbsUp,
   CreditCard,
-  Users2
+  Users2,
+  Palette
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -211,6 +212,14 @@ export const adminMenuItems: MenuItem[] = [
     access: 'admin',
   },
   {
+    id: 'branding-settings',
+    title: 'Pengaturan Tampilan',
+    href: '/admin/branding',
+    icon: Palette,
+    description: 'Sesuaikan logo, nama, dan ikon aplikasi.',
+    access: 'admin'
+  },
+  {
     id: 'developer-settings',
     title: 'Pengaturan Developer',
     href: '/admin/developer',
@@ -321,6 +330,7 @@ export const allIconsMap: { id: string, icon: LucideIcon }[] = [
   { id: 'message-square', icon: MessageSquare },
   { id: 'moon', icon: Moon },
   { id: 'package', icon: Package },
+  { id: 'palette', icon: Palette },
   { id: 'repeat', icon: Repeat },
   { id: 'send', icon: Send },
   { id: 'settings', icon: Settings },
