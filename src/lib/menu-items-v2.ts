@@ -203,6 +203,14 @@ export const adminMenuItems: MenuItem[] = [
     description: 'Kelola item dan pengaturan untuk laporan SMW Manyar.',
     access: 'admin',
   },
+   {
+    id: 'digital-product-management',
+    title: 'Manajemen Produk',
+    href: '/admin/digital-products',
+    icon: Package,
+    description: 'Kelola produk digital seperti pulsa, data, dll.',
+    access: 'admin',
+  },
   {
     id: 'digiflazz-integration',
     title: 'Integrasi Digiflazz',
