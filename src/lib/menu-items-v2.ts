@@ -64,7 +64,8 @@ import {
   ThumbsUp,
   CreditCard,
   Users2,
-  Palette
+  Palette,
+  PanelLeft
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -200,7 +201,15 @@ export const adminMenuItems: MenuItem[] = [
     title: 'Manajemen Menu',
     href: '/admin/menus',
     icon: Settings,
-    description: 'Sesuaikan item menu, ikon, dan visibilitas.',
+    description: 'Sesuaikan item menu utama (grid).',
+    access: 'admin',
+  },
+  {
+    id: 'sidebar-management',
+    title: 'Manajemen Sidebar',
+    href: '/admin/sidebar',
+    icon: PanelLeft,
+    description: 'Sesuaikan item menu di sidebar utama.',
     access: 'admin',
   },
     {
@@ -338,6 +347,7 @@ export const allIconsMap: { id: string, icon: LucideIcon }[] = [
   { id: 'moon', icon: Moon },
   { id: 'package', icon: Package },
   { id: 'palette', icon: Palette },
+  { id: 'panel-left', icon: PanelLeft },
   { id: 'repeat', icon: Repeat },
   { id: 'send', icon: Send },
   { id: 'settings', icon: Settings },
