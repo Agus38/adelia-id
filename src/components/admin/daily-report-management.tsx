@@ -36,12 +36,9 @@ import {
   MoreHorizontal,
   ChevronDown,
   PlusCircle,
-  FileCheck,
-  FileX,
   Eye,
   Trash2,
 } from 'lucide-react';
-import { Badge } from '../ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -54,12 +51,10 @@ import { Input } from '../ui/input';
 import { Checkbox } from '../ui/checkbox';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { getReports, deleteReport, updateReportStatus, listeners } from '@/lib/report-store';
+import { getReports, deleteReport, listeners } from '@/lib/report-store';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import Link from 'next/link';
 import { Separator } from '../ui/separator';
-
-export type ReportStatus = 'pending' | 'approved' | 'rejected';
 
 export interface DailyReport {
   id: string;
@@ -68,7 +63,6 @@ export interface DailyReport {
   omsetBersih: number;
   totalSetor: number;
   createdBy: string;
-  status: ReportStatus;
   details: {
     modalAwal: number;
     pajak: number;
@@ -84,18 +78,6 @@ const formatCurrency = (value: number) => {
     minimumFractionDigits: 0,
   }).format(value);
 };
-
-const statusBadgeVariant = {
-  pending: 'secondary',
-  approved: 'default',
-  rejected: 'destructive',
-} as const;
-
-const statusText = {
-    pending: 'Menunggu',
-    approved: 'Disetujui',
-    rejected: 'Ditolak',
-}
 
 const ClientDate = ({ date }: { date: Date }) => {
   const [formattedDate, setFormattedDate] = React.useState('');
@@ -128,10 +110,6 @@ export function DailyReportManagement() {
     setSelectedReport(report);
     setDetailModalOpen(true);
   };
-
-  const handleChangeStatus = (id: string, status: ReportStatus) => {
-    updateReportStatus(id, status);
-  }
 
   const handleDeleteClick = (report: DailyReport) => {
     setSelectedReport(report);
@@ -187,18 +165,6 @@ export function DailyReportManagement() {
     },
     { accessorKey: 'createdBy', header: 'Dibuat Oleh' },
     {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ row }) => (
-        <Badge variant={statusBadgeVariant[row.original.status]}>
-          {statusText[row.original.status]}
-        </Badge>
-      ),
-      filterFn: (row, id, value) => {
-        return value.includes(row.getValue(id));
-      },
-    },
-    {
       id: 'actions',
       cell: ({ row }) => {
         const report = row.original;
@@ -214,15 +180,6 @@ export function DailyReportManagement() {
               <DropdownMenuItem onClick={() => handleViewDetails(report)}>
                 <Eye className="mr-2 h-4 w-4" />
                 Lihat Detail
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleChangeStatus(report.id, 'approved')}>
-                <FileCheck className="mr-2 h-4 w-4" />
-                Setujui
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleChangeStatus(report.id, 'rejected')}>
-                <FileX className="mr-2 h-4 w-4" />
-                Tolak
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteClick(report)}>
@@ -268,35 +225,6 @@ export function DailyReportManagement() {
               }
               className="max-w-sm"
             />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto">
-                  Status <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                 <DropdownMenuLabel>Filter berdasarkan status</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {['pending', 'approved', 'rejected'].map(status => {
-                     const statusFilter: string[] = table.getColumn('status')?.getFilterValue() as any || [];
-                     return (
-                        <DropdownMenuCheckboxItem
-                            key={status}
-                            checked={statusFilter.includes(status)}
-                            onCheckedChange={(checked) => {
-                                const currentFilter = statusFilter || [];
-                                const newFilter = checked
-                                ? [...currentFilter, status]
-                                : currentFilter.filter(s => s !== status);
-                                table.getColumn('status')?.setFilterValue(newFilter.length ? newFilter : undefined);
-                            }}
-                        >
-                           {statusText[status as ReportStatus]}
-                        </DropdownMenuCheckboxItem>
-                     )
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
           <div className="flex items-center gap-2">
             <DropdownMenu>
@@ -423,8 +351,6 @@ export function DailyReportManagement() {
                     <div className="space-y-2">
                         <h3 className="font-semibold text-base">Ringkasan Finansial</h3>
                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm p-4 border rounded-lg">
-                            <div className="text-muted-foreground">Status:</div>
-                            <div className="font-semibold text-right"><Badge variant={statusBadgeVariant[selectedReport.status]}>{statusText[selectedReport.status]}</Badge></div>
                             <p className="text-muted-foreground">Omset Bersih:</p>
                             <p className="font-semibold text-right">{formatCurrency(selectedReport.omsetBersih)}</p>
                              <p className="text-muted-foreground">Modal Awal:</p>
@@ -525,5 +451,3 @@ export function DailyReportManagement() {
     </>
   );
 }
-
-    

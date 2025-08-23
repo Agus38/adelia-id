@@ -161,7 +161,7 @@ export default function DailyReportPage() {
     
     toast({
       title: 'Laporan Disimpan!',
-      description: 'Laporan keuangan harian telah berhasil disimpan dan menunggu persetujuan.',
+      description: 'Laporan keuangan harian telah berhasil disimpan.',
     });
 
     router.push('/admin/daily-reports');

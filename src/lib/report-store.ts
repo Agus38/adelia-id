@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { DailyReport, ReportStatus } from '@/components/admin/daily-report-management';
+import type { DailyReport } from '@/components/admin/daily-report-management';
 
 let reports: DailyReport[] = [
     {
@@ -11,7 +11,6 @@ let reports: DailyReport[] = [
         omsetBersih: 5250000,
         totalSetor: 4850000,
         createdBy: 'Adelia',
-        status: 'approved',
         details: {
             modalAwal: 500000,
             pajak: 525000,
@@ -34,7 +33,6 @@ let reports: DailyReport[] = [
         omsetBersih: 6100000,
         totalSetor: 5950000,
         createdBy: 'Budi',
-        status: 'pending',
         details: {
             modalAwal: 1000000,
             pajak: 610000,
@@ -55,7 +53,6 @@ let reports: DailyReport[] = [
         omsetBersih: 4800000,
         totalSetor: 4500000,
         createdBy: 'Adelia',
-        status: 'rejected',
         details: {
             modalAwal: 500000,
             pajak: 480000,
@@ -101,11 +98,10 @@ export const getReports = (): DailyReport[] => {
   return reports;
 };
 
-export const addReport = (reportData: Omit<DailyReport, 'id' | 'status'>) => {
+export const addReport = (reportData: Omit<DailyReport, 'id'>) => {
   const newReport: DailyReport = {
     ...reportData,
     id: generateId(),
-    status: 'pending',
   };
   reports.push(newReport);
   listeners.notify();
@@ -114,9 +110,4 @@ export const addReport = (reportData: Omit<DailyReport, 'id' | 'status'>) => {
 export const deleteReport = (reportId: string) => {
   reports = reports.filter(r => r.id !== reportId);
   listeners.notify();
-}
-
-export const updateReportStatus = (reportId: string, status: ReportStatus) => {
-    reports = reports.map(r => r.id === reportId ? { ...r, status } : r);
-    listeners.notify();
 }
