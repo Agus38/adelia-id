@@ -2,8 +2,7 @@
 import { PulsaTransactionForm } from "@/components/digital-products/pulsa/transaction-form";
 import { UserBalanceCard } from "@/components/digital-products/pulsa/user-balance-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { History } from "lucide-react";
+import { TransactionHistory } from "@/components/digital-products/pulsa/transaction-history";
 
 
 export default function PulsaPage() {
@@ -19,16 +18,7 @@ export default function PulsaPage() {
             <PulsaTransactionForm />
           </TabsContent>
           <TabsContent value="history" className="mt-6">
-             <Card>
-                <CardHeader className="items-center text-center">
-                    <History className="h-10 w-10 text-muted-foreground mb-2"/>
-                    <CardTitle>Riwayat Transaksi</CardTitle>
-                    <CardDescription>Riwayat transaksi pulsa Anda akan muncul di sini.</CardDescription>
-                </CardHeader>
-                <CardContent className="text-center">
-                    <p className="text-sm text-muted-foreground">Fitur ini sedang dalam pengembangan.</p>
-                </CardContent>
-             </Card>
+             <TransactionHistory />
           </TabsContent>
         </Tabs>
     </div>
