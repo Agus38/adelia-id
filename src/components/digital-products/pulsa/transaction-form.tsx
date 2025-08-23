@@ -7,9 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Loader2 } from "lucide-react";
+import { CheckCircle, Loader2, Wallet } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetFooter,
+  SheetClose,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 
 type Operator = 'Telkomsel' | 'Indosat' | 'XL' | 'AXIS' | 'Tri' | 'Smartfren' | null;
+type Product = { id: string; name: string; price: number; };
 
 const operatorPrefixes: Record<NonNullable<Operator>, string[]> = {
   Telkomsel: ['0811', '0812', '0813', '0821', '0822', '0852', '0853', '0823', '0851'],
@@ -29,7 +41,7 @@ const operatorLogos: Record<NonNullable<Operator>, string> = {
     Smartfren: 'https://placehold.co/100x40.png?text=Smartfren',
 }
 
-const mockProducts = {
+const mockProducts: Record<string, Product[]> = {
     Telkomsel: [
         { id: 'p5', name: 'Pulsa 5.000', price: 5500 },
         { id: 'p10', name: 'Pulsa 10.000', price: 10500 },
@@ -63,8 +75,8 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('id-ID', { style
 export function PulsaTransactionForm() {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [operator, setOperator] = useState<Operator>(null);
-    const [products, setProducts] = useState<typeof mockProducts.Telkomsel>([]);
-    const [selectedProduct, setSelectedProduct] = useState('');
+    const [products, setProducts] = useState<Product[]>([]);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isFetching, setIsFetching] = useState(false);
 
     useEffect(() => {
@@ -72,6 +84,7 @@ export function PulsaTransactionForm() {
             if (phoneNumber.length < 4) {
                 setOperator(null);
                 setProducts([]);
+                setSelectedProduct(null);
                 return;
             }
             
@@ -88,6 +101,7 @@ export function PulsaTransactionForm() {
             // Simulate API call delay
             setTimeout(() => {
                 setOperator(foundOperator);
+                setSelectedProduct(null); // Reset selection when operator changes
                 if (foundOperator && mockProducts[foundOperator as keyof typeof mockProducts]) {
                     setProducts(mockProducts[foundOperator as keyof typeof mockProducts]);
                 } else {
@@ -149,9 +163,9 @@ export function PulsaTransactionForm() {
                             {products.map(product => (
                                 <button
                                     key={product.id}
-                                    onClick={() => setSelectedProduct(product.id)}
+                                    onClick={() => setSelectedProduct(product)}
                                     className={`p-3 border rounded-lg text-left transition-colors ${
-                                        selectedProduct === product.id 
+                                        selectedProduct?.id === product.id 
                                             ? 'border-primary ring-2 ring-primary bg-primary/10'
                                             : 'hover:bg-muted/50'
                                     }`}
@@ -170,9 +184,51 @@ export function PulsaTransactionForm() {
                 )}
             </CardContent>
             <CardFooter>
-                <Button className="w-full" disabled={!phoneNumber || !selectedProduct || isFetching}>
-                    Beli Sekarang
-                </Button>
+                 <Sheet>
+                    <SheetTrigger asChild>
+                         <Button className="w-full" disabled={!phoneNumber || !selectedProduct || isFetching}>
+                            Beli Sekarang
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" className="rounded-t-lg">
+                        <SheetHeader className="text-left">
+                        <SheetTitle>Konfirmasi Transaksi</SheetTitle>
+                        <SheetDescription>
+                            Harap periksa kembali rincian transaksi Anda sebelum melanjutkan.
+                        </SheetDescription>
+                        </SheetHeader>
+                        <div className="py-6 space-y-4">
+                            <Separator />
+                             <div className="space-y-3 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Nomor Tujuan</span>
+                                    <span className="font-medium">{phoneNumber}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Operator</span>
+                                    <span className="font-medium">{operator}</span>
+                                </div>
+                                 <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Produk</span>
+                                    <span className="font-medium">{selectedProduct?.name}</span>
+                                </div>
+                             </div>
+                            <Separator />
+                             <div className="flex justify-between items-center text-base font-bold p-3 bg-muted rounded-lg">
+                                <span>Total Pembayaran</span>
+                                <span className="text-primary">{selectedProduct ? formatCurrency(selectedProduct.price) : 'Rp 0'}</span>
+                             </div>
+                        </div>
+                        <SheetFooter>
+                            <SheetClose asChild>
+                                <Button variant="outline" className="w-full">Batal</Button>
+                            </SheetClose>
+                            <Button className="w-full bg-green-600 hover:bg-green-700">
+                               <Wallet className="mr-2 h-4 w-4" /> Konfirmasi & Bayar
+                            </Button>
+                        </SheetFooter>
+                    </SheetContent>
+                </Sheet>
             </CardFooter>
         </Card>
     )
