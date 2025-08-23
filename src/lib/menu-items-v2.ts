@@ -67,6 +67,7 @@ import {
   Palette,
   PanelLeft,
   Smartphone,
+  PlusCircle,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -302,6 +303,13 @@ export const allMenuItems: MenuItem[] = [
     access: 'all',
   },
   {
+    id: 'top-up',
+    title: 'Top Up Saldo',
+    href: '/top-up',
+    icon: PlusCircle,
+    access: 'all'
+  },
+  {
     id: 'ai-assistant',
     title: 'Asisten AI Nexus',
     href: '/ai-assistant',
@@ -378,6 +386,7 @@ export const allIconsMap: { id: string, icon: LucideIcon }[] = [
   { id: 'package', icon: Package },
   { id: 'palette', icon: Palette },
   { id: 'panel-left', icon: PanelLeft },
+  { id: 'plus-circle', icon: PlusCircle },
   { id: 'repeat', icon: Repeat },
   { id: 'send', icon: Send },
   { id: 'settings', icon: Settings },

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlusCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export function UserBalanceCard() {
   const [greeting, setGreeting] = useState('');
@@ -50,10 +51,12 @@ export function UserBalanceCard() {
             <p className="text-sm font-bold text-primary">{formatCurrency(userInfo.balance)}</p>
           </div>
         </div>
-        <Button variant="outline">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Top Up
-        </Button>
+        <Link href="/top-up">
+          <Button variant="outline">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Top Up
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   );
