@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -29,7 +30,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -38,6 +38,10 @@ import {
   PlusCircle,
   Eye,
   Trash2,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Receipt,
 } from 'lucide-react';
 import {
   Dialog,
@@ -122,6 +126,11 @@ export function DailyReportManagement() {
     }
     setDeleteDialogOpen(false);
   }
+
+  const totalOmsetBersih = React.useMemo(() => data.reduce((sum, report) => sum + report.omsetBersih, 0), [data]);
+  const totalPajak = React.useMemo(() => data.reduce((sum, report) => sum + report.details.pajak, 0), [data]);
+  const totalOmsetKotor = totalOmsetBersih + totalPajak;
+  const totalPengeluaran = React.useMemo(() => data.reduce((sum, report) => sum + report.details.pengeluaran.reduce((subSum, item) => subSum + item.value, 0), 0), [data]);
   
   const columns: ColumnDef<DailyReport>[] = [
     {
@@ -215,7 +224,51 @@ export function DailyReportManagement() {
   return (
     <>
     <div className="space-y-4">
-       <div className="flex items-center justify-between">
+        {/* Stat Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Pemasukan Bersih</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalOmsetBersih)}</div>
+            <p className="text-xs text-muted-foreground">Dari semua laporan yang tersimpan</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Pemasukan Kotor</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalOmsetKotor)}</div>
+             <p className="text-xs text-muted-foreground">Termasuk pajak</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Pajak</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalPajak)}</div>
+            <p className="text-xs text-muted-foreground">Dari semua laporan yang tersimpan</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Pengeluaran Offline</CardTitle>
+            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalPengeluaran)}</div>
+            <p className="text-xs text-muted-foreground">Dari semua laporan yang tersimpan</p>
+          </CardContent>
+        </Card>
+      </div>
+
+       <div className="flex items-center justify-between pt-4">
           <div className="flex flex-1 items-center space-x-2">
             <Input
               placeholder="Cari berdasarkan ID atau pembuat..."
@@ -351,15 +404,15 @@ export function DailyReportManagement() {
                     <div className="space-y-2">
                         <h3 className="font-semibold text-base">Ringkasan Finansial</h3>
                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm p-4 border rounded-lg">
-                            <p className="text-muted-foreground">Omset Bersih:</p>
-                            <p className="font-semibold text-right">{formatCurrency(selectedReport.omsetBersih)}</p>
-                             <p className="text-muted-foreground">Modal Awal:</p>
-                            <p className="font-semibold text-right">{formatCurrency(selectedReport.details.modalAwal)}</p>
-                             <p className="text-muted-foreground">Pajak:</p>
-                            <p className="font-semibold text-right">{formatCurrency(selectedReport.details.pajak)}</p>
+                            <div className="text-muted-foreground">Omset Bersih:</div>
+                            <div className="font-semibold text-right">{formatCurrency(selectedReport.omsetBersih)}</div>
+                             <div className="text-muted-foreground">Modal Awal:</div>
+                            <div className="font-semibold text-right">{formatCurrency(selectedReport.details.modalAwal)}</div>
+                             <div className="text-muted-foreground">Pajak:</div>
+                            <div className="font-semibold text-right">{formatCurrency(selectedReport.details.pajak)}</div>
                             <Separator className="col-span-2 my-1"/>
-                             <p className="text-muted-foreground font-bold">Total Setor:</p>
-                            <p className="font-bold text-lg text-right">{formatCurrency(selectedReport.totalSetor)}</p>
+                             <div className="text-muted-foreground font-bold">Total Setor:</div>
+                            <div className="font-bold text-lg text-right">{formatCurrency(selectedReport.totalSetor)}</div>
                         </div>
                     </div>
 
