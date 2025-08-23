@@ -88,9 +88,9 @@ export const homeMenuItem: MenuItem = {
 
 export const menuItems: MenuItem[] = [
   {
-    id: 'wa-sender',
+    id: 'laporan-smw-merr',
     title: 'Laporan Harian',
-    href: '/wa-sender',
+    href: '/laporan-smw-merr',
     icon: MessageSquare,
   },
   {
@@ -249,9 +249,9 @@ export const adminMenuItems: MenuItem[] = [
 export const allMenuItems: MenuItem[] = [
   homeMenuItem,
   {
-    id: 'wa-sender-sidebar',
+    id: 'laporan-smw-merr-sidebar',
     title: 'Laporan Harian',
-    href: '/wa-sender',
+    href: '/laporan-smw-merr',
     icon: MessageSquare,
     access: 'all',
   },
@@ -349,3 +349,5 @@ export const allIconsMap: { id: string, icon: LucideIcon }[] = [
   { id: 'wallet', icon: Wallet },
   { id: 'wand-2', icon: Wand2 },
 ];
+
+    
