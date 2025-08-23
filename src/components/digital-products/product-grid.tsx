@@ -12,7 +12,7 @@ const digitalProducts = [
     description: 'Isi ulang pulsa prabayar untuk semua operator.',
     href: '/digital-products/pulsa',
     icon: Smartphone,
-    comingSoon: true,
+    comingSoon: false,
   },
   {
     id: 'paket-data',
