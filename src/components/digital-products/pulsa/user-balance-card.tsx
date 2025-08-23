@@ -5,14 +5,29 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlusCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export function UserBalanceCard() {
+  const [greeting, setGreeting] = useState('');
+
   const userInfo = {
     name: "Adelia",
     balance: 123456,
     avatarUrl: "https://placehold.co/100x100.png",
     avatarFallback: "A",
   };
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      setGreeting('Selamat Pagi,');
+    } else if (hour < 18) {
+      setGreeting('Selamat Siang,');
+    } else {
+      setGreeting('Selamat Malam,');
+    }
+  }, []);
+
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('id-ID', { 
@@ -30,7 +45,7 @@ export function UserBalanceCard() {
             <AvatarFallback>{userInfo.avatarFallback}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-semibold text-base">{userInfo.name}</p>
+            <p className="font-semibold text-base">{greeting} {userInfo.name}</p>
             <p className="text-sm font-bold text-primary">{formatCurrency(userInfo.balance)}</p>
           </div>
         </div>
