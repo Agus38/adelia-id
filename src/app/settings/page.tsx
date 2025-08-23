@@ -1,18 +1,28 @@
 
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Separator } from "@/components/ui/separator";
+import { ProfileForm } from "@/components/profile/profile-form";
+import { PasswordForm } from "@/components/profile/password-form";
+import { Sessions } from "@/components/profile/sessions";
+import { Settings }_from_ 'lucide-react';
 
-export default function SettingsPage() {
+export default function SettingsProfilePage() {
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Pengaturan Aplikasi</CardTitle>
-          <CardDescription>Konfigurasi pengaturan aplikasi umum.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p>Halaman ini sedang dalam pengembangan. Segera hadir!</p>
-        </CardContent>
-      </Card>
+       <div className="flex items-center space-x-2">
+        <Settings className="h-8 w-8" />
+        <h2 className="text-3xl font-bold tracking-tight">Pengaturan Akun</h2>
+      </div>
+       <p className="text-muted-foreground">
+        Kelola pengaturan akun dan preferensi Anda.
+      </p>
+      <Separator />
+      <div className="space-y-6">
+        <ProfileForm />
+        <Separator />
+        <PasswordForm />
+        <Separator />
+        <Sessions />
+      </div>
     </div>
-  );
+  )
 }

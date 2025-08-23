@@ -249,6 +249,13 @@ export const adminMenuItems: MenuItem[] = [
 export const allMenuItems: MenuItem[] = [
   homeMenuItem,
   {
+    id: 'profile',
+    title: 'Profil',
+    href: '/profile',
+    icon: User,
+    access: 'all',
+  },
+  {
     id: 'laporan-smw-merr-sidebar',
     title: 'Laporan Harian',
     href: '/laporan-smw-merr',
@@ -349,5 +356,3 @@ export const allIconsMap: { id: string, icon: LucideIcon }[] = [
   { id: 'wallet', icon: Wallet },
   { id: 'wand-2', icon: Wand2 },
 ];
-
-    
