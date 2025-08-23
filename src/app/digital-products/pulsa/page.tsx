@@ -1,4 +1,5 @@
 
+import { PulsaTransactionForm } from "@/components/digital-products/pulsa/transaction-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Smartphone } from 'lucide-react';
 
@@ -12,17 +13,9 @@ export default function PulsaPage() {
       <p className="text-muted-foreground">
         Halaman ini sedang dalam pengembangan. Segera hadir!
       </p>
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Transaksi Pulsa</CardTitle>
-          <CardDescription>
-            Formulir untuk membeli pulsa akan tersedia di sini.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Placeholder for the transaction form */}
-        </CardContent>
-      </Card>
+      <div className="mt-6">
+        <PulsaTransactionForm />
+      </div>
     </div>
   );
 }
