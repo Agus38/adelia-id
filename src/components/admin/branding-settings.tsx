@@ -20,6 +20,8 @@ import { Logo } from '../icons';
 import { ScrollArea } from '../ui/scroll-area';
 import { Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import Image from 'next/image';
 
 const iconList = allIconsMap.reduce((acc, item) => {
     if (item.icon && typeof item.icon.displayName === 'string' && !acc.find(i => i.name === item.icon.displayName)) {
@@ -31,7 +33,10 @@ const iconList = allIconsMap.reduce((acc, item) => {
 
 export function BrandingSettings() {
   const [appName, setAppName] = useState('Adelia-ID');
+  const [logoType, setLogoType] = useState<'icon' | 'image'>('icon');
   const [appIcon, setAppIcon] = useState<LucideIcon>(() => Logo);
+  const [appImageUrl, setAppImageUrl] = useState('');
+  
   const [isIconPickerOpen, setIconPickerOpen] = useState(false);
   const [iconSearchTerm, setIconSearchTerm] = useState("");
 
@@ -42,7 +47,7 @@ export function BrandingSettings() {
 
   const handleSaveChanges = () => {
     // NOTE: Mock implementation. In a real app, you would save this to a database or config file.
-    console.log('Saving changes:', { appName, appIcon: (appIcon as any).displayName });
+    console.log('Saving changes:', { appName, logoType, appIcon: (appIcon as any).displayName, appImageUrl });
     toast({
       title: 'Perubahan Disimpan!',
       description: 'Pengaturan tampilan aplikasi telah berhasil diperbarui.',
@@ -61,7 +66,7 @@ export function BrandingSettings() {
         <CardHeader>
           <CardTitle>Identitas Aplikasi</CardTitle>
           <CardDescription>
-            Atur nama dan ikon aplikasi yang akan ditampilkan di header.
+            Atur nama dan logo aplikasi yang akan ditampilkan di header.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -73,18 +78,58 @@ export function BrandingSettings() {
               onChange={(e) => setAppName(e.target.value)}
             />
           </div>
-          <div className="space-y-2">
-            <Label>Ikon Aplikasi</Label>
-            <div className='flex items-center gap-4'>
-                <div className="flex h-20 w-full items-center justify-center rounded-md border border-dashed">
-                    <div className="flex items-center gap-3 text-lg font-semibold text-primary">
-                        <AppIcon className="h-7 w-7" />
-                        <span>{appName}</span>
-                    </div>
+
+          <div className="space-y-4">
+            <Label>Jenis Logo</Label>
+            <RadioGroup value={logoType} onValueChange={(value: 'icon' | 'image') => setLogoType(value)} className="flex gap-4">
+                 <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="icon" id="r1" />
+                    <Label htmlFor="r1">Ikon</Label>
                 </div>
-                 <Button variant="outline" onClick={() => setIconPickerOpen(true)}>
-                    Ganti Ikon
-                </Button>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="image" id="r2" />
+                    <Label htmlFor="r2">URL Gambar</Label>
+                </div>
+            </RadioGroup>
+          </div>
+
+          {logoType === 'icon' ? (
+             <div className="space-y-2">
+                <Label>Ikon Aplikasi</Label>
+                <div className='flex items-center gap-4'>
+                    <div className="flex h-20 w-full items-center justify-center rounded-md border border-dashed">
+                        <div className="flex items-center gap-3 text-lg font-semibold text-primary">
+                            <AppIcon className="h-7 w-7" />
+                        </div>
+                    </div>
+                    <Button variant="outline" onClick={() => setIconPickerOpen(true)}>
+                        Ganti Ikon
+                    </Button>
+                </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+                <Label htmlFor="imageUrl">URL Logo Gambar</Label>
+                <Input
+                    id="imageUrl"
+                    value={appImageUrl}
+                    onChange={(e) => setAppImageUrl(e.target.value)}
+                    placeholder="https://example.com/logo.png"
+                />
+            </div>
+          )}
+          
+           <div className="space-y-2">
+             <Label>Pratinjau Header</Label>
+            <div className="flex h-20 w-full items-center justify-center rounded-md border border-dashed">
+                <div className="flex items-center gap-3 text-lg font-semibold text-primary">
+                    {logoType === 'icon' ? (
+                        <AppIcon className="h-7 w-7" />
+                    ) : (
+                        appImageUrl && <Image src={appImageUrl} alt="App Logo Preview" width={32} height={32} className="h-8 w-8 object-contain" />
+                    )}
+                    <span>{appName}</span>
+                </div>
             </div>
           </div>
         </CardContent>
