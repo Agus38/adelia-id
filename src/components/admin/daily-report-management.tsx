@@ -423,8 +423,8 @@ export function DailyReportManagement() {
                     <div className="space-y-2">
                         <h3 className="font-semibold text-base">Ringkasan Finansial</h3>
                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm p-4 border rounded-lg">
-                            <p className="text-muted-foreground">Status:</p>
-                            <p className="font-semibold text-right"><Badge variant={statusBadgeVariant[selectedReport.status]}>{statusText[selectedReport.status]}</Badge></p>
+                            <div className="text-muted-foreground">Status:</div>
+                            <div className="font-semibold text-right"><Badge variant={statusBadgeVariant[selectedReport.status]}>{statusText[selectedReport.status]}</Badge></div>
                             <p className="text-muted-foreground">Omset Bersih:</p>
                             <p className="font-semibold text-right">{formatCurrency(selectedReport.omsetBersih)}</p>
                              <p className="text-muted-foreground">Modal Awal:</p>
@@ -525,3 +525,5 @@ export function DailyReportManagement() {
     </>
   );
 }
+
+    
