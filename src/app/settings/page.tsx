@@ -3,7 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { PasswordForm } from "@/components/profile/password-form";
 import { Sessions } from "@/components/profile/sessions";
-import { Settings }_from_ 'lucide-react';
+import { Settings } from 'lucide-react';
 
 export default function SettingsProfilePage() {
   return (
