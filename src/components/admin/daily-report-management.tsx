@@ -43,6 +43,7 @@ import {
   TrendingUp,
   TrendingDown,
   Receipt,
+  Filter,
 } from 'lucide-react';
 import {
   Dialog,
@@ -60,6 +61,10 @@ import { getReports, deleteReport, listeners } from '@/lib/report-store';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import Link from 'next/link';
 import { Separator } from '../ui/separator';
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
+
 
 export interface DailyReport {
   id: string;
@@ -140,11 +145,6 @@ export function DailyReportManagement() {
     setDeleteDialogOpen(false);
   }
 
-  const totalOmsetBersih = React.useMemo(() => data.reduce((sum, report) => sum + report.omsetBersih, 0), [data]);
-  const totalPajak = React.useMemo(() => data.reduce((sum, report) => sum + report.details.pajak, 0), [data]);
-  const totalOmsetKotor = totalOmsetBersih + totalPajak;
-  const totalPengeluaran = React.useMemo(() => data.reduce((sum, report) => sum + report.details.pengeluaran.reduce((subSum, item) => subSum + item.value, 0), 0), [data]);
-  
   const columns: ColumnDef<DailyReport>[] = [
     {
       id: 'select',
@@ -237,6 +237,60 @@ export function DailyReportManagement() {
     },
   });
 
+  const [isFilteredTotalActive, setFilteredTotalActive] = React.useState(false);
+  const [selectedMonth, setSelectedMonth] = React.useState('all');
+  const [selectedYear, setSelectedYear] = React.useState('all');
+
+  React.useEffect(() => {
+    const filteredData = data.filter(report => {
+        const reportMonth = (report.date.getMonth() + 1).toString();
+        const reportYear = report.date.getFullYear().toString();
+        const monthMatch = selectedMonth === 'all' || reportMonth === selectedMonth;
+        const yearMatch = selectedYear === 'all' || reportYear === selectedYear;
+        return monthMatch && yearMatch;
+    });
+    table.setGlobalFilter(globalFilter); // Re-apply global filter on date change
+    // This is a bit of a hack to re-filter the table when date filters change
+    // by triggering a state update on the table itself.
+    if (table.getState().globalFilter !== globalFilter) {
+      table.setGlobalFilter(globalFilter);
+    }
+  }, [selectedMonth, selectedYear, data, globalFilter, table]);
+  
+  const getYears = React.useMemo(() => {
+    const years = new Set(data.map(report => report.date.getFullYear().toString()));
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [data]);
+  
+  const months = [
+    { value: '1', label: 'Januari' }, { value: '2', label: 'Februari' }, { value: '3', label: 'Maret' },
+    { value: '4', label: 'April' }, { value: '5', label: 'Mei' }, { value: '6', label: 'Juni' },
+    { value: '7', label: 'Juli' }, { value: '8', label: 'Agustus' }, { value: '9', label: 'September' },
+    { value: '10', label: 'Oktober' }, { value: '11', label: 'November' }, { value: '12', label: 'Desember' }
+  ];
+
+
+  const dataForTotals = isFilteredTotalActive ? table.getFilteredRowModel().rows.map(row => row.original) : data;
+
+  const totalOmsetBersih = React.useMemo(() => dataForTotals.reduce((sum, report) => sum + report.omsetBersih, 0), [dataForTotals]);
+  const totalPajak = React.useMemo(() => dataForTotals.reduce((sum, report) => sum + report.details.pajak, 0), [dataForTotals]);
+  const totalOmsetKotor = totalOmsetBersih + totalPajak;
+  const totalPengeluaran = React.useMemo(() => dataForTotals.reduce((sum, report) => sum + report.details.pengeluaran.reduce((subSum, item) => subSum + item.value, 0), 0), [dataForTotals]);
+
+  // Apply date filters to the main table data
+  const filteredTableData = React.useMemo(() => {
+    return data.filter(report => {
+        const reportMonth = (report.date.getMonth() + 1).toString();
+        const reportYear = report.date.getFullYear().toString();
+        const monthMatch = selectedMonth === 'all' || reportMonth === selectedMonth;
+        const yearMatch = selectedYear === 'all' || reportYear === selectedYear;
+        return monthMatch && yearMatch;
+    });
+  }, [data, selectedMonth, selectedYear]);
+
+  table.setOptions(prev => ({ ...prev, data: filteredTableData }));
+
+
   return (
     <>
     <div className="space-y-4">
@@ -249,7 +303,7 @@ export function DailyReportManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalOmsetBersih)}</div>
-            <p className="text-xs text-muted-foreground">Dari semua laporan yang tersimpan</p>
+            <p className="text-xs text-muted-foreground">Dari {isFilteredTotalActive ? 'laporan yang difilter' : 'semua laporan'}</p>
           </CardContent>
         </Card>
         <Card>
@@ -259,7 +313,7 @@ export function DailyReportManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalOmsetKotor)}</div>
-             <p className="text-xs text-muted-foreground">Termasuk pajak</p>
+             <p className="text-xs text-muted-foreground">{isFilteredTotalActive ? 'Termasuk pajak dari filter' : 'Termasuk pajak'}</p>
           </CardContent>
         </Card>
         <Card>
@@ -269,7 +323,7 @@ export function DailyReportManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalPajak)}</div>
-            <p className="text-xs text-muted-foreground">Dari semua laporan yang tersimpan</p>
+            <p className="text-xs text-muted-foreground">Dari {isFilteredTotalActive ? 'laporan yang difilter' : 'semua laporan'}</p>
           </CardContent>
         </Card>
         <Card>
@@ -279,23 +333,43 @@ export function DailyReportManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalPengeluaran)}</div>
-            <p className="text-xs text-muted-foreground">Dari semua laporan yang tersimpan</p>
+            <p className="text-xs text-muted-foreground">Dari {isFilteredTotalActive ? 'laporan yang difilter' : 'semua laporan'}</p>
           </CardContent>
         </Card>
       </div>
 
-       <div className="flex items-center justify-between pt-4">
-          <div className="flex flex-1 items-center space-x-2">
+       <div className="flex flex-col md:flex-row items-center justify-between pt-4 gap-4">
+          <div className="flex flex-1 flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2 w-full">
             <Input
               placeholder="Cari ID, shift, atau tanggal..."
               value={globalFilter ?? ''}
               onChange={(event) =>
                 setGlobalFilter(event.target.value)
               }
-              className="max-w-sm"
+              className="w-full md:max-w-xs"
             />
+            <div className="flex w-full md:w-auto items-center gap-2">
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger className="flex-1 md:w-[130px]">
+                        <SelectValue placeholder="Pilih Bulan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Semua Bulan</SelectItem>
+                        {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="flex-1 md:w-[110px]">
+                        <SelectValue placeholder="Pilih Tahun" />
+                    </SelectTrigger>
+                    <SelectContent>
+                         <SelectItem value="all">Semua Tahun</SelectItem>
+                        {getYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
@@ -325,10 +399,14 @@ export function DailyReportManagement() {
             <Button asChild>
               <Link href="/laporan-smw-merr">
                  <PlusCircle className="mr-2 h-4 w-4" />
-                 Tambah Laporan
+                 Tambah
               </Link>
             </Button>
           </div>
+        </div>
+        <div className="flex items-center space-x-2 pt-2">
+            <Switch id="filtered-total-switch" checked={isFilteredTotalActive} onCheckedChange={setFilteredTotalActive} />
+            <Label htmlFor="filtered-total-switch">Kalkulasi Total Berdasarkan Filter</Label>
         </div>
       <div className="rounded-md border">
         <Table>
