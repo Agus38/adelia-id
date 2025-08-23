@@ -39,6 +39,7 @@ import {
   FileCheck,
   FileX,
   Eye,
+  Trash2,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import {
@@ -53,10 +54,13 @@ import { Input } from '../ui/input';
 import { Checkbox } from '../ui/checkbox';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { getReports, deleteReport, updateReportStatus, listeners } from '@/lib/report-store';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import Link from 'next/link';
 
-type ReportStatus = 'pending' | 'approved' | 'rejected';
+export type ReportStatus = 'pending' | 'approved' | 'rejected';
 
-type DailyReport = {
+export interface DailyReport {
   id: string;
   date: Date;
   shift: 'pagi' | 'sore';
@@ -65,54 +69,6 @@ type DailyReport = {
   createdBy: string;
   status: ReportStatus;
 };
-
-const mockData: DailyReport[] = [
-  {
-    id: 'RPT-001',
-    date: new Date('2024-07-23'),
-    shift: 'pagi',
-    omsetBersih: 5250000,
-    totalSetor: 4850000,
-    createdBy: 'Adelia',
-    status: 'approved',
-  },
-  {
-    id: 'RPT-002',
-    date: new Date('2024-07-23'),
-    shift: 'sore',
-    omsetBersih: 6100000,
-    totalSetor: 5950000,
-    createdBy: 'Budi',
-    status: 'pending',
-  },
-  {
-    id: 'RPT-003',
-    date: new Date('2024-07-22'),
-    shift: 'pagi',
-    omsetBersih: 4800000,
-    totalSetor: 4500000,
-    createdBy: 'Adelia',
-    status: 'rejected',
-  },
-  {
-    id: 'RPT-004',
-    date: new Date('2024-07-22'),
-    shift: 'sore',
-    omsetBersih: 5500000,
-    totalSetor: 5100000,
-    createdBy: 'Citra',
-    status: 'approved',
-  },
-  {
-    id: 'RPT-005',
-    date: new Date('2024-07-21'),
-    shift: 'pagi',
-    omsetBersih: 7200000,
-    totalSetor: 6900000,
-    createdBy: 'Adelia',
-    status: 'pending',
-  },
-];
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('id-ID', {
@@ -143,18 +99,44 @@ const ClientDate = ({ date }: { date: Date }) => {
 };
 
 export function DailyReportManagement() {
-  const [data] = React.useState(() => [...mockData]);
+  const [data, setData] = React.useState(() => getReports());
+
+  React.useEffect(() => {
+    const unsubscribe = listeners.subscribe(setData);
+    return () => unsubscribe();
+  }, []);
+
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  
   const [isDetailModalOpen, setDetailModalOpen] = React.useState(false);
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+
   const [selectedReport, setSelectedReport] = React.useState<DailyReport | null>(null);
 
   const handleViewDetails = (report: DailyReport) => {
     setSelectedReport(report);
     setDetailModalOpen(true);
   };
+
+  const handleChangeStatus = (id: string, status: ReportStatus) => {
+    updateReportStatus(id, status);
+  }
+
+  const handleDeleteClick = (report: DailyReport) => {
+    setSelectedReport(report);
+    setDeleteDialogOpen(true);
+  }
+
+  const confirmDelete = () => {
+    if(selectedReport) {
+      deleteReport(selectedReport.id);
+    }
+    setDeleteDialogOpen(false);
+  }
   
   const columns: ColumnDef<DailyReport>[] = [
     {
@@ -227,13 +209,18 @@ export function DailyReportManagement() {
                 Lihat Detail
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleChangeStatus(report.id, 'approved')}>
                 <FileCheck className="mr-2 h-4 w-4" />
                 Setujui
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive focus:text-destructive">
+              <DropdownMenuItem onClick={() => handleChangeStatus(report.id, 'rejected')}>
                 <FileX className="mr-2 h-4 w-4" />
                 Tolak
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteClick(report)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Hapus
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -331,9 +318,11 @@ export function DailyReportManagement() {
                   })}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Tambah Laporan
+            <Button asChild>
+              <Link href="/laporan-smw-merr">
+                 <PlusCircle className="mr-2 h-4 w-4" />
+                 Tambah Laporan
+              </Link>
             </Button>
           </div>
         </div>
@@ -456,6 +445,21 @@ export function DailyReportManagement() {
             </DialogFooter>
         </DialogContent>
     </Dialog>
+
+     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
+            <AlertDialogDescription>
+                Tindakan ini tidak dapat dibatalkan. Ini akan menghapus laporan secara permanen dari daftar.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Lanjutkan</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }

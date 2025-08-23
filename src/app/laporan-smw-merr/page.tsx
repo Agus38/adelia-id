@@ -37,6 +37,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { addReport } from '@/lib/report-store';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 
 type ExtraField = {
@@ -52,7 +55,10 @@ type DeletionInfo = {
 
 export default function DailyReportPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
-  const [shift, setShift] = React.useState('pagi');
+  const [shift, setShift] = React.useState<'pagi' | 'sore'>('pagi');
+  const { toast } = useToast();
+  const router = useRouter();
+
 
   // Financial State
   const [modalAwal, setModalAwal] = React.useState(0);
@@ -107,6 +113,33 @@ export default function DailyReportPage() {
   const sisaOmset = omsetBersih - totalPengeluaran;
   const sisaOmsetPlusPajak = sisaOmset + pajak;
   const totalAkhir = sisaOmsetPlusPajak + modalAwal;
+
+  const handleSaveReport = () => {
+    if (!date || omsetBersih === 0) {
+       toast({
+        title: 'Data Tidak Lengkap',
+        description: 'Pastikan tanggal dan omset bersih telah diisi sebelum menyimpan.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    addReport({
+      date,
+      shift,
+      omsetBersih,
+      totalSetor: totalAkhir,
+      createdBy: 'Adelia', // Placeholder, replace with actual user later
+      status: 'pending',
+    });
+    
+    toast({
+      title: 'Laporan Disimpan!',
+      description: 'Laporan keuangan harian telah berhasil disimpan dan menunggu persetujuan.',
+    });
+
+    router.push('/admin/daily-reports');
+  };
   
   const handleAddExtraField = (type: 'pemasukan' | 'pengeluaran') => {
     const newField = { id: Date.now(), name: '', value: 0 };
@@ -282,7 +315,7 @@ ${pemasukanText}
               <Tabs
                 defaultValue="pagi"
                 className="w-full pt-2"
-                onValueChange={setShift}
+                onValueChange={(value) => setShift(value as 'pagi' | 'sore')}
                 value={shift}
               >
                 <TabsList className="grid w-full grid-cols-2">
@@ -385,7 +418,10 @@ ${pemasukanText}
           </div>
         </CardContent>
         <CardFooter className="flex justify-between gap-4">
-          <Button className="flex-1 bg-[#4560ec] hover:bg-[#4560ec]/90 text-white">
+          <Button
+            className="flex-1 bg-[#4560ec] hover:bg-[#4560ec]/90 text-white"
+            onClick={handleSaveReport}
+          >
             <Save className="mr-2 h-4 w-4" />
             Simpan
           </Button>
@@ -417,5 +453,3 @@ ${pemasukanText}
     </>
   );
 }
-
-    
