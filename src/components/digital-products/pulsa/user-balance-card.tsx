@@ -45,7 +45,8 @@ export function UserBalanceCard() {
             <AvatarFallback>{userInfo.avatarFallback}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-semibold text-base">{greeting} {userInfo.name}</p>
+            <p className="text-sm text-muted-foreground">{greeting}</p>
+            <p className="font-semibold text-base">{userInfo.name}</p>
             <p className="text-sm font-bold text-primary">{formatCurrency(userInfo.balance)}</p>
           </div>
         </div>
