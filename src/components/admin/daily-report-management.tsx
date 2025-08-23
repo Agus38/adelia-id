@@ -13,6 +13,7 @@ import {
   type ColumnFiltersState,
   type SortingState,
   type VisibilityState,
+  type FilterFn,
 } from '@tanstack/react-table';
 import {
   Table,
@@ -91,6 +92,17 @@ const ClientDate = ({ date }: { date: Date }) => {
   return <>{formattedDate}</>;
 };
 
+// Custom filter function for global search
+const globalFilterFn: FilterFn<DailyReport> = (row, columnId, value, addMeta) => {
+  const search = value.toLowerCase();
+
+  const reportId = row.original.id.toLowerCase();
+  const shift = row.original.shift.toLowerCase();
+  const date = format(row.original.date, 'd MMMM yyyy', { locale: id }).toLowerCase();
+  
+  return reportId.includes(search) || shift.includes(search) || date.includes(search);
+}
+
 export function DailyReportManagement() {
   const [data, setData] = React.useState(() => getReports());
 
@@ -104,6 +116,7 @@ export function DailyReportManagement() {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const [globalFilter, setGlobalFilter] = React.useState('');
   
   const [isDetailModalOpen, setDetailModalOpen] = React.useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -213,11 +226,14 @@ export function DailyReportManagement() {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: globalFilterFn,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      globalFilter,
     },
   });
 
@@ -271,10 +287,10 @@ export function DailyReportManagement() {
        <div className="flex items-center justify-between pt-4">
           <div className="flex flex-1 items-center space-x-2">
             <Input
-              placeholder="Cari berdasarkan ID atau pembuat..."
-              value={(table.getColumn('id')?.getFilterValue() as string) ?? ''}
+              placeholder="Cari ID, shift, atau tanggal..."
+              value={globalFilter ?? ''}
               onChange={(event) =>
-                table.getColumn('id')?.setFilterValue(event.target.value)
+                setGlobalFilter(event.target.value)
               }
               className="max-w-sm"
             />
