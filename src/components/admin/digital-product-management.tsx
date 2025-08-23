@@ -20,23 +20,40 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 
 // Mock data, to be replaced with API data from Digiflazz
 const mockProducts = {
-  pulsa: [
-    { id: 'p5', name: 'Telkomsel 5.000', price: 5200, status: 'Tersedia' },
-    { id: 'p10', name: 'Telkomsel 10.000', price: 10150, status: 'Tersedia' },
-    { id: 'ixl10', name: 'XL 10.000', price: 10500, status: 'Gangguan' },
-  ],
-  paketData: [
-    { id: 'd1', name: 'Internet 1GB/7 Hari', price: 15000, status: 'Tersedia' },
-    { id: 'd5', name: 'Internet 5GB/30 Hari', price: 50000, status: 'Tersedia' },
-  ],
-  tokenListrik: [
+  pulsa: {
+    Telkomsel: [
+        { id: 'p5', name: 'Telkomsel 5.000', price: 5200, status: 'Tersedia' },
+        { id: 'p10', name: 'Telkomsel 10.000', price: 10150, status: 'Tersedia' },
+    ],
+    XL: [
+        { id: 'ixl10', name: 'XL 10.000', price: 10500, status: 'Gangguan' },
+    ],
+    Indosat: [],
+    Axis: [],
+  },
+  paketData: {
+    Telkomsel: [
+        { id: 'd1', name: 'Internet 1GB/7 Hari', price: 15000, status: 'Tersedia' },
+    ],
+    XL: [
+        { id: 'd5', name: 'Internet 5GB/30 Hari', price: 50000, status: 'Tersedia' },
+    ],
+    Indosat: [],
+    Axis: [],
+  },
+  tokenListrik: [ // No sub-categories needed for this one
     { id: 'pln20', name: 'Token Listrik 20.000', price: 20000, status: 'Tersedia' },
     { id: 'pln50', name: 'Token Listrik 50.000', price: 50000, status: 'Tersedia' },
   ],
-  game: [
-    { id: 'ml100', name: 'Mobile Legends 100 Diamond', price: 28000, status: 'Tersedia' },
-    { id: 'uc60', name: 'PUBG Mobile 60 UC', price: 14500, status: 'Tersedia' },
-  ],
+  game: {
+    'Mobile Legends': [
+        { id: 'ml100', name: '100 Diamond', price: 28000, status: 'Tersedia' },
+    ],
+    'PUBG Mobile': [
+        { id: 'uc60', name: '60 UC', price: 14500, status: 'Tersedia' },
+    ],
+    'Free Fire': [],
+  },
 };
 
 type Product = {
@@ -62,7 +79,7 @@ const ProductTable = ({ products }: { products: Product[] }) => (
         </TableRow>
       </TableHeader>
       <TableBody>
-        {products.map((product) => (
+        {products.length > 0 ? products.map((product) => (
           <TableRow key={product.id}>
             <TableCell className="font-mono">{product.id}</TableCell>
             <TableCell className="font-medium">{product.name}</TableCell>
@@ -89,11 +106,38 @@ const ProductTable = ({ products }: { products: Product[] }) => (
                 </DropdownMenu>
             </TableCell>
           </TableRow>
-        ))}
+        )) : (
+            <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    Tidak ada produk untuk sub-kategori ini.
+                </TableCell>
+            </TableRow>
+        )}
       </TableBody>
     </Table>
   </div>
 );
+
+const SubCategoryTabs = ({ categoryData }: { categoryData: Record<string, Product[]> }) => {
+    const subCategories = Object.keys(categoryData);
+    if (!subCategories.length) return null;
+
+    return (
+        <Tabs defaultValue={subCategories[0]} className="w-full">
+            <TabsList>
+                {subCategories.map(subCategory => (
+                     <TabsTrigger key={subCategory} value={subCategory}>{subCategory}</TabsTrigger>
+                ))}
+            </TabsList>
+            {subCategories.map(subCategory => (
+                <TabsContent key={subCategory} value={subCategory} className="pt-4">
+                    <ProductTable products={categoryData[subCategory]} />
+                </TabsContent>
+            ))}
+        </Tabs>
+    )
+};
+
 
 export function DigitalProductManagement() {
   return (
@@ -113,16 +157,16 @@ export function DigitalProductManagement() {
             <TabsTrigger value="game">Game</TabsTrigger>
           </TabsList>
           <TabsContent value="pulsa" className="pt-6">
-            <ProductTable products={mockProducts.pulsa} />
+            <SubCategoryTabs categoryData={mockProducts.pulsa} />
           </TabsContent>
           <TabsContent value="paketData" className="pt-6">
-            <ProductTable products={mockProducts.paketData} />
+            <SubCategoryTabs categoryData={mockProducts.paketData} />
           </TabsContent>
           <TabsContent value="tokenListrik" className="pt-6">
             <ProductTable products={mockProducts.tokenListrik} />
           </TabsContent>
           <TabsContent value="game" className="pt-6">
-            <ProductTable products={mockProducts.game} />
+             <SubCategoryTabs categoryData={mockProducts.game} />
           </TabsContent>
         </Tabs>
       </CardContent>
