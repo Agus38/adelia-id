@@ -65,7 +65,8 @@ import {
   CreditCard,
   Users2,
   Palette,
-  PanelLeft
+  PanelLeft,
+  Smartphone,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -93,6 +94,12 @@ export const menuItems: MenuItem[] = [
     title: 'Laporan Harian',
     href: '/laporan-smw-merr',
     icon: MessageSquare,
+  },
+  {
+    id: 'digital-products',
+    title: 'Produk Digital',
+    href: '/digital-products',
+    icon: Wallet,
   },
   {
     id: 'stok-produk',
@@ -197,6 +204,14 @@ export const adminMenuItems: MenuItem[] = [
     access: 'admin',
   },
   {
+    id: 'digiflazz-integration',
+    title: 'Integrasi Digiflazz',
+    href: '/admin/digiflazz',
+    icon: CreditCard,
+    description: 'Kelola koneksi API dan sinkronisasi produk.',
+    access: 'admin',
+  },
+  {
     id: 'menu-management',
     title: 'Manajemen Menu',
     href: '/admin/menus',
@@ -269,6 +284,13 @@ export const allMenuItems: MenuItem[] = [
     title: 'Laporan Harian',
     href: '/laporan-smw-merr',
     icon: MessageSquare,
+    access: 'all',
+  },
+  {
+    id: 'digital-products-sidebar',
+    title: 'Produk Digital',
+    href: '/digital-products',
+    icon: Wallet,
     access: 'all',
   },
   {
@@ -353,6 +375,7 @@ export const allIconsMap: { id: string, icon: LucideIcon }[] = [
   { id: 'settings', icon: Settings },
   { id: 'settings-2', icon: Settings2 },
   { id: 'shield', icon: Shield },
+  { id: 'smartphone', icon: Smartphone },
   { id: 'sprout', icon: Sprout },
   { id: 'star', icon: Star },
   { id: 'sun', icon: Sun },
