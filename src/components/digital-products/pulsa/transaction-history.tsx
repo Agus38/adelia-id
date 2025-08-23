@@ -185,7 +185,7 @@ export function TransactionHistory() {
             <Button variant="outline" onClick={() => setDetailOpen(false)}>
                 <X className="mr-2 h-4 w-4"/> Tutup
             </Button>
-            <Button>
+            <Button disabled={selectedTx?.status !== 'Berhasil'}>
                 <Receipt className="mr-2 h-4 w-4"/> Cetak Struk
             </Button>
           </DialogFooter>
