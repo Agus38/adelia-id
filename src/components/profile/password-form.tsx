@@ -17,9 +17,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { toast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card"
+import { supabase } from "@/lib/supabaseClient"
+import { Loader2 } from "lucide-react"
 
 const passwordFormSchema = z.object({
-  currentPassword: z.string().min(1, {message: "Kata sandi saat ini diperlukan."}),
+  // We remove currentPassword as it's not needed for Supabase's updateUser method for password changes
   newPassword: z.string().min(8, {message: "Kata sandi baru minimal 8 karakter."}),
   confirmPassword: z.string(),
 }).refine(data => data.newPassword === data.confirmPassword, {
@@ -30,7 +32,6 @@ const passwordFormSchema = z.object({
 type PasswordFormValues = z.infer<typeof passwordFormSchema>
 
 const defaultValues: Partial<PasswordFormValues> = {
-    currentPassword: "",
     newPassword: "",
     confirmPassword: ""
 }
@@ -41,12 +42,24 @@ export function PasswordForm() {
     defaultValues,
   })
 
-  function onSubmit(data: PasswordFormValues) {
-    console.log(data);
-    toast({
-      title: "Kata Sandi Diperbarui",
-      description: "Kata sandi Anda telah berhasil diubah.",
-    })
+  async function onSubmit(data: PasswordFormValues) {
+    const { error } = await supabase.auth.updateUser({
+      password: data.newPassword
+    });
+    
+    if (error) {
+       toast({
+        title: "Error",
+        description: "Gagal memperbarui kata sandi: " + error.message,
+        variant: "destructive"
+      })
+    } else {
+       toast({
+        title: "Kata Sandi Diperbarui",
+        description: "Kata sandi Anda telah berhasil diubah.",
+      })
+      form.reset();
+    }
   }
 
   return (
@@ -55,22 +68,9 @@ export function PasswordForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <CardHeader>
                 <CardTitle>Ubah Kata Sandi</CardTitle>
-                <CardDescription>Ganti kata sandi Anda di sini. Setelah menyimpan, Anda akan keluar dari sesi ini.</CardDescription>
+                <CardDescription>Ganti kata sandi Anda di sini. Untuk keamanan, sebaiknya keluar setelah mengubah kata sandi.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <FormField
-                    control={form.control}
-                    name="currentPassword"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Kata Sandi Saat Ini</FormLabel>
-                        <FormControl>
-                            <Input type="password" placeholder="Masukkan kata sandi saat ini" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
                 <FormField
                     control={form.control}
                     name="newPassword"
@@ -99,7 +99,10 @@ export function PasswordForm() {
                 />
             </CardContent>
             <CardFooter>
-                 <Button type="submit">Perbarui Kata Sandi</Button>
+                 <Button type="submit" disabled={form.formState.isSubmitting}>
+                   {form.formState.isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                   Perbarui Kata Sandi
+                 </Button>
             </CardFooter>
         </form>
       </Form>
