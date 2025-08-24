@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,13 +14,19 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, Copy } from 'lucide-react';
 import { Separator } from '../ui/separator';
 
 export function DigiflazzIntegration() {
   const [username, setUsername] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState('');
+
+  useEffect(() => {
+    // This runs on the client, so window is available.
+    setWebhookUrl(`${window.location.origin}/api/webhooks/digiflazz`);
+  }, []);
   
   const handleSaveChanges = () => {
     // NOTE: Mock implementation. In a real app, you would save this to a secure config.
@@ -44,69 +50,115 @@ export function DigiflazzIntegration() {
     }, 2000);
   }
 
+  const handleCopyWebhookUrl = () => {
+    navigator.clipboard.writeText(webhookUrl);
+    toast({
+      title: 'URL Webhook Disalin!',
+      description: 'URL telah disalin ke clipboard Anda.',
+    });
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
+    <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-1">
+                <CardHeader>
+                    <CardTitle>Pengaturan API</CardTitle>
+                    <CardDescription>
+                    Masukkan kredensial API Anda untuk terhubung ke layanan Digiflazz.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="username">Username</Label>
+                        <Input
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Username Digiflazz Anda"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="apiKey">Production API Key</Label>
+                        <Input
+                        id="apiKey"
+                        type="password"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        placeholder="••••••••••••••••••••"
+                        />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSaveChanges}>Simpan Kredensial</Button>
+                </CardFooter>
+            </Card>
+            <Card className="lg:col-span-2">
+                <CardHeader>
+                    <CardTitle>Sinkronisasi Produk</CardTitle>
+                    <CardDescription>
+                    Tarik daftar produk terbaru dari Digiflazz ke database lokal Anda.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
+                        <p className="text-sm font-medium">Status Sinkronisasi</p>
+                        <p className="text-sm text-muted-foreground">
+                        Terakhir sinkronisasi: - <br/>
+                        Total produk: 0 (Pulsa), 0 (Paket Data), 0 (Token Listrik), 0 (Game)
+                        </p>
+                    </div>
+                    <Separator className="my-6" />
+                    <p className="text-sm text-muted-foreground">
+                        Menekan tombol di bawah ini akan memulai proses sinkronisasi di latar belakang. Ini mungkin memerlukan beberapa menit. Produk yang ada akan diperbarui dan produk baru akan ditambahkan.
+                    </p>
+                </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSyncProducts} disabled={isSyncing}>
+                        {isSyncing ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                        )}
+                        {isSyncing ? 'Menyinkronkan...' : 'Mulai Sinkronisasi'}
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+        <Card>
             <CardHeader>
-                <CardTitle>Pengaturan API</CardTitle>
+                <CardTitle>Pengaturan Webhook</CardTitle>
                 <CardDescription>
-                Masukkan kredensial API Anda untuk terhubung ke layanan Digiflazz.
+                    Gunakan URL ini untuk mengizinkan Digiflazz mengirim pembaruan status transaksi secara real-time ke aplikasi Anda.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Username Digiflazz Anda"
-                    />
+                <div>
+                    <Label htmlFor="webhookUrl">URL Webhook Anda</Label>
+                    <div className="flex gap-2 mt-2">
+                        <Input id="webhookUrl" value={webhookUrl} readOnly />
+                        <Button variant="outline" size="icon" onClick={handleCopyWebhookUrl}>
+                            <Copy className="h-4 w-4" />
+                            <span className="sr-only">Salin URL</span>
+                        </Button>
+                    </div>
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="apiKey">Production API Key</Label>
-                    <Input
-                    id="apiKey"
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="••••••••••••••••••••"
-                    />
-                </div>
-            </CardContent>
-            <CardFooter>
-                <Button onClick={handleSaveChanges}>Simpan Kredensial</Button>
-            </CardFooter>
-        </Card>
-        <Card className="lg:col-span-2">
-            <CardHeader>
-                <CardTitle>Sinkronisasi Produk</CardTitle>
-                <CardDescription>
-                Tarik daftar produk terbaru dari Digiflazz ke database lokal Anda.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
-                    <p className="text-sm font-medium">Status Sinkronisasi</p>
-                    <p className="text-sm text-muted-foreground">
-                       Terakhir sinkronisasi: - <br/>
-                       Total produk: 0 (Pulsa), 0 (Paket Data), 0 (Token Listrik), 0 (Game)
+                 <div>
+                    <Label>Kunci Rahasia Webhook (Signature)</Label>
+                    <Input value="Rahasia Anda dari dashboard Digiflazz" readOnly disabled className="mt-2" />
+                     <p className="text-xs text-muted-foreground mt-2">
+                        Masukkan kunci rahasia ini di file environment Anda untuk memverifikasi permintaan webhook.
                     </p>
                 </div>
-                 <Separator className="my-6" />
-                 <p className="text-sm text-muted-foreground">
-                    Menekan tombol di bawah ini akan memulai proses sinkronisasi di latar belakang. Ini mungkin memerlukan beberapa menit. Produk yang ada akan diperbarui dan produk baru akan ditambahkan.
-                 </p>
             </CardContent>
-            <CardFooter>
-                <Button onClick={handleSyncProducts} disabled={isSyncing}>
-                    {isSyncing ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                    )}
-                    {isSyncing ? 'Menyinkronkan...' : 'Mulai Sinkronisasi'}
-                </Button>
+            <CardFooter className="flex-col items-start gap-2 border-t pt-6 text-sm text-muted-foreground">
+                <p className="font-semibold">Cara Menggunakan:</p>
+                <ul className="list-disc list-inside space-y-1">
+                    <li>Salin URL Webhook di atas.</li>
+                    <li>Masuk ke akun Digiflazz Anda dan navigasikan ke pengaturan developer atau API.</li>
+                    <li>Tempelkan URL di kolom "URL Webhook" yang tersedia.</li>
+                    <li>Simpan perubahan di dashboard Digiflazz.</li>
+                </ul>
             </CardFooter>
         </Card>
     </div>
