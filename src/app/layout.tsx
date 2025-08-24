@@ -26,12 +26,13 @@ export default function RootLayout({
   const [user, setUser] = useState<UserProfile | null>(null);
 
   const fetchUserProfile = async (authUser: User) => {
-    const { data: profile, error } = await supabase
+    const { data: profileData, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', authUser.id)
-      .single();
+      .eq('id', authUser.id);
     
+    const profile = profileData ? profileData[0] : null;
+
     if (error) {
       console.error('Error fetching profile:', error.message);
       // Fallback to auth user metadata if profile fetch fails
