@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -68,39 +67,30 @@ CREATE TABLE profiles (
   role TEXT NOT NULL DEFAULT 'Pengguna'
 );
 
--- Kebijakan Keamanan untuk tabel Profil
--- 1. Pengguna dapat melihat semua profil (jika diperlukan untuk fitur seperti daftar tim).
+-- Kebijakan Keamanan (RLS) untuk tabel Profil
+-- 1. Izinkan pengguna untuk membaca semua profil. Ini berguna untuk fitur seperti daftar tim.
 CREATE POLICY "Public profiles are viewable by everyone."
   ON profiles FOR SELECT
   USING ( true );
 
--- 2. Pengguna hanya dapat menyisipkan profil mereka sendiri.
+-- 2. Izinkan pengguna untuk membuat profil mereka sendiri.
 CREATE POLICY "Users can insert their own profile."
   ON profiles FOR INSERT
   WITH CHECK ( auth.uid() = id );
 
--- 3. Pengguna hanya dapat memperbarui profil mereka sendiri.
+-- 3. Izinkan pengguna untuk memperbarui profil mereka sendiri.
 CREATE POLICY "Users can update their own profile."
   ON profiles FOR UPDATE
   USING ( auth.uid() = id );
 
--- Aktifkan Row Level Security (RLS) untuk tabel profil
+-- Aktifkan Row Level Security (RLS) untuk tabel profiles
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
--- Fungsi ini membuat baris di tabel profil publik untuk setiap pengguna baru
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name, avatar_url, role)
-  VALUES (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url', 'Pengguna');
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger yang memanggil fungsi handle_new_user setiap kali pengguna baru dibuat
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+-- Catatan: Tidak ada lagi trigger handle_new_user().
+-- Pembuatan profil pengguna (INSERT ke tabel 'profiles')
+-- sebaiknya ditangani dari sisi aplikasi (client-side/server-side)
+-- setelah pengguna berhasil mendaftar (setelah auth.signUp() berhasil).
+-- Ini adalah pendekatan yang lebih modern dan fleksibel.
 
 
 -- ### APPLICATION DATA ###
@@ -147,19 +137,17 @@ CREATE TABLE app_config (
 
 -- Aktifkan RLS untuk app_config dan izinkan baca untuk semua
 ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
+
 CREATE POLICY "App config is viewable by everyone."
   ON app_config FOR SELECT
   USING ( true );
--- Hanya admin yang bisa mengubah konfigurasi (asumsi ada tabel 'roles' atau pengecekan peran di 'profiles')
+
+-- Hanya admin yang bisa mengubah konfigurasi.
+-- Pastikan kolom 'role' di tabel 'profiles' Anda sudah ada.
 CREATE POLICY "Only admins can modify app config."
   ON app_config FOR ALL
   USING ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'Admin' )
   WITH CHECK ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'Admin' );
-
--- Catatan:
--- Untuk kebijakan 'Only admins can modify app config.', Anda mungkin perlu menyesuaikannya
--- tergantung pada bagaimana Anda mengelola peran (roles). Contoh di atas mengasumsikan
--- ada kolom 'role' di tabel 'profiles' Anda.
 `.trim();
 
 const CodeBlock = ({ code, lang = 'bash' }: { code: string; lang?: string }) => {
