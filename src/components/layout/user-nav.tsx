@@ -24,7 +24,7 @@ export function UserNav() {
   if (!isLoggedIn) {
     return (
       <Link href="/login">
-        <Button>
+        <Button size="sm">
             <LogIn className="mr-2 h-4 w-4"/>
             Masuk
         </Button>
