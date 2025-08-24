@@ -53,10 +53,14 @@ export default function RegisterPage() {
         variant: 'destructive',
       });
     } else if (user) {
+      // Assign role based on email
+      const adminEmails = ['server64462@gmail.com', 'agushermanto38@gmail.com'];
+      const role = adminEmails.includes(email) ? 'Admin' : 'Pengguna';
+
       // Insert into public.profiles
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert({ id: user.id, full_name: name, role: 'Pengguna' });
+        .insert({ id: user.id, full_name: name, role: role });
       
       setIsLoading(false);
 
