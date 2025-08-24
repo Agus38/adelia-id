@@ -14,27 +14,26 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users } from 'lucide-react';
 import Link from 'next/link';
-import type { Dispatch, SetStateAction } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { useRouter } from 'next/navigation';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface UserNavProps {
-  isLoggedIn: boolean;
-  setIsLoggedIn: Dispatch<SetStateAction<boolean>>;
+  user: SupabaseUser | null;
 }
 
-export function UserNav({ isLoggedIn, setIsLoggedIn }: UserNavProps) {
+export function UserNav({ user }: UserNavProps) {
+  const router = useRouter();
 
-  // Simulate login on link click for demonstration
-  const handleLoginClick = () => {
-    // In a real app, you'd navigate and the login page logic would set the state.
-    // For now, we'll simulate a successful login after a delay.
-    setTimeout(() => {
-        setIsLoggedIn(true);
-    }, 500);
-  }
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
 
-  if (!isLoggedIn) {
+  if (!user) {
     return (
-      <Link href="/login" onClick={handleLoginClick}>
+      <Link href="/login">
         <Button size="sm" className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm">
             <LogIn className="mr-2 h-4 w-4"/>
             Masuk
@@ -48,17 +47,17 @@ export function UserNav({ isLoggedIn, setIsLoggedIn }: UserNavProps) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
           <Avatar className="h-9 w-9">
-            <AvatarImage src="https://placehold.co/100x100.png" alt="@adelia" data-ai-hint="user avatar" />
-            <AvatarFallback>A</AvatarFallback>
+            <AvatarImage src={user.user_metadata.avatar_url || 'https://placehold.co/100x100.png'} alt={user.user_metadata.full_name || user.email} data-ai-hint="user avatar" />
+            <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Adelia</p>
+            <p className="text-sm font-medium leading-none">{user.user_metadata.full_name || 'Pengguna'}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              adelia@example.com
+              {user.email}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -112,7 +111,7 @@ export function UserNav({ isLoggedIn, setIsLoggedIn }: UserNavProps) {
             </DropdownMenuItem>
           </Link>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => setIsLoggedIn(false)}>
+        <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Keluar</span>
         </DropdownMenuItem>
