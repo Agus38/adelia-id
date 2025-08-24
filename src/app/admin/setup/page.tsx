@@ -86,11 +86,35 @@ CREATE POLICY "Users can update their own profile."
 -- Aktifkan Row Level Security (RLS) untuk tabel profiles
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
--- Catatan: Tidak ada lagi trigger handle_new_user().
--- Pembuatan profil pengguna (INSERT ke tabel 'profiles')
--- sebaiknya ditangani dari sisi aplikasi (client-side/server-side)
--- setelah pengguna berhasil mendaftar (setelah auth.signUp() berhasil).
--- Ini adalah pendekatan yang lebih modern dan fleksibel.
+-- Fungsi ini secara otomatis membuat baris di tabel 'profiles' untuk setiap pengguna baru.
+-- Fungsi ini juga menetapkan peran 'Admin' jika email cocok dengan daftar yang ditentukan.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+DECLARE
+  user_role TEXT;
+BEGIN
+  -- Daftar email admin
+  IF new.email IN ('server64462@gmail.com', 'agushermanto38@gmail.com') THEN
+    user_role := 'Admin';
+  ELSE
+    user_role := 'Pengguna';
+  END IF;
+
+  INSERT INTO public.profiles (id, full_name, avatar_url, role)
+  VALUES (
+    new.id,
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'avatar_url',
+    user_role
+  );
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger yang memanggil fungsi di atas setiap kali pengguna baru mendaftar.
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 
 -- ### APPLICATION DATA ###

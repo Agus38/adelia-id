@@ -35,48 +35,31 @@ export default function RegisterPage() {
     }
     setIsLoading(true);
 
-    const { data: { user }, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: name,
+          avatar_url: `https://placehold.co/100x100.png?text=${name.charAt(0)}`, // Optional: pass avatar url
         },
       },
     });
 
+    setIsLoading(false);
+
     if (error) {
-      setIsLoading(false);
       toast({
         title: 'Pendaftaran Gagal',
         description: error.message,
         variant: 'destructive',
       });
-    } else if (user) {
-      // Assign role based on email
-      const adminEmails = ['server64462@gmail.com', 'agushermanto38@gmail.com'];
-      const role = adminEmails.includes(email) ? 'Admin' : 'Pengguna';
-
-      // Insert into public.profiles
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({ id: user.id, full_name: name, role: role });
-      
-      setIsLoading(false);
-
-      if(profileError) {
-         toast({
-          title: 'Error Membuat Profil',
-          description: profileError.message,
-          variant: 'destructive',
-        });
-      } else {
-         toast({
-          title: 'Pendaftaran Berhasil!',
-          description: 'Silakan periksa email Anda untuk verifikasi. Anda akan diarahkan ke halaman login.',
-        });
-        router.push('/login');
-      }
+    } else {
+      toast({
+        title: 'Pendaftaran Berhasil!',
+        description: 'Silakan periksa email Anda untuk verifikasi. Anda akan diarahkan ke halaman login.',
+      });
+      router.push('/login');
     }
   };
 
