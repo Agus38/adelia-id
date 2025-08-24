@@ -50,13 +50,14 @@ type Transaction = {
   price: number;
   status: TransactionStatus;
   paymentMethod: string;
+  sn?: string;
 };
 
 const mockTransactions: Transaction[] = [
-  { id: 'TRX123', date: new Date('2024-07-24T10:30:00'), product: 'Telkomsel 10.000', phoneNumber: '081234567890', price: 10500, status: 'Berhasil', paymentMethod: 'Saldo Aplikasi' },
-  { id: 'TRX124', date: new Date('2024-07-23T15:00:00'), product: 'XL 25.000', phoneNumber: '087812345678', price: 25100, status: 'Berhasil', paymentMethod: 'Saldo Aplikasi' },
+  { id: 'TRX123', date: new Date('2024-07-24T10:30:00'), product: 'Telkomsel 10.000', phoneNumber: '081234567890', price: 10500, status: 'Berhasil', paymentMethod: 'Saldo Aplikasi', sn: '85237465823465827364' },
+  { id: 'TRX124', date: new Date('2024-07-23T15:00:00'), product: 'XL 25.000', phoneNumber: '087812345678', price: 25100, status: 'Berhasil', paymentMethod: 'Saldo Aplikasi', sn: '98657453422187654321' },
   { id: 'TRX125', date: new Date('2024-07-22T08:45:00'), product: 'Indosat 5.000', phoneNumber: '085787654321', price: 5800, status: 'Gagal', paymentMethod: 'Saldo Aplikasi' },
-  { id: 'TRX126', date: new Date('2024-07-21T19:20:00'), product: 'Telkomsel 50.000', phoneNumber: '081234567890', price: 50000, status: 'Berhasil', paymentMethod: 'Saldo Aplikasi' },
+  { id: 'TRX126', date: new Date('2024-07-21T19:20:00'), product: 'Telkomsel 50.000', phoneNumber: '081234567890', price: 50000, status: 'Berhasil', paymentMethod: 'Saldo Aplikasi', sn: '85237465823465827365' },
   { id: 'TRX127', date: new Date('2024-07-20T11:10:00'), product: 'Tri 10.000', phoneNumber: '089611223344', price: 10900, status: 'Menunggu', paymentMethod: 'Saldo Aplikasi' },
 ];
 
@@ -100,7 +101,7 @@ export function TransactionHistory() {
                     p { text-align: center; margin: 0; font-size: 0.8rem; color: #777; }
                     hr { border: none; border-top: 1px dashed #ccc; margin: 20px 0; }
                     table { width: 100%; border-collapse: collapse; }
-                    td { padding: 5px 0; }
+                    td { padding: 5px 0; word-break: break-all; }
                     .label { color: #555; }
                     .value { text-align: right; font-weight: 500; }
                     .total .value { font-weight: bold; font-size: 1.1rem; }
@@ -120,6 +121,7 @@ export function TransactionHistory() {
                     <table>
                         <tr><td class="label">Produk</td><td class="value">${selectedTx.product}</td></tr>
                         <tr><td class="label">No. Tujuan</td><td class="value">${selectedTx.phoneNumber}</td></tr>
+                         ${selectedTx.sn ? `<tr><td class="label">SN</td><td class="value">${selectedTx.sn}</td></tr>` : ''}
                     </table>
                     <hr>
                      <table>
@@ -227,6 +229,12 @@ export function TransactionHistory() {
                           <span className="text-muted-foreground">Tanggal</span>
                           <span className="font-medium">{format(selectedTx.date, 'd MMM yyyy, HH:mm', { locale: id })}</span>
                       </div>
+                      {selectedTx.sn && (
+                         <div className="flex justify-between items-start">
+                            <span className="text-muted-foreground">SN</span>
+                            <span className="font-medium text-right max-w-[70%] break-all">{selectedTx.sn}</span>
+                        </div>
+                      )}
                   </div>
 
                   <div className="space-y-2">
@@ -271,7 +279,7 @@ export function TransactionHistory() {
                       <Receipt className="mr-2 h-4 w-4"/> Cetak Struk
                   </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
                   <AlertDialogHeader>
                       <AlertDialogTitle>Cetak Struk</AlertDialogTitle>
                       <AlertDialogDescription>
