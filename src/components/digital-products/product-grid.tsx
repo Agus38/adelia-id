@@ -20,7 +20,7 @@ const digitalProducts = [
     description: 'Beli paket internet untuk tetap terhubung.',
     href: '/digital-products/paket-data',
     icon: Wallet, // Using Wallet as a placeholder, could be Wifi icon
-    comingSoon: true,
+    comingSoon: false,
   },
   {
     id: 'token-listrik',
@@ -28,7 +28,7 @@ const digitalProducts = [
     description: 'Beli token listrik PLN prabayar dengan mudah.',
     href: '/digital-products/token-listrik',
     icon: Bolt,
-    comingSoon: true,
+    comingSoon: false,
   },
   {
     id: 'game',
