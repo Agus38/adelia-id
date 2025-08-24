@@ -22,6 +22,7 @@ import { Camera, Loader2 } from "lucide-react"
 import type { UserProfile } from "@/app/layout"
 import { supabase } from "@/lib/supabaseClient"
 import { useRouter } from "next/navigation"
+import { useRef, useState } from "react"
 
 const profileFormSchema = z.object({
   full_name: z.string().min(2, {
@@ -39,6 +40,9 @@ interface ProfileFormProps {
 
 export function ProfileForm({ user }: ProfileFormProps) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -57,6 +61,41 @@ export function ProfileForm({ user }: ProfileFormProps) {
       return email.charAt(0).toUpperCase();
     }
     return 'U';
+  }
+
+  const handleAvatarButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
+
+    if (uploadError) {
+        toast({
+            title: "Upload Gagal",
+            description: "Gagal mengunggah avatar: " + uploadError.message,
+            variant: "destructive"
+        });
+        setIsUploading(false);
+        return;
+    }
+
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+    if (data) {
+        form.setValue('avatar_url', data.publicUrl, { shouldDirty: true });
+        // Auto-save when avatar is changed
+        await onSubmit({ ...form.getValues(), avatar_url: data.publicUrl });
+    }
+    setIsUploading(false);
   }
 
   async function onSubmit(data: ProfileFormValues) {
@@ -95,13 +134,26 @@ export function ProfileForm({ user }: ProfileFormProps) {
                     <div className="flex items-center space-x-4">
                         <div className="relative">
                             <Avatar className="h-20 w-20">
-                                <AvatarImage src={user.avatar_url ?? undefined} alt={user.full_name || "User Avatar"} data-ai-hint="user avatar" />
+                                <AvatarImage src={form.watch('avatar_url') ?? undefined} alt={user.full_name || "User Avatar"} data-ai-hint="user avatar" />
                                 <AvatarFallback>{getAvatarFallback(user.full_name, user.email)}</AvatarFallback>
+                                 {isUploading && (
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
+                                        <Loader2 className="h-6 w-6 animate-spin text-white" />
+                                    </div>
+                                )}
                             </Avatar>
-                            <Button size="icon" className="absolute bottom-0 right-0 rounded-full h-7 w-7" type="button">
+                            <Button size="icon" className="absolute bottom-0 right-0 rounded-full h-7 w-7" type="button" onClick={handleAvatarButtonClick} disabled={isUploading}>
                                 <Camera className="h-4 w-4"/>
                                 <span className="sr-only">Ubah Foto</span>
                             </Button>
+                             <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleAvatarChange}
+                                className="hidden"
+                                accept="image/png, image/jpeg"
+                                disabled={isUploading}
+                            />
                         </div>
                          <div className="space-y-1">
                             <h3 className="font-semibold text-lg">{form.watch('full_name')}</h3>
@@ -136,8 +188,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
                      />
                 </CardContent>
                 <CardFooter>
-                    <Button type="submit" disabled={form.formState.isSubmitting}>
-                       {form.formState.isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                    <Button type="submit" disabled={form.formState.isSubmitting || isUploading}>
+                       {(form.formState.isSubmitting || isUploading) && <Loader2 className="mr-2 animate-spin" />}
                        Simpan Perubahan
                     </Button>
                 </CardFooter>
