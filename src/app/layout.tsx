@@ -33,14 +33,13 @@ export default function RootLayout({
           const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', session.user.id)
-            .single();
+            .eq('id', session.user.id);
           
           if (error) {
             console.error('Error fetching profile:', error.message);
             setUser(session.user); // Fallback to auth user
-          } else if (profile) {
-            setUser({ ...session.user, ...profile });
+          } else if (profile && profile.length > 0) {
+            setUser({ ...session.user, ...profile[0] });
           } else {
              // Profile not found, but no error. Fallback to auth user.
              // This can happen if the profile creation via trigger is delayed.
@@ -59,9 +58,13 @@ export default function RootLayout({
           const { data: profile } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', user.id)
-            .single();
-          setUser({ ...user, ...profile });
+            .eq('id', user.id);
+            
+          if (profile && profile.length > 0) {
+            setUser({ ...user, ...profile[0] });
+          } else {
+            setUser(user);
+          }
        }
     };
     checkUser();
