@@ -16,10 +16,10 @@ import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users 
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
+import type { UserProfile } from '@/app/layout';
 
 interface UserNavProps {
-  user: SupabaseUser | null;
+  user: UserProfile | null;
 }
 
 export function UserNav({ user }: UserNavProps) {
@@ -41,21 +41,31 @@ export function UserNav({ user }: UserNavProps) {
       </Link>
     );
   }
+  
+  const getAvatarFallback = (name?: string, email?: string) => {
+    if (name) {
+      return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
+    if (email) {
+      return email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user.user_metadata.avatar_url || 'https://placehold.co/100x100.png'} alt={user.user_metadata.full_name || user.email} data-ai-hint="user avatar" />
-            <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={user.avatar_url || user.user_metadata?.avatar_url} alt={user.full_name || user.email} data-ai-hint="user avatar" />
+            <AvatarFallback>{getAvatarFallback(user.full_name, user.email)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.user_metadata.full_name || 'Pengguna'}</p>
+            <p className="text-sm font-medium leading-none">{user.full_name || 'Pengguna'}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
@@ -104,13 +114,17 @@ export function UserNav({ user }: UserNavProps) {
           </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-         <Link href="/admin">
-            <DropdownMenuItem className="text-primary focus:text-primary">
-              <Shield className="mr-2 h-4 w-4" />
-              <span>Panel Admin</span>
-            </DropdownMenuItem>
-          </Link>
-        <DropdownMenuSeparator />
+         {user.role === 'Admin' && (
+          <>
+            <Link href="/admin">
+              <DropdownMenuItem className="text-primary focus:text-primary">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Panel Admin</span>
+              </DropdownMenuItem>
+            </Link>
+            <DropdownMenuSeparator />
+          </>
+         )}
         <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Keluar</span>

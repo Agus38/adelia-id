@@ -12,24 +12,53 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
 
+export type UserProfile = User & {
+  full_name?: string;
+  avatar_url?: string;
+  role?: string;
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
+      async (event, session) => {
+        if (session?.user) {
+          // Fetch profile when user is logged in
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (error) {
+            console.error('Error fetching profile:', error);
+            setUser(session.user); // Fallback to auth user
+          } else {
+            setUser({ ...session.user, ...profile });
+          }
+        } else {
+          setUser(null);
+        }
       }
     );
 
     // Initial check for user session
     const checkUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
+      const { data: { user } } = await supabase.auth.getUser();
+       if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          setUser({ ...user, ...profile });
+       }
     };
     checkUser();
 

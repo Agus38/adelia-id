@@ -6,10 +6,10 @@ import { UserNav } from './user-nav';
 import { ThemeToggle } from '../theme-toggle';
 import { Logo } from '../icons';
 import Link from 'next/link';
-import type { User } from '@supabase/supabase-js';
+import type { UserProfile } from '@/app/layout';
 
 interface HeaderProps {
-  user: User | null;
+  user: UserProfile | null;
 }
 
 export function Header({ user }: HeaderProps) {

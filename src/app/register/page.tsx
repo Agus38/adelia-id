@@ -41,7 +41,7 @@ export default function RegisterPage() {
       options: {
         data: {
           full_name: name,
-          avatar_url: `https://placehold.co/100x100.png?text=${name.charAt(0)}`, // Optional: pass avatar url
+          avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         },
       },
     });
