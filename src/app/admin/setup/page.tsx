@@ -24,7 +24,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 const laporanMerrSql = `
 -- Menyimpan data dari halaman "Laporan Harian". Setiap laporan unik berdasarkan tanggal dan shift.
-CREATE TABLE laporan_smw_merr (
+CREATE TABLE IF NOT EXISTS laporan_smw_merr (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tanggal DATE NOT NULL,
   shift TEXT NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE laporan_smw_merr (
 
 const smwManyarSql = `
 -- Menyimpan data dari halaman "SMW Manyar", unik berdasarkan tanggal.
-CREATE TABLE laporan_smw_manyar (
+CREATE TABLE IF NOT EXISTS laporan_smw_manyar (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tanggal DATE NOT NULL UNIQUE,
   data JSONB NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE laporan_smw_manyar (
 
 const stokProdukSql = `
 -- Menyimpan data dari halaman "Stok Produk", unik berdasarkan tanggal dan shift.
-CREATE TABLE stok_produk_merr (
+CREATE TABLE IF NOT EXISTS stok_produk_merr (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tanggal DATE NOT NULL,
   shift TEXT NOT NULL,
@@ -58,33 +58,35 @@ CREATE TABLE stok_produk_merr (
 
 const fullSqlSchema = `
 -- ### AUTHENTICATION ###
+-- Mengaktifkan ekstensi jika belum ada (diperlukan untuk fungsi gen_random_uuid)
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "public";
 
--- Buat tabel untuk profil pengguna publik
-CREATE TABLE profiles (
+-- Buat tabel untuk profil pengguna publik hanya jika belum ada
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT,
   avatar_url TEXT,
   role TEXT NOT NULL DEFAULT 'Pengguna'
 );
 
--- Kebijakan Keamanan (RLS) untuk tabel Profil
--- 1. Izinkan pengguna untuk membaca semua profil. Ini berguna untuk fitur seperti daftar tim.
+-- Aktifkan Row Level Security (RLS) untuk tabel profiles
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- Hapus kebijakan yang ada sebelum membuat yang baru untuk menghindari error duplikat
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone." ON public.profiles;
 CREATE POLICY "Public profiles are viewable by everyone."
-  ON profiles FOR SELECT
+  ON public.profiles FOR SELECT
   USING ( true );
 
--- 2. Izinkan pengguna untuk membuat profil mereka sendiri.
+DROP POLICY IF EXISTS "Users can insert their own profile." ON public.profiles;
 CREATE POLICY "Users can insert their own profile."
-  ON profiles FOR INSERT
+  ON public.profiles FOR INSERT
   WITH CHECK ( auth.uid() = id );
 
--- 3. Izinkan pengguna untuk memperbarui profil mereka sendiri.
-CREATE POLICY "Users can update their own profile."
-  ON profiles FOR UPDATE
+DROP POLICY IF EXISTS "Users can update own profile." ON public.profiles;
+CREATE POLICY "Users can update own profile."
+  ON public.profiles FOR UPDATE
   USING ( auth.uid() = id );
-
--- Aktifkan Row Level Security (RLS) untuk tabel profiles
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
 -- Fungsi ini secara otomatis membuat baris di tabel 'profiles' untuk setiap pengguna baru.
 -- Fungsi ini juga menetapkan peran 'Admin' jika email cocok dengan daftar yang ditentukan.
@@ -111,6 +113,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Hapus trigger yang ada sebelum membuat yang baru
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 -- Trigger yang memanggil fungsi di atas setiap kali pengguna baru mendaftar.
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
@@ -120,8 +124,7 @@ CREATE TRIGGER on_auth_user_created
 -- ### APPLICATION DATA ###
 
 -- Skema untuk Laporan SMW MERR
--- Menyimpan data dari halaman "Laporan Harian". Setiap laporan unik berdasarkan tanggal dan shift.
-CREATE TABLE laporan_smw_merr (
+CREATE TABLE IF NOT EXISTS public.laporan_smw_merr (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tanggal DATE NOT NULL,
   shift TEXT NOT NULL,
@@ -131,8 +134,7 @@ CREATE TABLE laporan_smw_merr (
 );
 
 -- Skema untuk Laporan SMW Manyar
--- Menyimpan data dari halaman "SMW Manyar", unik berdasarkan tanggal.
-CREATE TABLE laporan_smw_manyar (
+CREATE TABLE IF NOT EXISTS public.laporan_smw_manyar (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tanggal DATE NOT NULL UNIQUE,
   data JSONB NOT NULL,
@@ -140,8 +142,7 @@ CREATE TABLE laporan_smw_manyar (
 );
 
 -- Skema untuk Stok Produk MERR
--- Menyimpan data dari halaman "Stok Produk", unik berdasarkan tanggal dan shift.
-CREATE TABLE stok_produk_merr (
+CREATE TABLE IF NOT EXISTS public.stok_produk_merr (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tanggal DATE NOT NULL,
   shift TEXT NOT NULL,
@@ -151,25 +152,25 @@ CREATE TABLE stok_produk_merr (
 );
 
 -- Skema untuk Pengaturan Aplikasi
--- Menggunakan satu tabel dengan tipe untuk menyimpan berbagai jenis konfigurasi.
-CREATE TABLE app_config (
+CREATE TABLE IF NOT EXISTS public.app_config (
   id SERIAL PRIMARY KEY,
   config_type TEXT NOT NULL UNIQUE, -- 'main_menu', 'banners', 'team_members', 'developer_info'
   data JSONB NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Aktifkan RLS untuk app_config dan izinkan baca untuk semua
-ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
+-- Aktifkan RLS untuk app_config
+ALTER TABLE public.app_config ENABLE ROW LEVEL SECURITY;
 
+-- Kebijakan untuk app_config
+DROP POLICY IF EXISTS "App config is viewable by everyone." ON public.app_config;
 CREATE POLICY "App config is viewable by everyone."
-  ON app_config FOR SELECT
+  ON public.app_config FOR SELECT
   USING ( true );
 
--- Hanya admin yang bisa mengubah konfigurasi.
--- Pastikan kolom 'role' di tabel 'profiles' Anda sudah ada.
+DROP POLICY IF EXISTS "Only admins can modify app config." ON public.app_config;
 CREATE POLICY "Only admins can modify app config."
-  ON app_config FOR ALL
+  ON public.app_config FOR ALL
   USING ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'Admin' )
   WITH CHECK ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'Admin' );
 `.trim();
