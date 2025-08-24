@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 type Product = { id: string; name: string; price: number; };
 
@@ -184,9 +184,11 @@ export function TokenListrikTransactionForm() {
                             <SheetClose asChild>
                                 <Button variant="outline" className="w-full">Batal</Button>
                             </SheetClose>
-                            <Button className="w-full bg-green-600 hover:bg-green-700">
-                               <Wallet className="mr-2 h-4 w-4" /> Konfirmasi & Bayar
-                            </Button>
+                            <Link href="/top-up" className="w-full">
+                                <Button className="w-full bg-green-600 hover:bg-green-700">
+                                   <Wallet className="mr-2 h-4 w-4" /> Konfirmasi & Bayar
+                                </Button>
+                            </Link>
                         </SheetFooter>
                     </SheetContent>
                 </Sheet>
