@@ -1,13 +1,13 @@
 
+'use client';
+
+import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-const CodeBlock = ({ code, lang = 'bash' }: { code: string; lang?: string }) => (
-  <pre className="p-4 rounded-md bg-muted text-sm overflow-x-auto">
-    <code className={`language-${lang}`}>{code.trim()}</code>
-  </pre>
-);
+import { Button } from '@/components/ui/button';
+import { Check, Copy } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const envCode = `
 NEXT_PUBLIC_SUPABASE_URL="https://dyidewepcgxahdabgpks.supabase.co"
@@ -162,6 +162,39 @@ CREATE POLICY "Only admins can modify app config."
 -- ada kolom 'role' di tabel 'profiles' Anda.
 `.trim();
 
+const CodeBlock = ({ code, lang = 'bash' }: { code: string; lang?: string }) => {
+  const { toast } = useToast();
+  const [hasCopied, setHasCopied] = React.useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code.trim());
+    setHasCopied(true);
+    setTimeout(() => setHasCopied(false), 2000);
+    toast({
+        title: "Kode Disalin!",
+        description: "Kode SQL telah berhasil disalin ke clipboard Anda.",
+    });
+  };
+
+  return (
+     <div className="relative">
+      <Button
+        size="icon"
+        variant="ghost"
+        className="absolute top-2 right-2 h-7 w-7"
+        onClick={handleCopy}
+      >
+        {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+        <span className="sr-only">Salin kode</span>
+      </Button>
+      <pre className="p-4 rounded-md bg-muted text-sm overflow-x-auto">
+        <code className={`language-${lang}`}>{code.trim()}</code>
+      </pre>
+    </div>
+  );
+};
+
+
 export default function SetupPage() {
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -260,5 +293,3 @@ export default function SetupPage() {
     </div>
   );
 }
-
-    
