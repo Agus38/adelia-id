@@ -119,6 +119,39 @@ async function getStokProduk(tanggal, shift) {
 }
 `.trim();
 
+const fullSqlSchema = `
+-- Skema untuk Laporan SMW MERR
+-- Menyimpan data dari halaman "Laporan Harian". Setiap laporan unik berdasarkan tanggal dan shift.
+CREATE TABLE laporan_smw_merr (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tanggal DATE NOT NULL,
+  shift TEXT NOT NULL,
+  data JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (tanggal, shift)
+);
+
+-- Skema untuk Laporan SMW Manyar
+-- Menyimpan data dari halaman "SMW Manyar", unik berdasarkan tanggal.
+CREATE TABLE laporan_smw_manyar (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tanggal DATE NOT NULL UNIQUE,
+  data JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Skema untuk Stok Produk MERR
+-- Menyimpan data dari halaman "Stok Produk", unik berdasarkan tanggal dan shift.
+CREATE TABLE stok_produk_merr (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tanggal DATE NOT NULL,
+  shift TEXT NOT NULL,
+  data JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (tanggal, shift)
+);
+`.trim();
+
 export default function SetupPage() {
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -163,6 +196,17 @@ export default function SetupPage() {
               Gunakan skema SQL di bawah ini untuk membuat tabel di database Supabase Anda. Anda dapat menjalankannya melalui Editor SQL di dasbor Supabase.
             </p>
 
+            <Card className="mb-6">
+                <CardHeader>
+                    <CardTitle>Skema SQL Lengkap</CardTitle>
+                    <CardDescription>Jalankan semua kode di bawah ini di Editor SQL Supabase Anda untuk membuat semua tabel yang diperlukan sekaligus.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <CodeBlock code={fullSqlSchema} lang="sql" />
+                </CardContent>
+            </Card>
+
+            <h4 className="text-lg font-semibold mb-2 mt-4">Rincian per Tabel</h4>
             <Tabs defaultValue="laporan-merr" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="laporan-merr">Laporan SMW MERR</TabsTrigger>
