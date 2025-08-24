@@ -192,7 +192,7 @@ export function TransactionHistory() {
     </Card>
 
      <Dialog open={isDetailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Detail Transaksi</DialogTitle>
             <DialogDescription>
