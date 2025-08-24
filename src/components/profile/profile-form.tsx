@@ -99,7 +99,22 @@ export function ProfileForm({ user }: ProfileFormProps) {
   }
 
   async function onSubmit(data: ProfileFormValues) {
-    const { error } = await supabase
+    // Step 1: Update the user metadata in auth.users
+    const { error: userError } = await supabase.auth.updateUser({
+      data: { avatar_url: data.avatar_url, full_name: data.full_name }
+    });
+
+    if (userError) {
+      toast({
+        title: "Error",
+        description: "Gagal memperbarui metadata pengguna: " + userError.message,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Step 2: Update the profiles table
+    const { error: profileError } = await supabase
       .from('profiles')
       .update({
         full_name: data.full_name,
@@ -107,10 +122,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
       })
       .eq('id', user.id);
 
-    if (error) {
+    if (profileError) {
        toast({
         title: "Error",
-        description: "Gagal memperbarui profil: " + error.message,
+        description: "Gagal memperbarui profil: " + profileError.message,
         variant: "destructive"
       })
     } else {

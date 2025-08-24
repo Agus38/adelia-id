@@ -29,32 +29,43 @@ export default function RootLayout({
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', authUser.id);
+      .eq('id', authUser.id)
+      .single();
     
     if (error) {
       console.error('Error fetching profile:', error.message);
-      setUser(authUser); // Fallback to auth user
-    } else if (profile && profile.length > 0) {
-      setUser({ ...authUser, ...profile[0] });
+      // Fallback to auth user metadata if profile fetch fails
+      setUser({
+        ...authUser,
+        full_name: authUser.user_metadata.full_name,
+        avatar_url: authUser.user_metadata.avatar_url,
+      });
+    } else if (profile) {
+      // If profile exists, merge it with the auth user object
+      setUser({ ...authUser, ...profile });
     } else {
-       // Profile not found, but no error. Fallback to auth user.
-       setUser(authUser);
+       // Profile not found, but no error. Fallback to auth user metadata.
+       setUser({
+        ...authUser,
+        full_name: authUser.user_metadata.full_name,
+        avatar_url: authUser.user_metadata.avatar_url,
+      });
     }
   };
 
   useEffect(() => {
-    const checkInitialUser = async () => {
+    const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        fetchUserProfile(session.user);
+        await fetchUserProfile(session.user);
       }
     };
-    checkInitialUser();
+    getInitialSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (session?.user) {
-          fetchUserProfile(session.user);
+          await fetchUserProfile(session.user);
         } else {
           setUser(null);
         }
