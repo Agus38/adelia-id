@@ -17,13 +17,14 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
@@ -191,84 +192,84 @@ export function TransactionHistory() {
       </CardContent>
     </Card>
 
-     <Dialog open={isDetailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="sm:max-w-sm max-h-[80vh]" onOpenAutoFocus={(e) => e.preventDefault()}>
-           <DialogHeader>
-            <DialogTitle>Detail Transaksi</DialogTitle>
-            <DialogDescription>
-                ID Transaksi: {selectedTx?.id}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="overflow-y-auto pr-2 -mr-2">
-              {selectedTx && (
-                <div className="space-y-4 pt-2">
-                    <div className="p-4 space-y-3 rounded-lg border text-sm">
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Status</span>
-                            <Badge variant={statusVariant[selectedTx.status]} className={cn(
-                                selectedTx.status === 'Berhasil' && 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
-                                selectedTx.status === 'Gagal' && 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
-                                'border-none'
-                            )}>
-                                {selectedTx.status}
-                            </Badge>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Tanggal</span>
-                            <span className="font-medium">{format(selectedTx.date, 'd MMM yyyy, HH:mm', { locale: id })}</span>
-                        </div>
-                    </div>
+    <Sheet open={isDetailOpen} onOpenChange={setDetailOpen}>
+      <SheetContent side="bottom" className="rounded-t-lg max-h-[90vh]">
+        <SheetHeader className="text-left">
+          <SheetTitle>Detail Transaksi</SheetTitle>
+          <SheetDescription>
+              ID Transaksi: {selectedTx?.id}
+          </SheetDescription>
+        </SheetHeader>
+        <div className="overflow-y-auto py-4">
+            {selectedTx && (
+              <div className="space-y-4 pt-2">
+                  <div className="p-4 space-y-3 rounded-lg border text-sm">
+                      <div className="flex justify-between">
+                          <span className="text-muted-foreground">Status</span>
+                          <Badge variant={statusVariant[selectedTx.status]} className={cn(
+                              selectedTx.status === 'Berhasil' && 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
+                              selectedTx.status === 'Gagal' && 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+                              'border-none'
+                          )}>
+                              {selectedTx.status}
+                          </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                          <span className="text-muted-foreground">Tanggal</span>
+                          <span className="font-medium">{format(selectedTx.date, 'd MMM yyyy, HH:mm', { locale: id })}</span>
+                      </div>
+                  </div>
 
-                    <div className="space-y-2">
-                        <p className="text-sm font-semibold">Rincian Pembelian</p>
-                        <Separator/>
-                        <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Produk</span>
-                                <span className="font-medium">{selectedTx.product}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Nomor Tujuan</span>
-                                <span className="font-medium">{selectedTx.phoneNumber}</span>
-                            </div>
-                        </div>
-                    </div>
+                  <div className="space-y-2">
+                      <p className="text-sm font-semibold">Rincian Pembelian</p>
+                      <Separator/>
+                      <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                              <span className="text-muted-foreground">Produk</span>
+                              <span className="font-medium">{selectedTx.product}</span>
+                          </div>
+                          <div className="flex justify-between">
+                              <span className="text-muted-foreground">Nomor Tujuan</span>
+                              <span className="font-medium">{selectedTx.phoneNumber}</span>
+                          </div>
+                      </div>
+                  </div>
 
-                    <div className="space-y-2">
-                        <p className="text-sm font-semibold">Rincian Pembayaran</p>
-                        <Separator/>
-                        <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Metode Pembayaran</span>
-                                <span className="font-medium">{selectedTx.paymentMethod}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <Label htmlFor="editable-price" className="text-muted-foreground">Total Harga</Label>
-                                <Input 
-                                    id="editable-price"
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={editablePrice.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
-                                    onChange={handlePriceChange}
-                                    className="w-32 h-8 text-right font-bold text-base text-primary border-primary/50 focus:border-primary"
-                                    disabled={selectedTx.status !== 'Berhasil'}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-              )}
-          </div>
-          <DialogFooter className="grid grid-cols-2 gap-2 pt-4">
-            <Button variant="outline" onClick={() => setDetailOpen(false)}>
-                <X className="mr-2 h-4 w-4"/> Tutup
-            </Button>
-            <Button onClick={handlePrintReceipt} disabled={selectedTx?.status !== 'Berhasil'}>
-                <Receipt className="mr-2 h-4 w-4"/> Cetak Struk
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                  <div className="space-y-2">
+                      <p className="text-sm font-semibold">Rincian Pembayaran</p>
+                      <Separator/>
+                      <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                              <span className="text-muted-foreground">Metode Pembayaran</span>
+                              <span className="font-medium">{selectedTx.paymentMethod}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                              <Label htmlFor="editable-price" className="text-muted-foreground">Total Harga</Label>
+                              <Input 
+                                  id="editable-price"
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={editablePrice.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+                                  onChange={handlePriceChange}
+                                  className="w-32 h-8 text-right font-bold text-base text-primary border-primary/50 focus:border-primary"
+                                  disabled={selectedTx.status !== 'Berhasil'}
+                              />
+                          </div>
+                      </div>
+                  </div>
+              </div>
+            )}
+        </div>
+        <SheetFooter className="grid grid-cols-2 gap-2 pt-4">
+          <Button variant="outline" onClick={() => setDetailOpen(false)}>
+              <X className="mr-2 h-4 w-4"/> Tutup
+          </Button>
+          <Button onClick={handlePrintReceipt} disabled={selectedTx?.status !== 'Berhasil'}>
+              <Receipt className="mr-2 h-4 w-4"/> Cetak Struk
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
     </>
   );
 }
