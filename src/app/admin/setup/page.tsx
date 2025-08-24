@@ -10,8 +10,8 @@ const CodeBlock = ({ code, lang = 'bash' }: { code: string; lang?: string }) => 
 );
 
 const envCode = `
-NEXT_PUBLIC_SUPABASE_URL="YOUR_SUPABASE_URL"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+NEXT_PUBLIC_SUPABASE_URL="https://dyidewepcgxahdabgpks.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aWRld2VwY2d4YWhkYWJncGtzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1MTU2ODYsImV4cCI6MjA3MTA5MTY4Nn0.tOFrS5FuUsJacEGTB2X7Ljn-rfwSXQOM4Fk6C1qu-mw"
 `.trim();
 
 const clientCode = `
@@ -24,6 +24,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 `.trim();
 
 const laporanMerrSql = `
+-- Menyimpan data dari halaman "Laporan Harian". Setiap laporan unik berdasarkan tanggal dan shift.
 CREATE TABLE laporan_smw_merr (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tanggal DATE NOT NULL,
@@ -34,29 +35,8 @@ CREATE TABLE laporan_smw_merr (
 );
 `.trim();
 
-const laporanMerrFunctions = `
-// Menyimpan atau memperbarui laporan
-async function saveLaporanSmwMerr(tanggal, shift, data) {
-  const { error } = await supabase
-    .from('laporan_smw_merr')
-    .upsert({ tanggal, shift, data }, { onConflict: 'tanggal,shift' });
-  if (error) throw error;
-}
-
-// Mengambil laporan berdasarkan tanggal dan shift
-async function getLaporanSmwMerr(tanggal, shift) {
-  const { data, error } = await supabase
-    .from('laporan_smw_merr')
-    .select('data')
-    .eq('tanggal', tanggal)
-    .eq('shift', shift)
-    .single();
-  if (error && error.code !== 'PGRST116') throw error; // 'PGRST116' means no rows found
-  return data?.data || {};
-}
-`.trim();
-
 const smwManyarSql = `
+-- Menyimpan data dari halaman "SMW Manyar", unik berdasarkan tanggal.
 CREATE TABLE laporan_smw_manyar (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tanggal DATE NOT NULL UNIQUE,
@@ -65,28 +45,8 @@ CREATE TABLE laporan_smw_manyar (
 );
 `.trim();
 
-const smwManyarFunctions = `
-// Menyimpan atau memperbarui laporan
-async function saveLaporanSmwManyar(tanggal, data) {
-  const { error } = await supabase
-    .from('laporan_smw_manyar')
-    .upsert({ tanggal, data }, { onConflict: 'tanggal' });
-  if (error) throw error;
-}
-
-// Mengambil laporan berdasarkan tanggal
-async function getLaporanSmwManyar(tanggal) {
-  const { data, error } = await supabase
-    .from('laporan_smw_manyar')
-    .select('data')
-    .eq('tanggal', tanggal)
-    .single();
-  if (error && error.code !== 'PGRST116') throw error;
-  return data?.data || {};
-}
-`.trim();
-
 const stokProdukSql = `
+-- Menyimpan data dari halaman "Stok Produk", unik berdasarkan tanggal dan shift.
 CREATE TABLE stok_produk_merr (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tanggal DATE NOT NULL,
@@ -97,29 +57,54 @@ CREATE TABLE stok_produk_merr (
 );
 `.trim();
 
-const stokProdukFunctions = `
-// Menyimpan atau memperbarui stok
-async function saveStokProduk(tanggal, shift, data) {
-  const { error } = await supabase
-    .from('stok_produk_merr')
-    .upsert({ tanggal, shift, data }, { onConflict: 'tanggal,shift' });
-  if (error) throw error;
-}
-
-// Mengambil stok berdasarkan tanggal dan shift
-async function getStokProduk(tanggal, shift) {
-  const { data, error } = await supabase
-    .from('stok_produk_merr')
-    .select('data')
-    .eq('tanggal', tanggal)
-    .eq('shift', shift)
-    .single();
-  if (error && error.code !== 'PGRST116') throw error;
-  return data?.data || [];
-}
-`.trim();
-
 const fullSqlSchema = `
+-- ### AUTHENTICATION ###
+
+-- Buat tabel untuk profil pengguna publik
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name TEXT,
+  avatar_url TEXT,
+  role TEXT NOT NULL DEFAULT 'Pengguna'
+);
+
+-- Kebijakan Keamanan untuk tabel Profil
+-- 1. Pengguna dapat melihat semua profil (jika diperlukan untuk fitur seperti daftar tim).
+CREATE POLICY "Public profiles are viewable by everyone."
+  ON profiles FOR SELECT
+  USING ( true );
+
+-- 2. Pengguna hanya dapat menyisipkan profil mereka sendiri.
+CREATE POLICY "Users can insert their own profile."
+  ON profiles FOR INSERT
+  WITH CHECK ( auth.uid() = id );
+
+-- 3. Pengguna hanya dapat memperbarui profil mereka sendiri.
+CREATE POLICY "Users can update their own profile."
+  ON profiles FOR UPDATE
+  USING ( auth.uid() = id );
+
+-- Aktifkan Row Level Security (RLS) untuk tabel profil
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Fungsi ini membuat baris di tabel profil publik untuk setiap pengguna baru
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, avatar_url, role)
+  VALUES (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url', 'Pengguna');
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger yang memanggil fungsi handle_new_user setiap kali pengguna baru dibuat
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+
+-- ### APPLICATION DATA ###
+
 -- Skema untuk Laporan SMW MERR
 -- Menyimpan data dari halaman "Laporan Harian". Setiap laporan unik berdasarkan tanggal dan shift.
 CREATE TABLE laporan_smw_merr (
@@ -150,6 +135,31 @@ CREATE TABLE stok_produk_merr (
   created_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE (tanggal, shift)
 );
+
+-- Skema untuk Pengaturan Aplikasi
+-- Menggunakan satu tabel dengan tipe untuk menyimpan berbagai jenis konfigurasi.
+CREATE TABLE app_config (
+  id SERIAL PRIMARY KEY,
+  config_type TEXT NOT NULL UNIQUE, -- 'main_menu', 'banners', 'team_members', 'developer_info'
+  data JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Aktifkan RLS untuk app_config dan izinkan baca untuk semua
+ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "App config is viewable by everyone."
+  ON app_config FOR SELECT
+  USING ( true );
+-- Hanya admin yang bisa mengubah konfigurasi (asumsi ada tabel 'roles' atau pengecekan peran di 'profiles')
+CREATE POLICY "Only admins can modify app config."
+  ON app_config FOR ALL
+  USING ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'Admin' )
+  WITH CHECK ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'Admin' );
+
+-- Catatan:
+-- Untuk kebijakan 'Only admins can modify app config.', Anda mungkin perlu menyesuaikannya
+-- tergantung pada bagaimana Anda mengelola peran (roles). Contoh di atas mengasumsikan
+-- ada kolom 'role' di tabel 'profiles' Anda.
 `.trim();
 
 export default function SetupPage() {
@@ -166,25 +176,21 @@ export default function SetupPage() {
           <section>
             <h3 className="text-xl font-semibold mb-2">Langkah 1: Pengaturan Awal</h3>
             <p className="text-muted-foreground mb-4">
-              Dapatkan kunci API dari dasbor Supabase Anda, lalu instal pustaka klien dan konfigurasikan variabel lingkungan.
+              Gunakan kredensial dari proyek Supabase Anda untuk mengkonfigurasi variabel lingkungan di aplikasi ini.
             </p>
              <div className="space-y-4">
                 <div>
-                  <Label className="text-base">1.1 Dapatkan Kunci API</Label>
+                  <Label className="text-base">1.1 Temukan Kunci API Anda</Label>
                   <p className="text-sm text-muted-foreground">Masuk ke akun Supabase Anda, navigasikan ke Pengaturan Proyek &gt; API, dan temukan URL Proyek serta kunci `anon` publik Anda.</p>
                 </div>
                 <div>
-                   <Label className="text-base">1.2 Instal Klien Supabase</Label>
-                   <CodeBlock code="npm install @supabase/supabase-js" />
-                </div>
-                <div>
-                   <Label className="text-base">1.3 Konfigurasi Variabel Lingkungan</Label>
-                   <p className="text-sm text-muted-foreground mb-2">Buat file `.env.local` di root proyek Anda dan tambahkan variabel berikut:</p>
+                   <Label className="text-base">1.2 Konfigurasi Variabel Lingkungan</Label>
+                   <p className="text-sm text-muted-foreground mb-2">Variabel lingkungan sudah saya atur untuk Anda di file `.env` menggunakan data yang Anda berikan. Anda dapat memeriksanya di bawah ini:</p>
                    <CodeBlock code={envCode} lang="ini" />
                 </div>
                 <div>
-                   <Label className="text-base">1.4 Buat Klien Supabase</Label>
-                   <p className="text-sm text-muted-foreground mb-2">Buat file `src/lib/supabaseClient.ts` untuk menginisialisasi klien:</p>
+                   <Label className="text-base">1.3 Inisialisasi Klien Supabase</Label>
+                   <p className="text-sm text-muted-foreground mb-2">Aplikasi ini sudah memiliki file `src/lib/supabaseClient.ts` untuk menginisialisasi dan mengekspor klien Supabase untuk digunakan di seluruh aplikasi:</p>
                    <CodeBlock code={clientCode} lang="typescript" />
                 </div>
              </div>
@@ -193,20 +199,20 @@ export default function SetupPage() {
           <section>
             <h3 className="text-xl font-semibold mb-2">Langkah 2: Skema Database & Fungsi</h3>
             <p className="text-muted-foreground mb-4">
-              Gunakan skema SQL di bawah ini untuk membuat tabel di database Supabase Anda. Anda dapat menjalankannya melalui Editor SQL di dasbor Supabase.
+              Gunakan skema SQL di bawah ini untuk membuat semua tabel dan fungsi yang diperlukan di database Supabase Anda. Anda dapat menjalankannya melalui Editor SQL di dasbor Supabase.
             </p>
 
             <Card className="mb-6">
                 <CardHeader>
                     <CardTitle>Skema SQL Lengkap</CardTitle>
-                    <CardDescription>Jalankan semua kode di bawah ini di Editor SQL Supabase Anda untuk membuat semua tabel yang diperlukan sekaligus.</CardDescription>
+                    <CardDescription>Jalankan semua kode di bawah ini di Editor SQL Supabase Anda untuk membuat semua tabel, fungsi, dan kebijakan keamanan yang diperlukan sekaligus.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <CodeBlock code={fullSqlSchema} lang="sql" />
                 </CardContent>
             </Card>
 
-            <h4 className="text-lg font-semibold mb-2 mt-4">Rincian per Tabel</h4>
+            <h4 className="text-lg font-semibold mb-2 mt-4">Rincian per Tabel Laporan</h4>
             <Tabs defaultValue="laporan-merr" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="laporan-merr">Laporan SMW MERR</TabsTrigger>
@@ -221,12 +227,6 @@ export default function SetupPage() {
                       <p className="text-sm text-muted-foreground mt-4">Tabel ini menyimpan data JSON dari halaman "Laporan Harian". Setiap laporan unik berdasarkan `tanggal` dan `shift`.</p>
                     </CardContent>
                  </Card>
-                 <Card>
-                    <CardHeader><CardTitle className="text-lg">Contoh Fungsi TypeScript</CardTitle></CardHeader>
-                    <CardContent>
-                      <CodeBlock code={laporanMerrFunctions} lang="typescript" />
-                    </CardContent>
-                 </Card>
               </TabsContent>
               <TabsContent value="smw-manyar" className="pt-4 space-y-4">
                   <Card>
@@ -234,12 +234,6 @@ export default function SetupPage() {
                     <CardContent>
                         <CodeBlock code={smwManyarSql} lang="sql" />
                         <p className="text-sm text-muted-foreground mt-4">Tabel ini menyimpan data dari halaman "SMW Manyar", dengan setiap entri unik berdasarkan `tanggal`.</p>
-                    </CardContent>
-                  </Card>
-                   <Card>
-                    <CardHeader><CardTitle className="text-lg">Contoh Fungsi TypeScript</CardTitle></CardHeader>
-                    <CardContent>
-                        <CodeBlock code={smwManyarFunctions} lang="typescript" />
                     </CardContent>
                   </Card>
               </TabsContent>
@@ -251,12 +245,6 @@ export default function SetupPage() {
                          <p className="text-sm text-muted-foreground mt-4">Tabel ini menyimpan data dari halaman "Stok Produk", dengan setiap entri unik berdasarkan `tanggal` dan `shift`.</p>
                     </CardContent>
                   </Card>
-                   <Card>
-                    <CardHeader><CardTitle className="text-lg">Contoh Fungsi TypeScript</CardTitle></CardHeader>
-                    <CardContent>
-                        <CodeBlock code={stokProdukFunctions} lang="typescript" />
-                    </CardContent>
-                  </Card>
               </TabsContent>
             </Tabs>
           </section>
@@ -264,7 +252,7 @@ export default function SetupPage() {
           <section>
             <h3 className="text-xl font-semibold mb-2">Langkah 3: Selesai!</h3>
             <p className="text-muted-foreground">
-              Anda sekarang dapat mengimpor klien Supabase dan menggunakan fungsi-fungsi di atas di dalam komponen atau halaman aplikasi Anda untuk berinteraksi dengan database.
+              Setelah menjalankan skema SQL di atas, database Anda siap digunakan. Anda sekarang dapat mulai mengintegrasikan fungsi Supabase ke dalam komponen aplikasi Anda untuk menyimpan dan mengambil data secara dinamis.
             </p>
           </section>
         </CardContent>
@@ -272,3 +260,5 @@ export default function SetupPage() {
     </div>
   );
 }
+
+    
