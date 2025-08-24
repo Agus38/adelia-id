@@ -23,13 +23,22 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-
 
 type TransactionStatus = 'Berhasil' | 'Gagal' | 'Menunggu';
 
@@ -160,7 +169,7 @@ export function TransactionHistory() {
             <TableBody>
               {mockTransactions.length > 0 ? mockTransactions.map((tx) => (
                 <TableRow key={tx.id} onClick={() => handleRowClick(tx)} className="cursor-pointer">
-                  <TableCell className="px-2 py-2 text-[11px] text-muted-foreground md:px-4 md:text-xs">
+                  <TableCell className="px-2 py-2 text-[11px] text-muted-foreground md:px-4 md:text-sm">
                     {format(tx.date, 'd MMM, HH:mm', { locale: id })}
                   </TableCell>
                   <TableCell className="px-2 py-2 md:px-4">
@@ -193,7 +202,7 @@ export function TransactionHistory() {
     </Card>
 
     <Sheet open={isDetailOpen} onOpenChange={setDetailOpen}>
-      <SheetContent side="bottom" className="rounded-t-lg max-h-[90vh]">
+      <SheetContent side="bottom" className="rounded-t-lg max-h-[80vh]">
         <SheetHeader className="text-left">
           <SheetTitle>Detail Transaksi</SheetTitle>
           <SheetDescription>
@@ -243,17 +252,9 @@ export function TransactionHistory() {
                               <span className="text-muted-foreground">Metode Pembayaran</span>
                               <span className="font-medium">{selectedTx.paymentMethod}</span>
                           </div>
-                          <div className="flex justify-between items-center">
-                              <Label htmlFor="editable-price" className="text-muted-foreground">Total Harga</Label>
-                              <Input 
-                                  id="editable-price"
-                                  type="text"
-                                  inputMode="numeric"
-                                  value={editablePrice.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
-                                  onChange={handlePriceChange}
-                                  className="w-32 h-8 text-right font-bold text-base text-primary border-primary/50 focus:border-primary"
-                                  disabled={selectedTx.status !== 'Berhasil'}
-                              />
+                          <div className="flex justify-between">
+                              <span className="text-muted-foreground">Total Harga</span>
+                              <span className="font-medium">{formatCurrency(selectedTx.price)}</span>
                           </div>
                       </div>
                   </div>
@@ -264,9 +265,37 @@ export function TransactionHistory() {
           <Button variant="outline" onClick={() => setDetailOpen(false)}>
               <X className="mr-2 h-4 w-4"/> Tutup
           </Button>
-          <Button onClick={handlePrintReceipt} disabled={selectedTx?.status !== 'Berhasil'}>
-              <Receipt className="mr-2 h-4 w-4"/> Cetak Struk
-          </Button>
+          <AlertDialog>
+              <AlertDialogTrigger asChild>
+                  <Button disabled={selectedTx?.status !== 'Berhasil'}>
+                      <Receipt className="mr-2 h-4 w-4"/> Cetak Struk
+                  </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                  <AlertDialogHeader>
+                      <AlertDialogTitle>Cetak Struk</AlertDialogTitle>
+                      <AlertDialogDescription>
+                          Anda dapat mengubah harga jual di bawah ini sebelum mencetak struk. Harga asli adalah {selectedTx ? formatCurrency(selectedTx.price) : ''}.
+                      </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="py-2">
+                    <Label htmlFor="editable-price">Harga Jual (Opsional)</Label>
+                    <Input 
+                        id="editable-price"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Masukkan harga jual baru"
+                        value={editablePrice.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+                        onChange={handlePriceChange}
+                        className="mt-2 text-right font-bold"
+                    />
+                  </div>
+                  <AlertDialogFooter>
+                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                      <AlertDialogAction onClick={handlePrintReceipt}>Cetak</AlertDialogAction>
+                  </AlertDialogFooter>
+              </AlertDialogContent>
+          </AlertDialog>
         </SheetFooter>
       </SheetContent>
     </Sheet>
