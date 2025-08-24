@@ -122,6 +122,36 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 
+-- ### STORAGE (AVATARS) ###
+-- Buat bucket penyimpanan untuk avatar jika belum ada.
+-- CATATAN: Anda mungkin perlu menjalankan ini secara manual di dashboard Supabase atau pastikan bucket 'avatars' sudah ada.
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Kebijakan untuk melihat avatar.
+-- Memungkinkan siapa saja untuk melihat avatar (karena URL-nya publik).
+DROP POLICY IF EXISTS "Avatar images are publicly viewable." ON storage.objects;
+CREATE POLICY "Avatar images are publicly viewable."
+  ON storage.objects FOR SELECT
+  USING ( bucket_id = 'avatars' );
+
+-- Kebijakan untuk mengunggah avatar.
+-- Memungkinkan pengguna yang sudah login untuk mengunggah avatar mereka sendiri.
+-- File harus berada di dalam folder yang sama dengan ID pengguna mereka.
+DROP POLICY IF EXISTS "User can upload their own avatar." ON storage.objects;
+CREATE POLICY "User can upload their own avatar."
+  ON storage.objects FOR INSERT
+  WITH CHECK ( auth.uid() IS NOT NULL );
+
+-- Kebijakan untuk memperbarui avatar.
+-- Memungkinkan pengguna yang sudah login untuk memperbarui avatar mereka sendiri.
+DROP POLICY IF EXISTS "User can update their own avatar." ON storage.objects;
+CREATE POLICY "User can update their own avatar."
+  ON storage.objects FOR UPDATE
+  USING ( auth.uid() IS NOT NULL );
+  
+
 -- ### APPLICATION DATA ###
 
 -- Skema untuk Laporan SMW MERR
@@ -176,6 +206,33 @@ CREATE POLICY "Only admins can modify app config."
   WITH CHECK ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'Admin' );
 `.trim();
 
+const storagePoliciesSql = `
+-- Buat bucket 'avatars' jika belum ada.
+-- Disarankan untuk membuat bucket ini melalui UI Supabase dan mengaturnya sebagai publik.
+-- Kode ini disediakan sebagai fallback.
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Kebijakan untuk MEMBACA: Siapa saja dapat melihat avatar.
+DROP POLICY IF EXISTS "Avatar images are publicly viewable." ON storage.objects;
+CREATE POLICY "Avatar images are publicly viewable."
+  ON storage.objects FOR SELECT
+  USING ( bucket_id = 'avatars' );
+
+-- Kebijakan untuk MENAMBAH: Pengguna yang login dapat menyisipkan file.
+DROP POLICY IF EXISTS "User can upload their own avatar." ON storage.objects;
+CREATE POLICY "User can upload their own avatar."
+  ON storage.objects FOR INSERT
+  WITH CHECK ( auth.uid() IS NOT NULL );
+
+-- Kebijakan untuk MENGUBAH: Pengguna yang login dapat memperbarui file mereka.
+DROP POLICY IF EXISTS "User can update their own avatar." ON storage.objects;
+CREATE POLICY "User can update their own avatar."
+  ON storage.objects FOR UPDATE
+  USING ( auth.uid() IS NOT NULL );
+`.trim();
+
 const CodeBlock = ({ code, lang = 'bash' }: { code: string; lang?: string }) => {
   const { toast } = useToast();
   const [hasCopied, setHasCopied] = React.useState(false);
@@ -221,51 +278,57 @@ export default function SetupPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <section>
-            <h3 className="text-xl font-semibold mb-2">Langkah 1: Pengaturan Awal</h3>
+            <h3 className="text-xl font-semibold mb-2">Langkah 1: Konfigurasi Klien</h3>
             <p className="text-muted-foreground mb-4">
-              Gunakan kredensial dari proyek Supabase Anda untuk mengkonfigurasi variabel lingkungan di aplikasi ini.
+              Bagian ini mencakup pengaturan variabel lingkungan dan inisialisasi klien Supabase di aplikasi Anda.
             </p>
              <div className="space-y-4">
                 <div>
-                  <Label className="text-base">1.1 Temukan Kunci API Anda</Label>
-                  <p className="text-sm text-muted-foreground">Masuk ke akun Supabase Anda, navigasikan ke Pengaturan Proyek &gt; API, dan temukan URL Proyek serta kunci `anon` publik Anda.</p>
-                </div>
-                <div>
-                   <Label className="text-base">1.2 Konfigurasi Variabel Lingkungan</Label>
-                   <p className="text-sm text-muted-foreground mb-2">Variabel lingkungan sudah saya atur untuk Anda di file `.env` menggunakan data yang Anda berikan. Anda dapat memeriksanya di bawah ini:</p>
+                  <Label className="text-base">1.1 Variabel Lingkungan</Label>
+                   <p className="text-sm text-muted-foreground mb-2">Variabel lingkungan sudah diatur untuk Anda di file `.env`.</p>
                    <CodeBlock code={envCode} lang="ini" />
                 </div>
                 <div>
-                   <Label className="text-base">1.3 Inisialisasi Klien Supabase</Label>
-                   <p className="text-sm text-muted-foreground mb-2">Aplikasi ini sudah memiliki file `src/lib/supabaseClient.ts` untuk menginisialisasi dan mengekspor klien Supabase untuk digunakan di seluruh aplikasi:</p>
+                   <Label className="text-base">1.2 Inisialisasi Klien Supabase</Label>
+                   <p className="text-sm text-muted-foreground mb-2">Aplikasi ini sudah memiliki file `src/lib/supabaseClient.ts` untuk menginisialisasi klien Supabase.</p>
                    <CodeBlock code={clientCode} lang="typescript" />
                 </div>
              </div>
           </section>
 
           <section>
-            <h3 className="text-xl font-semibold mb-2">Langkah 2: Skema Database & Fungsi</h3>
+            <h3 className="text-xl font-semibold mb-2">Langkah 2: Skema & Kebijakan Database</h3>
             <p className="text-muted-foreground mb-4">
-              Gunakan skema SQL di bawah ini untuk membuat semua tabel dan fungsi yang diperlukan di database Supabase Anda. Anda dapat menjalankannya melalui Editor SQL di dasbor Supabase.
+              Jalankan kode SQL di bawah ini di Editor SQL Supabase Anda untuk menyiapkan semua tabel, fungsi, dan kebijakan keamanan yang diperlukan.
             </p>
 
             <Card className="mb-6">
                 <CardHeader>
-                    <CardTitle>Skema SQL Lengkap</CardTitle>
-                    <CardDescription>Jalankan semua kode di bawah ini di Editor SQL Supabase Anda untuk membuat semua tabel, fungsi, dan kebijakan keamanan yang diperlukan sekaligus.</CardDescription>
+                    <CardTitle>Skema SQL Lengkap (Disarankan)</CardTitle>
+                    <CardDescription>Jalankan semua kode di bawah ini sekaligus untuk menyiapkan database Anda sepenuhnya.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <CodeBlock code={fullSqlSchema} lang="sql" />
                 </CardContent>
             </Card>
 
-            <h4 className="text-lg font-semibold mb-2 mt-4">Rincian per Tabel Laporan</h4>
-            <Tabs defaultValue="laporan-merr" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="laporan-merr">Laporan SMW MERR</TabsTrigger>
+            <h4 className="text-lg font-semibold mb-2 mt-4">Rincian per Bagian</h4>
+            <Tabs defaultValue="storage" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="storage">Penyimpanan</TabsTrigger>
+                <TabsTrigger value="laporan-merr">Laporan MERR</TabsTrigger>
                 <TabsTrigger value="smw-manyar">SMW Manyar</TabsTrigger>
-                <TabsTrigger value="stok-produk">Stok Produk MERR</TabsTrigger>
+                <TabsTrigger value="stok-produk">Stok Produk</TabsTrigger>
               </TabsList>
+               <TabsContent value="storage" className="pt-4 space-y-4">
+                 <Card>
+                    <CardHeader><CardTitle className="text-lg">Tabel: Kebijakan Penyimpanan (Storage)</CardTitle></CardHeader>
+                    <CardContent>
+                      <CodeBlock code={storagePoliciesSql} lang="sql" />
+                      <p className="text-sm text-muted-foreground mt-4">Sangat penting: Kebijakan ini memungkinkan pengguna untuk mengunggah dan mengelola avatar mereka. Tanpa ini, fitur ubah foto profil tidak akan berfungsi.</p>
+                    </CardContent>
+                 </Card>
+              </TabsContent>
               <TabsContent value="laporan-merr" className="pt-4 space-y-4">
                  <Card>
                     <CardHeader><CardTitle className="text-lg">Tabel: laporan_smw_merr</CardTitle></CardHeader>
