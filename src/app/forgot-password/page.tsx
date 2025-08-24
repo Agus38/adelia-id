@@ -6,26 +6,38 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabaseClient';
 import { LockKeyhole, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
   const { toast } = useToast();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`, // URL to your reset password page
+    });
+
+    setIsLoading(false);
+
+    if (error) {
       toast({
-        title: 'Tautan Terkirim (Simulasi)',
-        description: 'Jika email terdaftar, tautan reset kata sandi telah dikirim.',
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
       });
-    }, 1500);
+    } else {
+      toast({
+        title: 'Tautan Terkirim',
+        description: 'Jika email terdaftar, tautan untuk mengatur ulang kata sandi telah dikirim.',
+      });
+    }
   };
 
   return (
@@ -44,7 +56,7 @@ export default function ForgotPasswordPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="email@contoh.com" required disabled={isLoading} />
+              <Input id="email" type="email" placeholder="email@contoh.com" required disabled={isLoading} value={email} onChange={e => setEmail(e.target.value)} />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">

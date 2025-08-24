@@ -8,26 +8,72 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const { toast } = useToast();
+  const router = useRouter();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (password !== confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Kata sandi dan konfirmasi kata sandi tidak cocok.',
+        variant: 'destructive',
+      });
+      return;
+    }
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    const { data: { user }, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+        },
+      },
+    });
+
+    if (error) {
       setIsLoading(false);
       toast({
-        title: 'Pendaftaran Berhasil (Simulasi)',
-        description: 'Akun Anda telah berhasil dibuat.',
+        title: 'Pendaftaran Gagal',
+        description: error.message,
+        variant: 'destructive',
       });
-    }, 1500);
+    } else if (user) {
+      // Insert into public.profiles
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({ id: user.id, full_name: name, role: 'Pengguna' });
+      
+      setIsLoading(false);
+
+      if(profileError) {
+         toast({
+          title: 'Error Membuat Profil',
+          description: profileError.message,
+          variant: 'destructive',
+        });
+      } else {
+         toast({
+          title: 'Pendaftaran Berhasil!',
+          description: 'Silakan periksa email Anda untuk verifikasi. Anda akan diarahkan ke halaman login.',
+        });
+        router.push('/login');
+      }
+    }
   };
 
   return (
@@ -44,11 +90,11 @@ export default function RegisterPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nama Lengkap</Label>
-              <Input id="name" type="text" placeholder="Nama Anda" required disabled={isLoading} />
+              <Input id="name" type="text" placeholder="Nama Anda" required disabled={isLoading} value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="email@contoh.com" required disabled={isLoading} />
+              <Input id="email" type="email" placeholder="email@contoh.com" required disabled={isLoading} value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Kata Sandi</Label>
@@ -59,6 +105,8 @@ export default function RegisterPage() {
                   placeholder="Minimal 8 karakter"
                   required
                   disabled={isLoading}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
                 <Button
                   type="button"
@@ -88,6 +136,8 @@ export default function RegisterPage() {
                   placeholder="Ulangi kata sandi"
                   required
                   disabled={isLoading}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                 />
                 <Button
                   type="button"
