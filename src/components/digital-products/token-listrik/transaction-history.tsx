@@ -265,7 +265,7 @@ export function TransactionHistoryTokenListrik() {
                       <p className="text-sm font-semibold">Token</p>
                       <Separator/>
                        <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
-                            <span className="font-mono font-bold text-lg tracking-wider">{selectedTx.sn}</span>
+                            <span className="font-mono font-bold text-base md:text-lg tracking-wider">{selectedTx.sn}</span>
                              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleCopySn(selectedTx.sn!)}>
                                 <Copy className="h-4 w-4" />
                              </Button>
