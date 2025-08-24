@@ -26,6 +26,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 
 type TransactionStatus = 'Berhasil' | 'Gagal' | 'Menunggu';
@@ -59,12 +61,77 @@ const statusVariant: Record<TransactionStatus, 'default' | 'destructive' | 'seco
 export function TransactionHistory() {
   const [isDetailOpen, setDetailOpen] = React.useState(false);
   const [selectedTx, setSelectedTx] = React.useState<Transaction | null>(null);
+  const [editablePrice, setEditablePrice] = React.useState('');
 
   const handleRowClick = (tx: Transaction) => {
     setSelectedTx(tx);
+    setEditablePrice(tx.price.toString());
     setDetailOpen(true);
   };
+  
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value.replace(/\D/g, '');
+      setEditablePrice(value);
+  }
 
+  const handlePrintReceipt = () => {
+    if (!selectedTx) return;
+
+    const finalPrice = Number(editablePrice) || selectedTx.price;
+
+    const receiptContent = `
+        <html>
+            <head>
+                <title>Struk Transaksi ${selectedTx.id}</title>
+                <style>
+                    body { font-family: 'sans-serif'; margin: 0; padding: 20px; color: #333; font-size: 14px; }
+                    .container { max-width: 320px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 8px; }
+                    h2 { text-align: center; margin-top: 0; margin-bottom: 10px; font-size: 1.2rem; }
+                    p { text-align: center; margin: 0; font-size: 0.8rem; color: #777; }
+                    hr { border: none; border-top: 1px dashed #ccc; margin: 20px 0; }
+                    table { width: 100%; border-collapse: collapse; }
+                    td { padding: 5px 0; }
+                    .label { color: #555; }
+                    .value { text-align: right; font-weight: 500; }
+                    .total .value { font-weight: bold; font-size: 1.1rem; }
+                    .footer { text-align: center; margin-top: 20px; font-size: 0.8rem; color: #999; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h2>Struk Pembelian</h2>
+                    <p>Adelia-ID</p>
+                    <hr>
+                    <table>
+                        <tr><td class="label">ID Transaksi</td><td class="value">${selectedTx.id}</td></tr>
+                        <tr><td class="label">Tanggal</td><td class="value">${format(selectedTx.date, 'd MMM yyyy, HH:mm', { locale: id })}</td></tr>
+                    </table>
+                    <hr>
+                    <table>
+                        <tr><td class="label">Produk</td><td class="value">${selectedTx.product}</td></tr>
+                        <tr><td class="label">No. Tujuan</td><td class="value">${selectedTx.phoneNumber}</td></tr>
+                    </table>
+                    <hr>
+                     <table>
+                        <tr class="total"><td class="label">TOTAL</td><td class="value">${formatCurrency(finalPrice)}</td></tr>
+                    </table>
+                    <hr>
+                    <p class="footer">Terima kasih telah bertransaksi!</p>
+                </div>
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        setTimeout(function() { window.close(); }, 100);
+                    }
+                <\/script>
+            </body>
+        </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    printWindow?.document.write(receiptContent);
+    printWindow?.document.close();
+  }
 
   return (
     <>
@@ -174,9 +241,17 @@ export function TransactionHistory() {
                             <span className="text-muted-foreground">Metode Pembayaran</span>
                             <span className="font-medium">{selectedTx.paymentMethod}</span>
                         </div>
-                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Total Harga</span>
-                            <span className="font-bold text-base text-primary">{formatCurrency(selectedTx.price)}</span>
+                        <div className="flex justify-between items-center">
+                            <Label htmlFor="editable-price" className="text-muted-foreground">Total Harga</Label>
+                            <Input 
+                                id="editable-price"
+                                type="text"
+                                inputMode="numeric"
+                                value={editablePrice.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+                                onChange={handlePriceChange}
+                                className="w-32 h-8 text-right font-bold text-base text-primary border-primary/50 focus:border-primary"
+                                disabled={selectedTx.status !== 'Berhasil'}
+                            />
                         </div>
                     </div>
                 </div>
@@ -186,7 +261,7 @@ export function TransactionHistory() {
             <Button variant="outline" onClick={() => setDetailOpen(false)}>
                 <X className="mr-2 h-4 w-4"/> Tutup
             </Button>
-            <Button disabled={selectedTx?.status !== 'Berhasil'}>
+            <Button onClick={handlePrintReceipt} disabled={selectedTx?.status !== 'Berhasil'}>
                 <Receipt className="mr-2 h-4 w-4"/> Cetak Struk
             </Button>
           </DialogFooter>
