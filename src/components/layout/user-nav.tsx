@@ -12,10 +12,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users } from 'lucide-react';
+import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
 
 export function UserNav() {
+  // NOTE: This is a mock authentication state.
+  // Replace this with your actual authentication logic (e.g., from a context or hook).
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  if (!isLoggedIn) {
+    return (
+      <Link href="/login">
+        <Button>
+            <LogIn className="mr-2 h-4 w-4"/>
+            Masuk
+        </Button>
+      </Link>
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -85,7 +101,7 @@ export function UserNav() {
             </DropdownMenuItem>
           </Link>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setIsLoggedIn(false)}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Keluar</span>
         </DropdownMenuItem>
