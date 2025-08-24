@@ -83,25 +83,26 @@ export function TransactionHistory() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Keterangan</TableHead>
-                <TableHead className="text-right">Jumlah</TableHead>
-                <TableHead className="text-center">Status</TableHead>
+                <TableHead className="px-2 py-3 text-xs md:px-4">Tanggal</TableHead>
+                <TableHead className="px-2 py-3 text-xs md:px-4">Keterangan</TableHead>
+                <TableHead className="text-right px-2 py-3 text-xs md:px-4">Jumlah</TableHead>
+                <TableHead className="text-center px-2 py-3 text-xs md:px-4">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {mockTransactions.length > 0 ? mockTransactions.map((tx) => (
                 <TableRow key={tx.id} onClick={() => handleRowClick(tx)} className="cursor-pointer">
-                  <TableCell className="text-xs text-muted-foreground">
-                    {format(tx.date, 'd MMM yyyy, HH:mm', { locale: id })}
+                  <TableCell className="px-2 py-2 text-[11px] text-muted-foreground md:px-4 md:text-xs">
+                    {format(tx.date, 'd MMM, HH:mm', { locale: id })}
                   </TableCell>
-                  <TableCell>
-                    <p className="font-medium">{tx.product}</p>
-                    <p className="text-xs text-muted-foreground">{tx.phoneNumber}</p>
+                  <TableCell className="px-2 py-2 md:px-4">
+                    <p className="font-medium text-xs md:text-sm">{tx.product}</p>
+                    <p className="text-[11px] text-muted-foreground">{tx.phoneNumber}</p>
                   </TableCell>
-                  <TableCell className="text-right font-medium">{formatCurrency(tx.price)}</TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="text-right font-medium px-2 py-2 text-xs md:px-4 md:text-sm">{formatCurrency(tx.price)}</TableCell>
+                  <TableCell className="text-center px-2 py-2 md:px-4">
                     <Badge variant={statusVariant[tx.status]} className={cn(
+                        'text-[10px] px-1.5 py-0.5 md:text-xs md:px-2.5',
                         tx.status === 'Berhasil' && 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
                         tx.status === 'Gagal' && 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
                         'border-none'
