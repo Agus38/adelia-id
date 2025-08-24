@@ -6,8 +6,11 @@ import { UserNav } from './user-nav';
 import { ThemeToggle } from '../theme-toggle';
 import { Logo } from '../icons';
 import Link from 'next/link';
+import { useState } from 'react';
 
 export function Header() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
       <div className="flex items-center gap-2">
@@ -28,8 +31,8 @@ export function Header() {
 
 
       <div className="flex items-center gap-4 md:flex-1 md:justify-end">
-        <ThemeToggle />
-        <UserNav />
+        {isLoggedIn && <ThemeToggle />}
+        <UserNav isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
       </div>
     </header>
   );

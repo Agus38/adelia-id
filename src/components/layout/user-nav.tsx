@@ -14,17 +14,28 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 
-export function UserNav() {
-  // NOTE: This is a mock authentication state.
-  // Replace this with your actual authentication logic (e.g., from a context or hook).
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+interface UserNavProps {
+  isLoggedIn: boolean;
+  setIsLoggedIn: Dispatch<SetStateAction<boolean>>;
+}
+
+export function UserNav({ isLoggedIn, setIsLoggedIn }: UserNavProps) {
+
+  // Simulate login on link click for demonstration
+  const handleLoginClick = () => {
+    // In a real app, you'd navigate and the login page logic would set the state.
+    // For now, we'll simulate a successful login after a delay.
+    setTimeout(() => {
+        setIsLoggedIn(true);
+    }, 500);
+  }
 
   if (!isLoggedIn) {
     return (
-      <Link href="/login">
-        <Button size="sm">
+      <Link href="/login" onClick={handleLoginClick}>
+        <Button size="sm" className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm">
             <LogIn className="mr-2 h-4 w-4"/>
             Masuk
         </Button>
