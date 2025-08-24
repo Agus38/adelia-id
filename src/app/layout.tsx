@@ -25,49 +25,41 @@ export default function RootLayout({
 }>) {
   const [user, setUser] = useState<UserProfile | null>(null);
 
+  const fetchUserProfile = async (authUser: User) => {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', authUser.id);
+    
+    if (error) {
+      console.error('Error fetching profile:', error.message);
+      setUser(authUser); // Fallback to auth user
+    } else if (profile && profile.length > 0) {
+      setUser({ ...authUser, ...profile[0] });
+    } else {
+       // Profile not found, but no error. Fallback to auth user.
+       setUser(authUser);
+    }
+  };
+
   useEffect(() => {
+    const checkInitialUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        fetchUserProfile(session.user);
+      }
+    };
+    checkInitialUser();
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (session?.user) {
-          // Fetch profile when user is logged in
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id);
-          
-          if (error) {
-            console.error('Error fetching profile:', error.message);
-            setUser(session.user); // Fallback to auth user
-          } else if (profile && profile.length > 0) {
-            setUser({ ...session.user, ...profile[0] });
-          } else {
-             // Profile not found, but no error. Fallback to auth user.
-             // This can happen if the profile creation via trigger is delayed.
-             setUser(session.user);
-          }
+          fetchUserProfile(session.user);
         } else {
           setUser(null);
         }
       }
     );
-
-    // Initial check for user session
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-       if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id);
-            
-          if (profile && profile.length > 0) {
-            setUser({ ...user, ...profile[0] });
-          } else {
-            setUser(user);
-          }
-       }
-    };
-    checkUser();
 
     return () => {
       authListener.subscription.unsubscribe();
@@ -111,5 +103,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    
