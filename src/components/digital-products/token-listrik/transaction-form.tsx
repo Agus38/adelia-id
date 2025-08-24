@@ -184,7 +184,7 @@ export function TokenListrikTransactionForm() {
                             <SheetClose asChild>
                                 <Button variant="outline" className="w-full">Batal</Button>
                             </SheetClose>
-                            <Link href="/top-up" className="w-full">
+                            <Link href="/payment" className="w-full">
                                 <Button className="w-full bg-green-600 hover:bg-green-700">
                                    <Wallet className="mr-2 h-4 w-4" /> Konfirmasi & Bayar
                                 </Button>
