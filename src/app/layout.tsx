@@ -37,10 +37,14 @@ export default function RootLayout({
             .single();
           
           if (error) {
-            console.error('Error fetching profile:', error);
+            console.error('Error fetching profile:', error.message);
             setUser(session.user); // Fallback to auth user
-          } else {
+          } else if (profile) {
             setUser({ ...session.user, ...profile });
+          } else {
+             // Profile not found, but no error. Fallback to auth user.
+             // This can happen if the profile creation via trigger is delayed.
+             setUser(session.user);
           }
         } else {
           setUser(null);
@@ -104,3 +108,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    
