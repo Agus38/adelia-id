@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { History, Receipt, X } from 'lucide-react';
+import { History, Receipt, X, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -39,6 +39,8 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+
 
 type TransactionStatus = 'Berhasil' | 'Gagal' | 'Menunggu';
 
@@ -73,6 +75,7 @@ export function TransactionHistory() {
   const [isDetailOpen, setDetailOpen] = React.useState(false);
   const [selectedTx, setSelectedTx] = React.useState<Transaction | null>(null);
   const [editablePrice, setEditablePrice] = React.useState('');
+  const { toast } = useToast();
 
   const handleRowClick = (tx: Transaction) => {
     setSelectedTx(tx);
@@ -83,6 +86,14 @@ export function TransactionHistory() {
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value.replace(/\D/g, '');
       setEditablePrice(value);
+  }
+
+  const handleCopySn = (sn: string) => {
+    navigator.clipboard.writeText(sn);
+    toast({
+        title: "SN Berhasil Disalin!",
+        description: "Nomor seri telah disalin ke clipboard Anda.",
+    });
   }
 
   const handlePrintReceipt = () => {
@@ -231,8 +242,13 @@ export function TransactionHistory() {
                       </div>
                       {selectedTx.sn && (
                          <div className="flex justify-between items-start">
-                            <span className="text-muted-foreground">SN</span>
-                            <span className="font-medium text-right max-w-[70%] break-all">{selectedTx.sn}</span>
+                            <span className="text-muted-foreground pt-1">SN</span>
+                            <div className="flex items-center gap-1 text-right">
+                               <span className="font-medium max-w-full break-all">{selectedTx.sn}</span>
+                               <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => handleCopySn(selectedTx.sn!)}>
+                                  <Copy className="h-4 w-4" />
+                               </Button>
+                            </div>
                         </div>
                       )}
                   </div>
