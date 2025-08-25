@@ -24,26 +24,60 @@ export default function LoginPage() {
     event.preventDefault();
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    setIsLoading(false);
-
     if (error) {
+      setIsLoading(false);
       toast({
         title: 'Login Gagal',
         description: error.message,
         variant: 'destructive',
       });
-    } else {
+      return;
+    }
+
+    if (signInData.user) {
+      // After successful login, check the user's role from the profiles table.
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', signInData.user.id)
+        .single();
+      
+      setIsLoading(false);
+
+      if (profileError) {
+         toast({
+          title: 'Login Berhasil, tapi Gagal Mengambil Profil',
+          description: 'Anda akan diarahkan ke halaman utama. ' + profileError.message,
+          variant: 'destructive',
+        });
+        router.push('/');
+        return;
+      }
+
       toast({
         title: 'Login Berhasil!',
-        description: 'Anda akan diarahkan ke halaman utama.',
+        description: 'Anda akan diarahkan...',
       });
-      router.push('/');
-      router.refresh(); // To re-trigger server components and update user state
+
+      // Redirect based on role
+      if (profile.role === 'Admin') {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
+
+    } else {
+        setIsLoading(false);
+         toast({
+            title: 'Login Gagal',
+            description: 'Pengguna tidak ditemukan setelah proses login.',
+            variant: 'destructive',
+        });
     }
   };
 
