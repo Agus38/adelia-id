@@ -29,8 +29,8 @@ export default async function AdminLayout({
 
   if (error || !profile || profile.role !== 'Admin') {
     // Jika terjadi error, profil tidak ada, atau peran bukan Admin,
-    // alihkan ke halaman utama.
-    redirect('/');
+    // alihkan ke halaman "Akses Ditolak".
+    redirect('/unauthorized');
   }
 
   // Jika pengguna adalah Admin, tampilkan konten halaman admin
