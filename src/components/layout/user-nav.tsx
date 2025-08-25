@@ -53,7 +53,8 @@ export function UserNav({ user, loading }: UserNavProps) {
   
   const getAvatarFallback = (name?: string, email?: string) => {
     if (name) {
-      return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2);
+      if (initials) return initials.toUpperCase();
     }
     if (email) {
       return email.charAt(0).toUpperCase();
@@ -66,7 +67,7 @@ export function UserNav({ user, loading }: UserNavProps) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user.photoURL || undefined} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
+            <AvatarImage src={user.photoURL || ''} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
             <AvatarFallback>{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
           </Avatar>
         </Button>

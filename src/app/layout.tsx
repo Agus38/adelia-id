@@ -35,7 +35,7 @@ export default function RootLayout({
           const userData = userDoc.data();
           setUser({
             ...authUser,
-            fullName: userData.fullName,
+            fullName: userData.fullName || authUser.displayName,
             role: userData.role,
           });
         } else {
