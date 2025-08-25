@@ -35,7 +35,7 @@ export default function RegisterPage() {
     }
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -49,19 +49,19 @@ export default function RegisterPage() {
     setIsLoading(false);
 
     if (error) {
-       if (error.message.includes('User already registered')) {
         toast({
-            title: 'Pendaftaran Gagal',
-            description: 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.',
-            variant: 'destructive',
-        });
-       } else {
-         toast({
             title: 'Pendaftaran Gagal',
             description: error.message,
             variant: 'destructive',
         });
-       }
+    } else if (data.user && !data.session) {
+        // This case handles when the user already exists but confirmation is required.
+        // Supabase doesn't throw an error, but returns a user with no session.
+        toast({
+            title: 'Pendaftaran Gagal',
+            description: 'Email ini sudah terdaftar. Silakan coba masuk atau periksa email Anda untuk tautan konfirmasi.',
+            variant: 'destructive',
+        });
     } else {
       toast({
         title: 'Pendaftaran Berhasil!',
