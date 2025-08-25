@@ -1,4 +1,6 @@
 
+'use server';
+
 import * as React from 'react';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
