@@ -35,6 +35,7 @@ export default function RootLayout({
       
       if (error) {
         console.error('Error fetching profile:', error.message);
+        // Fallback to auth user metadata if profile fetch fails
         setUser({
           ...authUser,
           full_name: authUser.user_metadata.full_name,
@@ -51,6 +52,7 @@ export default function RootLayout({
         await fetchUserProfile(session.user);
       }
     };
+    
     getInitialSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
