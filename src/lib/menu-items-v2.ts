@@ -269,6 +269,14 @@ export const adminMenuItems: MenuItem[] = [
     access: 'admin',
   },
   {
+    id: 'session-management',
+    title: 'Manajemen Sesi',
+    href: '/admin/sessions',
+    icon: Lock,
+    description: 'Kelola sesi pengguna yang aktif.',
+    access: 'admin',
+  },
+  {
     id: 'system-settings',
     title: 'Pengaturan Sistem',
     href: '/admin/setup',

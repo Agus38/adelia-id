@@ -17,6 +17,7 @@ import {
   Users2,
   CreditCard,
   ImageIcon,
+  Lock,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -36,6 +37,12 @@ const managementLinks = [
     href: "/admin/users",
     icon: Users,
     description: "Kelola pengguna, peran, dan hak akses.",
+  },
+  {
+    title: "Manajemen Sesi",
+    href: "/admin/sessions",
+    icon: Lock,
+    description: "Kelola sesi pengguna yang aktif.",
   },
   {
     title: "Manajemen Tim",
