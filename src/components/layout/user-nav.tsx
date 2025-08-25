@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,9 +19,10 @@ import type { UserProfile } from '@/app/layout';
 
 interface UserNavProps {
   user: UserProfile | null;
+  loading?: boolean;
 }
 
-export function UserNav({ user }: UserNavProps) {
+export function UserNav({ user, loading }: UserNavProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -31,10 +31,19 @@ export function UserNav({ user }: UserNavProps) {
     router.refresh();
   };
 
+  if (loading) {
+    return (
+      <Button size="sm" className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm" disabled>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+        Memuat...
+      </Button>
+    )
+  }
+
   if (!user) {
     return (
       <Link href="/login">
-        <Button size="sm" className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm">
+        <Button size="sm" className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm" disabled={loading}>
             <LogIn className="mr-2 h-4 w-4"/>
             Masuk
         </Button>

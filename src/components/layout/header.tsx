@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -10,9 +9,10 @@ import type { UserProfile } from '@/app/layout';
 
 interface HeaderProps {
   user: UserProfile | null;
+  loading?: boolean;
 }
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user, loading }: HeaderProps) {
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
       <div className="flex items-center gap-2">
@@ -33,7 +33,7 @@ export function Header({ user }: HeaderProps) {
 
       <div className="flex items-center gap-4 md:flex-1 md:justify-end">
         {user && <ThemeToggle />}
-        <UserNav user={user} />
+        <UserNav user={user} loading={loading} />
       </div>
     </header>
   );
