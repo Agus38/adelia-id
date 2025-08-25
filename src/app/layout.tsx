@@ -25,35 +25,26 @@ export default function RootLayout({
 }>) {
   const [user, setUser] = useState<UserProfile | null>(null);
 
-  const fetchUserProfile = async (authUser: User) => {
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', authUser.id)
-      .single();
-
-    if (error) {
-      console.error('Error fetching profile:', error.message);
-      // Fallback to auth user metadata if profile fetch fails
-      setUser({
-        ...authUser,
-        full_name: authUser.user_metadata.full_name,
-        avatar_url: authUser.user_metadata.avatar_url,
-      });
-    } else if (profile) {
-      // If profile exists, merge it with the auth user object
-      setUser({ ...authUser, ...profile });
-    } else {
-       // Profile not found, but no error. Fallback to auth user metadata.
-       setUser({
-        ...authUser,
-        full_name: authUser.user_metadata.full_name,
-        avatar_url: authUser.user_metadata.avatar_url,
-      });
-    }
-  };
-
   useEffect(() => {
+    const fetchUserProfile = async (authUser: User) => {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error.message);
+        setUser({
+          ...authUser,
+          full_name: authUser.user_metadata.full_name,
+          avatar_url: authUser.user_metadata.avatar_url,
+        });
+      } else {
+        setUser({ ...authUser, ...profile });
+      }
+    };
+
     const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
@@ -64,8 +55,9 @@ export default function RootLayout({
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (session?.user) {
-          await fetchUserProfile(session.user);
+        const currentUser = session?.user;
+        if (currentUser) {
+          await fetchUserProfile(currentUser);
         } else {
           setUser(null);
         }

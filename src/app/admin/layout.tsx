@@ -16,23 +16,23 @@ export default async function AdminLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    // Pengguna tidak login, alihkan ke halaman login
+    // User is not logged in, redirect to login page.
     redirect('/login');
   }
 
-  // Ambil profil pengguna untuk memeriksa peran
+  // User is logged in, check their role.
   const { data: profile, error } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
+  // If there's an error, or if the profile doesn't exist, or if the role is not 'Admin',
+  // redirect to a "not authorized" page.
   if (error || !profile || profile.role !== 'Admin') {
-    // Jika terjadi error, profil tidak ada, atau peran bukan Admin,
-    // alihkan ke halaman "Akses Ditolak".
     redirect('/unauthorized');
   }
 
-  // Jika pengguna adalah Admin, tampilkan konten halaman admin
+  // If the user is an Admin, render the admin page content.
   return <>{children}</>;
 }
