@@ -1,4 +1,6 @@
 
+'use client';
+
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { type MenuItem, menuItems as defaultMenuItems, allIcons, type LucideIcon } from './menu-items-v2';
@@ -17,8 +19,8 @@ interface MenuItemDTO {
     title: string;
     href: string;
     iconName: string; // Store icon name as a string
-    access?: 'all' | 'admin';
-    comingSoon?: boolean;
+    access: 'all' | 'admin';
+    comingSoon: boolean;
 }
 
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
@@ -43,8 +45,8 @@ export const getMenuConfig = async (): Promise<MenuItem[]> => {
                 title: item.title,
                 href: item.href,
                 iconName: item.icon.displayName || 'Package',
-                access: item.access,
-                comingSoon: item.comingSoon,
+                access: item.access || 'all',
+                comingSoon: item.comingSoon || false,
             }));
             await setDoc(menuConfigDocRef, { items: defaultDTOs });
             return defaultMenuItems;
@@ -57,7 +59,8 @@ export const getMenuConfig = async (): Promise<MenuItem[]> => {
 };
 
 export const saveMenuConfig = async (items: MenuItem[]) => {
-    // Convert full MenuItem objects to lightweight DTOs for storing in Firestore
+    // Convert full MenuItem objects to lightweight DTOs for storing in Firestore.
+    // Explicitly map each field to ensure no 'undefined' values are sent.
     const itemsToStore: MenuItemDTO[] = items.map(item => ({
         id: item.id,
         title: item.title,
