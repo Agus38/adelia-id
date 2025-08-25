@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { type MenuItem, menuItems as defaultMenuItems, allIcons, type LucideIcon } from './menu-items-v2';
