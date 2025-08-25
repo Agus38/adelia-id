@@ -92,6 +92,7 @@ export function MenuManagement() {
       title: '',
       href: '/',
       icon: defaultIcon.component, 
+      iconName: defaultIcon.name,
       access: 'all',
       comingSoon: false,
     });

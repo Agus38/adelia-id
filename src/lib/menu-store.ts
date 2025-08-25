@@ -1,7 +1,7 @@
 
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
-import { type MenuItem, menuItems as defaultMenuItems, allIcons } from './menu-items-v2';
+import { type MenuItem, menuItems as defaultMenuItems, allIcons, type LucideIcon } from './menu-items-v2';
 
 // Helper function to get icon component from its name string
 const getIconComponent = (iconName?: string): LucideIcon => {
@@ -63,8 +63,8 @@ export const saveMenuConfig = async (items: MenuItem[]) => {
         title: item.title,
         href: item.href,
         iconName: (item as any).iconName || item.icon.displayName || 'Package',
-        access: item.access,
-        comingSoon: item.comingSoon,
+        access: item.access ?? 'all', // Fallback to 'all' if undefined
+        comingSoon: item.comingSoon ?? false, // Fallback to false if undefined
     }));
     
     await setDoc(menuConfigDocRef, { items: itemsToStore });
