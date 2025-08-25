@@ -54,12 +54,12 @@ export default function RegisterPage() {
             description: error.message,
             variant: 'destructive',
         });
-    } else if (data.user && !data.session) {
-        // This case handles when the user already exists but confirmation is required.
-        // Supabase doesn't throw an error, but returns a user with no session.
+    } else if (data.user && data.user.identities && data.user.identities.length === 0) {
+        // This case handles when the user already exists. Supabase returns a user
+        // but with an empty identities array.
         toast({
             title: 'Pendaftaran Gagal',
-            description: 'Email ini sudah terdaftar. Silakan coba masuk atau periksa email Anda untuk tautan konfirmasi.',
+            description: 'Email ini sudah terdaftar. Silakan coba masuk atau gunakan email lain.',
             variant: 'destructive',
         });
     } else {
