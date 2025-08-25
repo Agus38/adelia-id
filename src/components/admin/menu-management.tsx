@@ -43,12 +43,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '../ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
-import { getMenuConfig, saveMenuConfig, menuConfigListener } from '@/lib/menu-store';
+import { useMenuConfig, saveMenuConfig } from '@/lib/menu-store';
 
-// Create a map for quick icon lookup
+
 const iconList = allIconsMap.reduce((acc, item) => {
     if (item.icon && typeof item.icon.displayName === 'string' && !acc.find(i => i.name === item.icon.displayName)) {
         acc.push({ name: item.icon.displayName, component: item.icon });
@@ -58,28 +57,21 @@ const iconList = allIconsMap.reduce((acc, item) => {
 
 
 export function MenuManagement() {
+  const { menuItems, isLoading } = useMenuConfig();
   const [menuState, setMenuState] = useState<MenuItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isNew, setIsNew] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
   
-  // Icon Picker State
   const [isIconPickerOpen, setIconPickerOpen] = useState(false);
   const [iconSearchTerm, setIconSearchTerm] = useState("");
 
   useEffect(() => {
-    const unsubscribe = menuConfigListener.subscribe((config) => {
-      setMenuState(config);
-      setIsLoading(false);
-    });
-
-    // Initial fetch
-    getMenuConfig(); 
-    
-    return () => unsubscribe();
-  }, []);
+    if (menuItems) {
+      setMenuState(menuItems);
+    }
+  }, [menuItems]);
 
 
   const handleEdit = (item: MenuItem) => {

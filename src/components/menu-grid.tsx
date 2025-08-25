@@ -4,27 +4,11 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "./ui/badge";
-import { useEffect, useState } from "react";
-import type { MenuItem } from "@/lib/menu-items-v2";
-import { menuConfigListener, getMenuConfig } from "@/lib/menu-store";
+import { useMenuConfig } from "@/lib/menu-store";
 import { Loader2 } from "lucide-react";
 
 export function MenuGrid() {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = menuConfigListener.subscribe((config) => {
-      setMenuItems(config);
-      setIsLoading(false);
-    });
-
-    // Initial fetch
-    getMenuConfig();
-
-    return () => unsubscribe();
-  }, []);
-
+  const { menuItems, isLoading } = useMenuConfig();
 
   if (isLoading) {
     return (

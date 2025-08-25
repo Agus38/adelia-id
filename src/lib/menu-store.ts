@@ -4,6 +4,7 @@
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { type MenuItem, menuItems as defaultMenuItems, allIcons, type LucideIcon } from './menu-items-v2';
+import { create } from 'zustand';
 
 // Helper function to get icon component from its name string
 const getIconComponent = (iconName?: string): LucideIcon => {
@@ -25,77 +26,71 @@ interface MenuItemDTO {
 
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
 
-const processDocData = (data: any): MenuItem[] => {
-    const storedItems = (data?.items || []) as MenuItemDTO[];
-    // Re-hydrate the menu items with the actual icon components
-    return storedItems.map(item => ({
-        ...item,
-        icon: getIconComponent(item.iconName),
-        access: item.access ?? 'all',
-        comingSoon: item.comingSoon ?? false,
-    }));
+// Zustand store for real-time state management
+interface MenuStoreState {
+    menuItems: MenuItem[];
+    isLoading: boolean;
+    error: Error | null;
+    initializeListener: () => () => void; // Returns the unsubscribe function
+    setMenuItems: (items: MenuItem[]) => void;
+}
+
+const useMenuStore = create<MenuStoreState>((set) => ({
+    menuItems: [],
+    isLoading: true,
+    error: null,
+    setMenuItems: (items) => set({ menuItems: items, isLoading: false, error: null }),
+    initializeListener: () => {
+        const unsubscribe = onSnapshot(menuConfigDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const storedItems = (docSnap.data()?.items || []) as MenuItemDTO[];
+                const hydratedItems = storedItems.map(item => ({
+                    ...item,
+                    icon: getIconComponent(item.iconName),
+                    access: item.access ?? 'all',
+                    comingSoon: item.comingSoon ?? false,
+                }));
+                set({ menuItems: hydratedItems, isLoading: false, error: null });
+            } else {
+                console.log("No menu config found, providing defaults.");
+                set({ menuItems: defaultMenuItems, isLoading: false, error: null });
+            }
+        }, (error) => {
+            console.error("Error with real-time menu listener:", error);
+            set({ menuItems: defaultMenuItems, isLoading: false, error });
+        });
+
+        return unsubscribe; // Return the unsubscribe function for cleanup
+    },
+}));
+
+// Custom hook for components to use
+export const useMenuConfig = () => {
+    const { menuItems, isLoading, initializeListener } = useMenuStore();
+
+    React.useEffect(() => {
+        // Initialize listener only once
+        const unsubscribe = initializeListener();
+        return () => unsubscribe(); // Cleanup on unmount
+    }, [initializeListener]);
+
+    return { menuItems, isLoading };
 };
 
-// --- Real-time Listener Setup ---
-type Listener = (config: MenuItem[]) => void;
-let listener: Listener | null = null;
-let isListenerAttached = false;
-
-export const menuConfigListener = {
-  subscribe: (newListener: Listener): (() => void) => {
-    listener = newListener;
-    if (!isListenerAttached) {
-      attachListener();
-    }
-    return () => {
-      listener = null; // Don't detach Firestore listener, just the UI listener
-    };
-  },
-  notify: (config: MenuItem[]) => {
-    if (listener) {
-      listener(config);
-    }
-  },
-};
-
-const attachListener = () => {
-  if (isListenerAttached) return;
-  isListenerAttached = true;
-  
-  onSnapshot(menuConfigDocRef, (docSnap) => {
-    if (docSnap.exists()) {
-      const config = processDocData(docSnap.data());
-      menuConfigListener.notify(config);
-    } else {
-      console.log("No menu config found, providing defaults.");
-      menuConfigListener.notify(defaultMenuItems);
-    }
-  }, (error) => {
-    console.error("Error with real-time menu listener:", error);
-    // Fallback to defaults on error
-    menuConfigListener.notify(defaultMenuItems);
-  });
-};
-
-
-// One-time fetch function
 export const getMenuConfig = async (): Promise<MenuItem[]> => {
     try {
         const docSnap = await getDoc(menuConfigDocRef);
-
         if (docSnap.exists()) {
-            return processDocData(docSnap.data());
+            const storedItems = (docSnap.data()?.items || []) as MenuItemDTO[];
+            return storedItems.map(item => ({
+                ...item,
+                icon: getIconComponent(item.iconName),
+                access: item.access ?? 'all',
+                comingSoon: item.comingSoon ?? false,
+            }));
         } else {
             console.log("No menu config found, initializing with defaults.");
-            const defaultDTOs: MenuItemDTO[] = defaultMenuItems.map(item => ({
-                id: item.id,
-                title: item.title,
-                href: item.href,
-                iconName: item.icon.displayName || 'Package',
-                access: item.access || 'all',
-                comingSoon: item.comingSoon || false,
-            }));
-            await setDoc(menuConfigDocRef, { items: defaultDTOs });
+            await saveMenuConfig(defaultMenuItems);
             return defaultMenuItems;
         }
     } catch (error) {
@@ -113,6 +108,5 @@ export const saveMenuConfig = async (items: MenuItem[]) => {
         access: item.access ?? 'all',
         comingSoon: item.comingSoon ?? false,
     }));
-    
     await setDoc(menuConfigDocRef, { items: itemsToStore });
 };
