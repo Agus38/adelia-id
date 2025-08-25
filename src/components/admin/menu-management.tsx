@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { menuItems as initialMenuItems, allIconsMap } from '@/lib/menu-items-v2';
+import { allIconsMap } from '@/lib/menu-items-v2';
 import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
@@ -24,7 +24,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import type { MenuItem } from '@/lib/menu-items-v2';
-import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon, Search, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   Select,
@@ -46,6 +46,7 @@ import {
   AlertDialogTrigger,
 } from '../ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
+import { getMenuConfig, saveMenuConfig } from '@/lib/menu-store';
 
 // Create a map for quick icon lookup
 const iconList = allIconsMap.reduce((acc, item) => {
@@ -57,7 +58,9 @@ const iconList = allIconsMap.reduce((acc, item) => {
 
 
 export function MenuManagement() {
-  const [menuState, setMenuState] = useState<MenuItem[]>(initialMenuItems);
+  const [menuState, setMenuState] = useState<MenuItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isNew, setIsNew] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
@@ -66,6 +69,16 @@ export function MenuManagement() {
   const [isIconPickerOpen, setIconPickerOpen] = useState(false);
   const [iconSearchTerm, setIconSearchTerm] = useState("");
 
+  useEffect(() => {
+    const fetchMenuData = async () => {
+      setIsLoading(true);
+      const config = await getMenuConfig();
+      setMenuState(config);
+      setIsLoading(false);
+    }
+    fetchMenuData();
+  }, []);
+
   const handleEdit = (item: MenuItem) => {
     setSelectedMenuItem(item);
     setIsNew(false);
@@ -73,11 +86,12 @@ export function MenuManagement() {
   };
   
   const handleAddNew = () => {
+    const defaultIcon = iconList.find(i => i.name === 'Package') || iconList[0];
     setSelectedMenuItem({
       id: '',
       title: '',
       href: '/',
-      icon: iconList[0].component,
+      icon: defaultIcon.component, 
       access: 'all',
       comingSoon: false,
     });
@@ -89,7 +103,7 @@ export function MenuManagement() {
     setMenuState(menuState.filter(item => item.id !== id));
     toast({
         title: "Menu Dihapus",
-        description: `Menu dengan ID "${id}" telah berhasil dihapus.`,
+        description: `Menu dengan ID "${id}" telah dihapus dari daftar lokal. Simpan perubahan untuk menerapkan.`,
         variant: "destructive"
     });
   }
@@ -130,25 +144,35 @@ export function MenuManagement() {
             return;
         }
         setMenuState([...menuState, selectedMenuItem]);
-        toast({ title: "Menu Ditambahkan", description: "Item menu baru telah berhasil ditambahkan." });
+        toast({ title: "Menu Ditambahkan", description: "Item menu baru telah ditambahkan ke daftar lokal." });
     } else {
         setMenuState(menuState.map(item => item.id === selectedMenuItem.id ? selectedMenuItem : item));
-        toast({ title: "Menu Diperbarui", description: "Item menu telah berhasil diperbarui." });
+        toast({ title: "Menu Diperbarui", description: "Item menu telah diperbarui di daftar lokal." });
     }
     setEditDialogOpen(false);
   }
 
-  const handleSaveChanges = () => {
-    // NOTE: Mock implementation. In a real app, you would save the new order.
-    console.log("Saving new menu state:", menuState);
-    toast({
-        title: "Perubahan Disimpan!",
-        description: "Konfigurasi menu telah berhasil diperbarui."
-    })
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+        await saveMenuConfig(menuState);
+        toast({
+            title: "Perubahan Disimpan!",
+            description: "Konfigurasi menu telah berhasil diperbarui di database."
+        })
+    } catch (error) {
+         toast({
+            title: "Gagal Menyimpan",
+            description: "Terjadi kesalahan saat menyimpan konfigurasi menu.",
+            variant: "destructive"
+        })
+    } finally {
+        setIsSaving(false);
+    }
   }
 
   const handleIconSelect = (icon: {name: string, component: LucideIcon}) => {
-    setSelectedMenuItem(prev => prev ? {...prev, icon: icon.component} : null);
+    setSelectedMenuItem(prev => prev ? {...prev, icon: icon.component, iconName: icon.name } : null);
     setIconPickerOpen(false);
   }
   
@@ -159,8 +183,11 @@ export function MenuManagement() {
   return (
     <div>
         <div className="flex justify-between mb-4">
-            <Button variant="outline" onClick={handleAddNew}><PlusCircle className="mr-2" /> Tambah Menu Baru</Button>
-            <Button onClick={handleSaveChanges}>Simpan Semua Perubahan</Button>
+            <Button variant="outline" onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> Tambah Menu Baru</Button>
+            <Button onClick={handleSaveChanges} disabled={isSaving || isLoading}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Semua Perubahan
+            </Button>
         </div>
       <div className="rounded-md border">
         <Table>
@@ -174,67 +201,76 @@ export function MenuManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {menuState.map((item, index) => (
-              <TableRow key={item.id}>
-                <TableCell>
-                  <item.icon className="h-5 w-5" />
-                </TableCell>
-                <TableCell className="font-medium">{item.title}</TableCell>
-                <TableCell>
-                   <div className="flex flex-col items-center gap-1.5">
-                    <Switch 
-                        checked={!item.comingSoon} 
-                        onCheckedChange={(checked) => handleVisibilityChange(item.id, checked)}
-                        aria-label="Visibilitas menu" />
-                    <Badge variant={item.comingSoon ? 'secondary' : 'default'} className="text-[10px] px-1.5 py-0.5">
-                        {item.comingSoon ? 'Segera' : 'Terlihat'}
-                    </Badge>
-                   </div>
-                </TableCell>
-                <TableCell>
-                  <Select 
-                    value={item.access || 'all'} 
-                    onValueChange={(value: 'all' | 'admin') => handleAccessChange(item.id, value)}
-                  >
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Pilih akses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell className="text-right space-x-0.5">
-                   <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'up')} disabled={index === 0}>
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'down')} disabled={index === menuState.length - 1}>
-                    <ArrowDown className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
-                    Edit
-                  </Button>
-                   <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                         <Button variant="destructive" size="sm">Hapus</Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Anda yakin ingin menghapus menu "{item.title}"?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tindakan ini tidak dapat dibatalkan. Ini akan menghapus item menu secara permanen.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Batal</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(item.id)}>Lanjutkan</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                </TableCell>
-              </TableRow>
-            ))}
+            {isLoading ? (
+                <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                        <p>Memuat konfigurasi menu...</p>
+                    </TableCell>
+                </TableRow>
+            ) : (
+                menuState.map((item, index) => (
+                <TableRow key={item.id}>
+                    <TableCell>
+                    <item.icon className="h-5 w-5" />
+                    </TableCell>
+                    <TableCell className="font-medium">{item.title}</TableCell>
+                    <TableCell>
+                    <div className="flex flex-col items-center gap-1.5">
+                        <Switch 
+                            checked={!item.comingSoon} 
+                            onCheckedChange={(checked) => handleVisibilityChange(item.id, checked)}
+                            aria-label="Visibilitas menu" />
+                        <Badge variant={item.comingSoon ? 'secondary' : 'default'} className="text-[10px] px-1.5 py-0.5">
+                            {item.comingSoon ? 'Segera' : 'Terlihat'}
+                        </Badge>
+                    </div>
+                    </TableCell>
+                    <TableCell>
+                    <Select 
+                        value={item.access || 'all'} 
+                        onValueChange={(value: 'all' | 'admin') => handleAccessChange(item.id, value)}
+                    >
+                        <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Pilih akses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="all">Semua</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    </TableCell>
+                    <TableCell className="text-right space-x-0.5">
+                    <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'up')} disabled={index === 0}>
+                        <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'down')} disabled={index === menuState.length - 1}>
+                        <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
+                        Edit
+                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">Hapus</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Anda yakin ingin menghapus menu "{item.title}"?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Tindakan ini tidak dapat dibatalkan. Ini akan menghapus item menu dari daftar lokal.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(item.id)}>Lanjutkan</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                        </AlertDialog>
+                    </TableCell>
+                </TableRow>
+                ))
+            )}
           </TableBody>
         </Table>
       </div>
@@ -284,7 +320,7 @@ export function MenuManagement() {
                     <Label className="text-right">Ikon</Label>
                     <Button variant="outline" className="col-span-3 justify-start" onClick={() => setIconPickerOpen(true)}>
                        {selectedMenuItem.icon && <selectedMenuItem.icon className="mr-2 h-4 w-4" />}
-                       <span>{selectedMenuItem.icon.displayName}</span>
+                       <span>{(selectedMenuItem as any).iconName || selectedMenuItem.icon.displayName}</span>
                     </Button>
                 </div>
             </div>

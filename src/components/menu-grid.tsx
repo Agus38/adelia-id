@@ -1,9 +1,36 @@
+
+'use client';
+
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { menuItems } from "@/lib/menu-items-v2";
 import { Badge } from "./ui/badge";
+import { useEffect, useState } from "react";
+import type { MenuItem } from "@/lib/menu-items-v2";
+import { getMenuConfig } from "@/lib/menu-store";
+import { Loader2 } from "lucide-react";
 
 export function MenuGrid() {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMenus = async () => {
+      setIsLoading(true);
+      const config = await getMenuConfig();
+      setMenuItems(config);
+      setIsLoading(false);
+    }
+    fetchMenus();
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-3 gap-4 md:grid-cols-4 md:gap-6">
       {menuItems.map((item) => (
