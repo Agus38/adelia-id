@@ -20,10 +20,9 @@ import type { UserProfile } from '@/app/layout';
 
 interface UserNavProps {
   user: UserProfile | null;
-  loading: boolean;
 }
 
-export function UserNav({ user, loading }: UserNavProps) {
+export function UserNav({ user }: UserNavProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -31,15 +30,6 @@ export function UserNav({ user, loading }: UserNavProps) {
     router.push('/login');
     router.refresh();
   };
-
-  if (loading) {
-     return (
-        <Button size="sm" disabled className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-            Memuat...
-        </Button>
-     )
-  }
 
   if (!user) {
     return (
