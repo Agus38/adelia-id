@@ -114,7 +114,7 @@ export function UserNav({ user }: UserNavProps) {
           </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-         {user.role === 'Admin' && (
+         {user && user.role === 'Admin' && (
           <>
             <Link href="/admin">
               <DropdownMenuItem className="text-primary focus:text-primary">
