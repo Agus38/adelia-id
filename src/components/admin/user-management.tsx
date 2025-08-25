@@ -32,7 +32,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Ban, Trash2, Edit, CheckCircle, ChevronDown, Eye } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Ban, Trash2, Edit, CheckCircle, ChevronDown, Eye, Loader2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import {
   Dialog,
@@ -56,34 +56,27 @@ import {
 } from '../ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
-import { allMenuItems, type MenuItem } from '@/lib/menu-items-v2';
+import { allMenuItems } from '@/lib/menu-items-v2';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ScrollArea } from '../ui/scroll-area';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { toast } from '@/hooks/use-toast';
 
 type UserStatus = 'Aktif' | 'Diblokir';
 type UserRole = 'Admin' | 'Pengguna' | 'Editor';
 
 type User = {
-  id: number;
-  name: string;
+  id: string; // Firestore document ID
+  uid: string;
+  fullName: string;
   email: string;
   role: UserRole;
-  joined: string; // YYYY-MM-DD
+  createdAt: any; // Firestore Timestamp
   status: UserStatus;
-  menuAccess: Record<string, boolean>;
+  menuAccess?: Record<string, boolean>;
 };
 
-
-const initialUsers: User[] = [
-  { id: 1, name: 'Adelia', email: 'adelia@example.com', role: 'Admin', joined: '2023-01-15', status: 'Aktif', menuAccess: {} },
-  { id: 2, name: 'Budi', email: 'budi@example.com', role: 'Pengguna', joined: '2023-02-20', status: 'Aktif', menuAccess: {} },
-  { id: 3, name: 'Citra', email: 'citra@example.com', role: 'Pengguna', joined: '2023-03-10', status: 'Aktif', menuAccess: {} },
-  { id: 4, name: 'Dewi', email: 'dewi@example.com', role: 'Editor', joined: '2023-04-05', status: 'Diblokir', menuAccess: {} },
-  { id: 5, name: 'Eka', email: 'eka@example.com', role: 'Pengguna', joined: '2023-05-21', status: 'Aktif', menuAccess: {} },
-  { id: 6, name: 'Fajar', email: 'fajar@example.com', role: 'Pengguna', joined: '2023-06-12', status: 'Aktif', menuAccess: {} },
-  { id: 7, name: 'Gita', email: 'gita@example.com', role: 'Admin', joined: '2023-07-01', status: 'Aktif', menuAccess: {} },
-  { id: 8, name: 'Hadi', email: 'hadi@example.com', role: 'Editor', joined: '2023-08-18', status: 'Diblokir', menuAccess: {} },
-];
 
 const roleBadgeVariant: { [key in UserRole]: 'destructive' | 'secondary' | 'default' } = {
   'Admin': 'destructive',
@@ -97,14 +90,8 @@ const statusBadgeVariant: { [key in UserStatus]: 'default' | 'destructive' } = {
 };
 
 export function UserManagement() {
-  const [users, setUsers] = React.useState(initialUsers.map(user => ({
-    ...user,
-    // Initialize menu access based on default menu item access
-    menuAccess: allMenuItems.reduce((acc, item) => {
-      acc[item.id] = item.access === 'all' || user.role === 'Admin';
-      return acc;
-    }, {} as Record<string, boolean>)
-  })));
+  const [users, setUsers] = React.useState<User[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -121,6 +108,29 @@ export function UserManagement() {
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
   const [editedUserData, setEditedUserData] = React.useState<Partial<User>>({});
 
+  const fetchUsers = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const usersCollection = collection(db, 'users');
+      const usersSnapshot = await getDocs(usersCollection);
+      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+      setUsers(usersList);
+    } catch (error) {
+       toast({
+        title: "Gagal memuat pengguna",
+        description: "Terjadi kesalahan saat mengambil data dari Firestore.",
+        variant: "destructive",
+      });
+    } finally {
+        setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+
   const handleEdit = (user: User) => {
     setSelectedUser(user);
     setEditedUserData(user);
@@ -129,12 +139,10 @@ export function UserManagement() {
 
   const handleAdd = () => {
     setSelectedUser(null);
-    const newUserTemplate: User = {
-        id: Math.max(...users.map(u => u.id), 0) + 1,
-        name: '',
+    const newUserTemplate: Partial<User> = {
+        fullName: '',
         email: '',
         role: 'Pengguna',
-        joined: new Date().toISOString().split('T')[0],
         status: 'Aktif',
         menuAccess: allMenuItems.reduce((acc, item) => {
           acc[item.id] = item.access === 'all';
@@ -165,15 +173,43 @@ export function UserManagement() {
     setDetailModalOpen(true);
   };
   
-  const handleSaveUser = () => {
-    if (selectedUser) { // Editing existing user
-      setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...editedUserData } as User : u));
-    } else { // Adding new user
-      setUsers([...users, editedUserData as User]);
+  const handleSaveUser = async () => {
+    if (!editedUserData.email || !editedUserData.fullName) {
+      toast({ title: "Error", description: "Nama dan email harus diisi.", variant: "destructive" });
+      return;
     }
-    setAddEditDialogOpen(false);
-    setSelectedUser(null);
-    setEditedUserData({});
+
+    try {
+      if (selectedUser) { // Editing existing user
+        const userDocRef = doc(db, 'users', selectedUser.id);
+        await updateDoc(userDocRef, {
+            fullName: editedUserData.fullName,
+            role: editedUserData.role,
+            // menuAccess: editedUserData.menuAccess, // Implement if needed
+        });
+        toast({ title: "Pengguna Diperbarui", description: "Data pengguna telah berhasil diperbarui." });
+      } else { // Adding new user
+        await addDoc(collection(db, "users"), {
+            fullName: editedUserData.fullName,
+            email: editedUserData.email,
+            role: editedUserData.role,
+            status: 'Aktif',
+            createdAt: serverTimestamp(),
+            // You might want to set a temporary UID or leave it empty
+            // as this user hasn't authenticated yet.
+            uid: `temp_${Date.now()}`,
+            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(editedUserData.fullName)}&background=random`,
+        });
+        toast({ title: "Pengguna Ditambahkan", description: "Pengguna baru telah berhasil ditambahkan." });
+      }
+      fetchUsers(); // Refresh data
+      setAddEditDialogOpen(false);
+      setSelectedUser(null);
+      setEditedUserData({});
+
+    } catch (error) {
+       toast({ title: "Error", description: "Gagal menyimpan data pengguna.", variant: "destructive" });
+    }
   };
 
   const handleAccessChange = (menuId: string, checked: boolean) => {
@@ -190,25 +226,45 @@ export function UserManagement() {
     setEditedUserData(prev => ({ ...prev, role }));
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedUser) {
-      setUsers(users.filter(u => u.id !== selectedUser.id));
+      try {
+        await deleteDoc(doc(db, 'users', selectedUser.id));
+        toast({ title: "Pengguna Dihapus", description: `Pengguna ${selectedUser.fullName} telah dihapus.` });
+        fetchUsers(); // Refresh data
+      } catch (error) {
+        toast({ title: "Error", description: "Gagal menghapus pengguna.", variant: "destructive" });
+      }
     }
     setDeleteDialogOpen(false);
     setSelectedUser(null);
   };
 
-  const confirmBlock = () => {
+  const confirmBlock = async () => {
     if (selectedUser) {
-      setUsers(users.map(u => u.id === selectedUser.id ? {...u, status: 'Diblokir'} : u));
+       try {
+        const userDocRef = doc(db, 'users', selectedUser.id);
+        await updateDoc(userDocRef, { status: 'Diblokir' });
+        toast({ title: "Pengguna Diblokir", description: `${selectedUser.fullName} telah diblokir.` });
+        fetchUsers();
+      } catch (error) {
+         toast({ title: "Error", description: "Gagal memblokir pengguna.", variant: "destructive" });
+      }
     }
     setBlockDialogOpen(false);
     setSelectedUser(null);
   }
 
-  const confirmUnblock = () => {
+  const confirmUnblock = async () => {
     if (selectedUser) {
-        setUsers(users.map(u => u.id === selectedUser.id ? {...u, status: 'Aktif'} : u));
+       try {
+        const userDocRef = doc(db, 'users', selectedUser.id);
+        await updateDoc(userDocRef, { status: 'Aktif' });
+        toast({ title: "Blokir Dibuka", description: `Blokir untuk ${selectedUser.fullName} telah dibuka.` });
+        fetchUsers();
+      } catch (error) {
+        toast({ title: "Error", description: "Gagal membuka blokir pengguna.", variant: "destructive" });
+      }
     }
     setUnblockDialogOpen(false);
     setSelectedUser(null);
@@ -238,9 +294,9 @@ export function UserManagement() {
       enableHiding: false,
     },
     {
-      accessorKey: 'name',
+      accessorKey: 'fullName',
       header: 'Nama',
-      cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
+      cell: ({ row }) => <div className="font-medium">{row.getValue('fullName')}</div>,
     },
     {
       accessorKey: 'email',
@@ -251,7 +307,7 @@ export function UserManagement() {
       header: 'Peran',
       cell: ({ row }) => {
         const role = row.getValue('role') as UserRole;
-        return <Badge variant={roleBadgeVariant[role]}>{role}</Badge>;
+        return <Badge variant={roleBadgeVariant[role] || 'secondary'}>{role}</Badge>;
       },
        filterFn: (row, id, value) => {
         return value.includes(row.getValue(id));
@@ -263,8 +319,8 @@ export function UserManagement() {
       cell: ({ row }) => {
         const status = row.getValue('status') as UserStatus;
         return (
-          <Badge variant={statusBadgeVariant[status]} className={cn(status === 'Aktif' ? 'bg-green-500/20 text-green-700 border-green-500/30 hover:bg-green-500/30' : 'bg-red-500/20 text-red-700 border-red-500/30 hover:bg-red-500/30', 'border')}>
-            {status}
+          <Badge variant={statusBadgeVariant[status] || 'default'} className={cn(status === 'Aktif' ? 'bg-green-500/20 text-green-700 border-green-500/30 hover:bg-green-500/30' : 'bg-red-500/20 text-red-700 border-red-500/30 hover:bg-red-500/30', 'border')}>
+            {status || 'Aktif'}
           </Badge>
         );
       },
@@ -273,16 +329,11 @@ export function UserManagement() {
       },
     },
     {
-      accessorKey: 'joined',
+      accessorKey: 'createdAt',
       header: 'Tanggal Bergabung',
       cell: ({ row }) => {
-        const date = row.getValue('joined') as string;
-        try {
-          const [year, month, day] = date.split('-');
-          return `${day}-${month}-${year}`;
-        } catch (e) {
-          return date; // Fallback for invalid format
-        }
+        const date = row.original.createdAt?.toDate();
+        return date ? new Intl.DateTimeFormat('id-ID', {day: '2-digit', month: 'short', year: 'numeric'}).format(date) : '-';
       },
     },
     {
@@ -354,9 +405,9 @@ export function UserManagement() {
           <div className="flex flex-1 items-center space-x-2">
             <Input
               placeholder="Cari pengguna berdasarkan nama..."
-              value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+              value={(table.getColumn('fullName')?.getFilterValue() as string) ?? ''}
               onChange={(event) =>
-                table.getColumn('name')?.setFilterValue(event.target.value)
+                table.getColumn('fullName')?.setFilterValue(event.target.value)
               }
               className="max-w-sm"
             />
@@ -440,7 +491,7 @@ export function UserManagement() {
                           column.toggleVisibility(!!value)
                         }
                       >
-                        {column.id === "name" ? "Nama" : column.id === "email" ? "Email" : column.id === "role" ? "Peran" : column.id === "status" ? "Status" : column.id === "joined" ? "Tanggal Bergabung" : column.id}
+                        {column.id === "fullName" ? "Nama" : column.id}
                       </DropdownMenuCheckboxItem>
                     );
                   })}
@@ -473,7 +524,13 @@ export function UserManagement() {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {loading ? (
+                <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                    </TableCell>
+                </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -531,24 +588,24 @@ export function UserManagement() {
 
       {/* Dialogs */}
       <Dialog open={isAddEditDialogOpen} onOpenChange={setAddEditDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{selectedUser ? 'Edit Pengguna' : 'Tambah Pengguna Baru'}</DialogTitle>
             <DialogDescription>
               {selectedUser
-                ? 'Ubah detail pengguna, peran, dan hak akses menu di bawah ini.'
-                : 'Isi formulir untuk menambahkan pengguna baru.'}
+                ? 'Ubah detail pengguna dan peran di bawah ini.'
+                : 'Isi formulir untuk menambahkan pengguna baru. Pengguna harus tetap mendaftar sendiri.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nama</Label>
-                <Input id="name" value={editedUserData?.name || ''} onChange={(e) => setEditedUserData(prev => ({...prev, name: e.target.value}))} />
+                <Label htmlFor="name">Nama Lengkap</Label>
+                <Input id="name" value={editedUserData?.fullName || ''} onChange={(e) => setEditedUserData(prev => ({...prev, fullName: e.target.value}))} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={editedUserData?.email || ''} onChange={(e) => setEditedUserData(prev => ({...prev, email: e.target.value}))} />
+                <Input id="email" type="email" value={editedUserData?.email || ''} onChange={(e) => setEditedUserData(prev => ({...prev, email: e.target.value}))} disabled={!!selectedUser} />
               </div>
             </div>
              <div className="space-y-2">
@@ -564,29 +621,6 @@ export function UserManagement() {
                   </SelectContent>
                 </Select>
             </div>
-             <div className="space-y-2">
-                <Label>Hak Akses Menu</Label>
-                 <ScrollArea className="h-48 rounded-md border p-4">
-                  <div className="space-y-4">
-                  {allMenuItems
-                    .filter(item => item.id !== 'home')
-                    .map(item => (
-                    <div key={item.id} className="flex items-center justify-between">
-                      <Label htmlFor={`menu-${item.id}`} className="flex items-center gap-2 font-normal">
-                          <item.icon className="h-4 w-4" />
-                          {item.title}
-                      </Label>
-                      <Checkbox
-                        id={`menu-${item.id}`}
-                        checked={editedUserData.menuAccess?.[item.id] ?? false}
-                        onCheckedChange={(checked) => handleAccessChange(item.id, !!checked)}
-                        disabled={item.access === 'admin' && editedUserData.role !== 'Admin'}
-                      />
-                    </div>
-                  ))}
-                  </div>
-                </ScrollArea>
-             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddEditDialogOpen(false)}>Batal</Button>
@@ -598,7 +632,7 @@ export function UserManagement() {
       <Dialog open={isDetailModalOpen} onOpenChange={setDetailModalOpen}>
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
-                <DialogTitle>Detail Pengguna: {selectedUser?.name}</DialogTitle>
+                <DialogTitle>Detail Pengguna: {selectedUser?.fullName}</DialogTitle>
                 <DialogDescription>
                     Informasi lengkap untuk pengguna yang dipilih.
                 </DialogDescription>
@@ -606,27 +640,27 @@ export function UserManagement() {
             {selectedUser && (
                 <div className="space-y-4 pt-2">
                     <div className="grid grid-cols-3 gap-2 text-sm">
-                        <p className="text-muted-foreground col-span-1">ID Pengguna:</p>
-                        <p className="font-semibold col-span-2">{selectedUser.id}</p>
+                        <p className="text-muted-foreground col-span-1">User ID:</p>
+                        <p className="font-semibold col-span-2 truncate">{selectedUser.uid}</p>
 
                         <p className="text-muted-foreground col-span-1">Nama:</p>
-                        <p className="font-semibold col-span-2">{selectedUser.name}</p>
+                        <p className="font-semibold col-span-2">{selectedUser.fullName}</p>
 
                         <p className="text-muted-foreground col-span-1">Email:</p>
                         <p className="font-semibold col-span-2">{selectedUser.email}</p>
 
                         <p className="text-muted-foreground col-span-1">Peran:</p>
-                        <div className="col-span-2"><Badge variant={roleBadgeVariant[selectedUser.role]}>{selectedUser.role}</Badge></div>
+                        <div className="col-span-2"><Badge variant={roleBadgeVariant[selectedUser.role] || 'secondary'}>{selectedUser.role}</Badge></div>
 
                         <p className="text-muted-foreground col-span-1">Status:</p>
                         <div className="col-span-2">
-                           <Badge variant={statusBadgeVariant[selectedUser.status]} className={cn(selectedUser.status === 'Aktif' ? 'bg-green-500/20 text-green-700 border-green-500/30 hover:bg-green-500/30' : 'bg-red-500/20 text-red-700 border-red-500/30 hover:bg-red-500/30', 'border')}>
-                             {selectedUser.status}
+                           <Badge variant={statusBadgeVariant[selectedUser.status || 'Aktif']} className={cn((selectedUser.status || 'Aktif') === 'Aktif' ? 'bg-green-500/20 text-green-700 border-green-500/30 hover:bg-green-500/30' : 'bg-red-500/20 text-red-700 border-red-500/30 hover:bg-red-500/30', 'border')}>
+                             {selectedUser.status || 'Aktif'}
                            </Badge>
                         </div>
 
                          <p className="text-muted-foreground col-span-1">Bergabung:</p>
-                        <p className="font-semibold col-span-2">{selectedUser.joined.split('-').reverse().join('-')}</p>
+                        <p className="font-semibold col-span-2">{selectedUser.createdAt?.toDate ? new Intl.DateTimeFormat('id-ID').format(selectedUser.createdAt.toDate()) : '-'}</p>
                     </div>
                 </div>
             )}
@@ -644,7 +678,7 @@ export function UserManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Ini akan menghapus pengguna secara permanen.
+              Tindakan ini tidak dapat dibatalkan. Ini akan menghapus data pengguna dari Firestore, tetapi tidak dari Firebase Authentication.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -657,7 +691,7 @@ export function UserManagement() {
        <AlertDialog open={isBlockDialogOpen} onOpenChange={setBlockDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Blokir Pengguna: {selectedUser?.name}?</AlertDialogTitle>
+            <AlertDialogTitle>Blokir Pengguna: {selectedUser?.fullName}?</AlertDialogTitle>
             <AlertDialogDescription>
               Pengguna yang diblokir tidak akan dapat mengakses aplikasi. Anda dapat membuka blokir nanti.
             </AlertDialogDescription>
@@ -672,7 +706,7 @@ export function UserManagement() {
       <AlertDialog open={isUnblockDialogOpen} onOpenChange={setUnblockDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Buka Blokir Pengguna: {selectedUser?.name}?</AlertDialogTitle>
+            <AlertDialogTitle>Buka Blokir Pengguna: {selectedUser?.fullName}?</AlertDialogTitle>
             <AlertDialogDescription>
               Tindakan ini akan mengizinkan pengguna untuk mengakses aplikasi kembali.
             </AlertDialogDescription>
