@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { setDoc, doc } from 'firebase/firestore';
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -37,6 +37,7 @@ export default function RegisterPage() {
     }
     setIsLoading(true);
 
+    let isSuccess = false;
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -48,15 +49,9 @@ export default function RegisterPage() {
         fullName: name,
         role: email === 'server64462@gmail.com' ? 'Admin' : 'Pengguna',
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
       });
-
-      toast({
-        title: 'Pendaftaran Berhasil!',
-        description: 'Akun Anda telah dibuat. Anda akan diarahkan ke halaman login.',
-      });
-      router.push('/login');
-
+      isSuccess = true;
     } catch (error: any) {
         let errorMessage = 'Terjadi kesalahan saat pendaftaran.';
         if (error.code === 'auth/email-already-in-use') {
@@ -69,6 +64,14 @@ export default function RegisterPage() {
         });
     } finally {
         setIsLoading(false);
+    }
+
+    if (isSuccess) {
+       toast({
+        title: 'Pendaftaran Berhasil!',
+        description: 'Akun Anda telah dibuat. Anda akan diarahkan ke halaman login.',
+      });
+      router.push('/login');
     }
   };
 
