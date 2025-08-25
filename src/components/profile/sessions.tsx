@@ -1,3 +1,4 @@
+
 "use client"
 
 import {
@@ -67,7 +68,7 @@ export function Sessions() {
             title: "Berhasil Keluar",
             description: "Anda telah berhasil keluar dari semua perangkat.",
         });
-        router.push('/login');
+        router.push('/');
        }
     };
     
