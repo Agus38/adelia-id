@@ -46,7 +46,7 @@ export default function RegisterPage() {
         uid: user.uid,
         email: user.email,
         fullName: name,
-        role: email === 'server64462@gmail.com' || email === 'agushermanto38@gmail.com' ? 'Admin' : 'Pengguna',
+        role: email === 'server64462@gmail.com' ? 'Admin' : 'Pengguna',
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         createdAt: new Date(),
       });
