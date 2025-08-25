@@ -39,6 +39,7 @@ export default function RootLayout({
             role: userData.role,
           });
         } else {
+           // Fallback if user doc doesn't exist for some reason
            setUser(authUser);
         }
       } else {
