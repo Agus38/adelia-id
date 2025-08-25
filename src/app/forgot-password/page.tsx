@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabaseClient';
+import { auth } from '@/lib/firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { LockKeyhole, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -20,23 +21,20 @@ export default function ForgotPasswordPage() {
     event.preventDefault();
     setIsLoading(true);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`, // URL to your reset password page
-    });
-
-    setIsLoading(false);
-
-    if (error) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } else {
+    try {
+      await sendPasswordResetEmail(auth, email);
       toast({
         title: 'Tautan Terkirim',
         description: 'Jika email terdaftar, tautan untuk mengatur ulang kata sandi telah dikirim.',
       });
+    } catch (error: any) {
+       toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+        setIsLoading(false);
     }
   };
 

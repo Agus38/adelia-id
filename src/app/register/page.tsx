@@ -10,7 +10,9 @@ import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { auth, db } from '@/lib/firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { setDoc, doc } from 'firebase/firestore';
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -35,39 +37,38 @@ export default function RegisterPage() {
     }
     setIsLoading(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name,
-          avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
-        },
-      },
-    });
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-    setIsLoading(false);
+      // Save user info to Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        fullName: name,
+        role: email === 'server64462@gmail.com' || email === 'agushermanto38@gmail.com' ? 'Admin' : 'Pengguna',
+        avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+        createdAt: new Date(),
+      });
 
-    if (error) {
-        toast({
-            title: 'Pendaftaran Gagal',
-            description: error.message,
-            variant: 'destructive',
-        });
-    } else if (data.user && data.user.identities && data.user.identities.length === 0) {
-        // This case handles when the user already exists. Supabase returns a user
-        // but with an empty identities array.
-        toast({
-            title: 'Pendaftaran Gagal',
-            description: 'Email ini sudah terdaftar. Silakan coba masuk atau gunakan email lain.',
-            variant: 'destructive',
-        });
-    } else {
       toast({
         title: 'Pendaftaran Berhasil!',
-        description: 'Silakan periksa email Anda untuk verifikasi. Anda akan diarahkan ke halaman login.',
+        description: 'Akun Anda telah dibuat. Anda akan diarahkan ke halaman login.',
       });
       router.push('/login');
+
+    } catch (error: any) {
+        let errorMessage = 'Terjadi kesalahan saat pendaftaran.';
+        if (error.code === 'auth/email-already-in-use') {
+            errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain.';
+        }
+        toast({
+            title: 'Pendaftaran Gagal',
+            description: errorMessage,
+            variant: 'destructive',
+        });
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -97,7 +98,7 @@ export default function RegisterPage() {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Minimal 8 karakter"
+                  placeholder="Minimal 6 karakter"
                   required
                   disabled={isLoading}
                   value={password}

@@ -9,12 +9,12 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Footer } from '@/components/layout/footer';
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import type { User } from '@supabase/supabase-js';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import type { User } from 'firebase/auth';
 
 export type UserProfile = User & {
-  full_name?: string;
-  avatar_url?: string;
+  fullName?: string;
   role?: string;
 };
 
@@ -27,58 +27,27 @@ export default function RootLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserProfile = async (authUser: User) => {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authUser.id)
-        .maybeSingle(); // Use maybeSingle() to prevent error if profile doesn't exist yet
-      
-      if (error && error.code !== 'PGRST116') { // PGRST116 is for "exactly one row not found" which is fine
-        console.error('Error fetching profile:', error.message);
-        setUser({
-          ...authUser,
-          full_name: authUser.user_metadata.full_name,
-          avatar_url: authUser.user_metadata.avatar_url,
-        });
-      } else if (profile) {
-        setUser({ ...authUser, ...profile });
+    const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
+      if (authUser) {
+        const userDocRef = doc(db, 'users', authUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUser({
+            ...authUser,
+            fullName: userData.fullName,
+            role: userData.role,
+          });
+        } else {
+           setUser(authUser);
+        }
       } else {
-         setUser({
-          ...authUser,
-          full_name: authUser.user_metadata.full_name,
-          avatar_url: authUser.user_metadata.avatar_url,
-        });
-      }
-    };
-
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await fetchUserProfile(session.user);
+        setUser(null);
       }
       setLoading(false);
-    };
-    
-    getInitialSession();
+    });
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        const currentUser = session?.user;
-        if (currentUser) {
-          await fetchUserProfile(currentUser);
-        } else {
-          setUser(null);
-        }
-        if (event !== 'INITIAL_SESSION') {
-          setLoading(false);
-        }
-      }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   return (

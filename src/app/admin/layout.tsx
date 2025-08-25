@@ -1,40 +1,53 @@
 
+'use client';
+
 import * as React from 'react';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
-
-export default async function AdminLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createServerComponentClient({ cookies });
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = React.useState<boolean | null>(null);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        // 1. If user is not logged in, redirect to the login page.
+        router.push('/login');
+        return;
+      }
 
-  // 1. If user is not logged in, redirect to the login page.
-  if (!user) {
-    redirect('/login');
+      // 2. If user is logged in, check their role.
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists() && userDoc.data().role === 'Admin') {
+        // 4. If the user is an Admin, allow access.
+        setIsAuthorized(true);
+      } else {
+        // 3. If the role is not 'Admin', redirect to the unauthorized page.
+        router.push('/unauthorized');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  if (isAuthorized === null) {
+    // Show a loading state while checking authorization
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
-  // 2. If user is logged in, check their role.
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  // 3. If there was an error, the profile doesn't exist, or the role is not 'Admin',
-  //    redirect to the unauthorized page.
-  if (error || !profile || profile.role !== 'Admin') {
-    redirect('/unauthorized');
-  }
-
-  // 4. If the user is an Admin, allow access.
-  return <>{children}</>;
+  return isAuthorized ? <>{children}</> : null;
 }

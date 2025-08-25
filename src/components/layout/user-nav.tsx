@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabaseClient';
+import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import type { UserProfile } from '@/app/layout';
 
@@ -27,9 +27,8 @@ export function UserNav({ user, loading }: UserNavProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await auth.signOut();
     router.push('/');
-    router.refresh();
   };
 
   if (loading) {
@@ -44,7 +43,7 @@ export function UserNav({ user, loading }: UserNavProps) {
   if (!user) {
     return (
       <Link href="/login">
-        <Button size="sm" className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm" disabled={loading}>
+        <Button size="sm" className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm">
             <LogIn className="mr-2 h-4 w-4"/>
             Masuk
         </Button>
@@ -67,15 +66,15 @@ export function UserNav({ user, loading }: UserNavProps) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user.avatar_url || user.user_metadata?.avatar_url} alt={user.full_name || user.email} data-ai-hint="user avatar" />
-            <AvatarFallback>{getAvatarFallback(user.full_name, user.email)}</AvatarFallback>
+            <AvatarImage src={user.photoURL || undefined} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
+            <AvatarFallback>{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.full_name || 'Pengguna'}</p>
+            <p className="text-sm font-medium leading-none">{user.fullName || 'Pengguna'}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>

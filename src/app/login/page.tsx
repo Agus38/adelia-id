@@ -10,7 +10,9 @@ import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { auth, db } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -24,29 +26,33 @@ export default function LoginPage() {
     event.preventDefault();
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-    setIsLoading(false);
+      // Check user role from Firestore
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
 
-    if (error) {
+      toast({
+        title: 'Login Berhasil!',
+        description: 'Anda akan diarahkan...',
+      });
+      
+      if (userDoc.exists() && userDoc.data().role === 'Admin') {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
+    } catch (error: any) {
       toast({
         title: 'Login Gagal',
-        description: error.message,
+        description: 'Email atau kata sandi salah.',
         variant: 'destructive',
       });
-      return;
+    } finally {
+        setIsLoading(false);
     }
-
-    toast({
-      title: 'Login Berhasil!',
-      description: 'Anda akan diarahkan...',
-    });
-    
-    // Redirect to home and let layouts handle role-based routing
-    router.push('/');
   };
 
   return (

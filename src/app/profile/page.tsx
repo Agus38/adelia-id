@@ -8,27 +8,31 @@ import { Sessions } from "@/components/profile/sessions";
 import { User, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { UserProfile } from "../layout";
-import { supabase } from "@/lib/supabaseClient";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function SettingsProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        setUser({ ...user, ...profile });
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+      if (authUser) {
+        const userDocRef = doc(db, 'users', authUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+           setUser({ ...authUser, ...userDoc.data() } as UserProfile);
+        } else {
+           setUser(authUser);
+        }
+      } else {
+        setUser(null);
       }
       setLoading(false);
-    };
-
-    fetchUser();
+    });
+    
+    return () => unsubscribe();
   }, []);
 
   if (loading) {

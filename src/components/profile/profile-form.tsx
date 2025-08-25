@@ -20,16 +20,19 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Camera, Loader2 } from "lucide-react"
 import type { UserProfile } from "@/app/layout"
-import { supabase } from "@/lib/supabaseClient"
+import { auth, db, storage } from "@/lib/firebase"
+import { updateProfile } from "firebase/auth"
+import { doc, updateDoc } from "firebase/firestore"
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { useRouter } from "next/navigation"
 import { useRef, useState } from "react"
 
 const profileFormSchema = z.object({
-  full_name: z.string().min(2, {
+  fullName: z.string().min(2, {
     message: "Nama harus memiliki setidaknya 2 karakter.",
   }),
   email: z.string().email(),
-  avatar_url: z.string().url().optional(),
+  photoURL: z.string().url().optional(),
 })
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
@@ -46,9 +49,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      full_name: user.full_name || "",
-      email: user.email,
-      avatar_url: user.avatar_url || "",
+      fullName: user.fullName || "",
+      email: user.email || "",
+      photoURL: user.photoURL || "",
     },
     mode: "onChange",
   })
@@ -69,71 +72,58 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
   const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !auth.currentUser) return;
 
     setIsUploading(true);
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}-${Math.random()}.${fileExt}`;
-    const filePath = `${fileName}`;
+    const storageRef = ref(storage, `avatars/${auth.currentUser.uid}/${file.name}`);
+    
+    try {
+        await uploadBytes(storageRef, file);
+        const photoURL = await getDownloadURL(storageRef);
 
-    const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
+        await updateProfile(auth.currentUser, { photoURL });
+        const userDocRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userDocRef, { avatarUrl: photoURL });
 
-    if (uploadError) {
+        form.setValue('photoURL', photoURL, { shouldDirty: true });
         toast({
+            title: "Avatar Diperbarui",
+            description: "Foto profil Anda telah berhasil diubah.",
+        });
+        router.refresh();
+    } catch (error) {
+         toast({
             title: "Upload Gagal",
-            description: "Gagal mengunggah avatar: " + uploadError.message,
+            description: "Gagal mengunggah avatar.",
             variant: "destructive"
         });
+    } finally {
         setIsUploading(false);
-        return;
     }
-
-    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-
-    if (data) {
-        form.setValue('avatar_url', data.publicUrl, { shouldDirty: true });
-        // Auto-save when avatar is changed
-        await onSubmit({ ...form.getValues(), avatar_url: data.publicUrl });
-    }
-    setIsUploading(false);
   }
 
   async function onSubmit(data: ProfileFormValues) {
-    // Step 1: Update the user metadata in auth.users
-    const { error: userError } = await supabase.auth.updateUser({
-      data: { avatar_url: data.avatar_url, full_name: data.full_name }
-    });
+    if (!auth.currentUser) return;
+    
+    try {
+        // Update Firebase Auth profile
+        await updateProfile(auth.currentUser, { displayName: data.fullName });
+        
+        // Update Firestore document
+        const userDocRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userDocRef, { fullName: data.fullName });
 
-    if (userError) {
-      toast({
-        title: "Error",
-        description: "Gagal memperbarui metadata pengguna: " + userError.message,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Step 2: Update the profiles table
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        full_name: data.full_name,
-        avatar_url: data.avatar_url,
-      })
-      .eq('id', user.id);
-
-    if (profileError) {
-       toast({
-        title: "Error",
-        description: "Gagal memperbarui profil: " + profileError.message,
-        variant: "destructive"
-      })
-    } else {
-       toast({
-        title: "Profil Diperbarui",
-        description: "Informasi profil Anda telah berhasil disimpan.",
-      })
-      router.refresh();
+        toast({
+            title: "Profil Diperbarui",
+            description: "Informasi profil Anda telah berhasil disimpan.",
+        });
+        router.refresh();
+    } catch (error) {
+        toast({
+            title: "Error",
+            description: "Gagal memperbarui profil.",
+            variant: "destructive"
+        });
     }
   }
 
@@ -149,8 +139,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
                     <div className="flex items-center space-x-4">
                         <div className="relative">
                             <Avatar className="h-20 w-20">
-                                <AvatarImage src={form.watch('avatar_url') ?? undefined} alt={user.full_name || "User Avatar"} data-ai-hint="user avatar" />
-                                <AvatarFallback>{getAvatarFallback(user.full_name, user.email)}</AvatarFallback>
+                                <AvatarImage src={form.watch('photoURL') ?? undefined} alt={user.fullName || "User Avatar"} data-ai-hint="user avatar" />
+                                <AvatarFallback>{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
                                  {isUploading && (
                                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
                                         <Loader2 className="h-6 w-6 animate-spin text-white" />
@@ -171,13 +161,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
                             />
                         </div>
                          <div className="space-y-1">
-                            <h3 className="font-semibold text-lg">{form.watch('full_name')}</h3>
+                            <h3 className="font-semibold text-lg">{form.watch('fullName')}</h3>
                             <p className="text-sm text-muted-foreground">{user.email}</p>
                         </div>
                     </div>
                      <FormField
                         control={form.control}
-                        name="full_name"
+                        name="fullName"
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>Nama Lengkap</FormLabel>

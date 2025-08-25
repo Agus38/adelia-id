@@ -17,12 +17,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { toast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card"
-import { supabase } from "@/lib/supabaseClient"
+import { auth } from "@/lib/firebase"
+import { updatePassword } from "firebase/auth"
 import { Loader2 } from "lucide-react"
 
 const passwordFormSchema = z.object({
-  // We remove currentPassword as it's not needed for Supabase's updateUser method for password changes
-  newPassword: z.string().min(8, {message: "Kata sandi baru minimal 8 karakter."}),
+  newPassword: z.string().min(6, {message: "Kata sandi baru minimal 6 karakter."}),
   confirmPassword: z.string(),
 }).refine(data => data.newPassword === data.confirmPassword, {
     message: "Kata sandi tidak cocok.",
@@ -43,22 +43,29 @@ export function PasswordForm() {
   })
 
   async function onSubmit(data: PasswordFormValues) {
-    const { error } = await supabase.auth.updateUser({
-      password: data.newPassword
-    });
+    const user = auth.currentUser;
+    if (!user) {
+        toast({
+            title: "Error",
+            description: "Anda harus login untuk mengubah kata sandi.",
+            variant: "destructive"
+        });
+        return;
+    }
     
-    if (error) {
-       toast({
-        title: "Error",
-        description: "Gagal memperbarui kata sandi: " + error.message,
-        variant: "destructive"
-      })
-    } else {
-       toast({
-        title: "Kata Sandi Diperbarui",
-        description: "Kata sandi Anda telah berhasil diubah.",
-      })
-      form.reset();
+    try {
+        await updatePassword(user, data.newPassword);
+        toast({
+            title: "Kata Sandi Diperbarui",
+            description: "Kata sandi Anda telah berhasil diubah.",
+        });
+        form.reset();
+    } catch(error: any) {
+        toast({
+            title: "Error",
+            description: "Gagal memperbarui kata sandi: " + error.message,
+            variant: "destructive"
+        });
     }
   }
 

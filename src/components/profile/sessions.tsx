@@ -11,65 +11,51 @@ import {
 } from "@/components/ui/card"
 import { Button } from "../ui/button"
 import { Laptop, Smartphone, Loader2 } from "lucide-react"
-import { supabase } from "@/lib/supabaseClient"
+import { auth } from "@/lib/firebase"
 import { useEffect, useState } from "react"
-import type { Session } from "@supabase/supabase-js"
+import type { User } from "firebase/auth"
 import { toast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 
-// NOTE: Supabase client-side library does not currently support fetching all user sessions.
-// This is a mock implementation to demonstrate the UI.
-const mockSessions = [
-  {
-    device: "Chrome di Windows",
-    location: "Gresik, ID",
-    ip: "103.24.12.10",
+// NOTE: Firebase client SDK does not support listing all sessions.
+// This component shows the current session and allows logging out from all sessions.
+const mockCurrentSession = {
+    device: "Browser Ini",
+    location: "Tidak Diketahui",
+    ip: "Tidak Diketahui",
     isCurrent: true,
     icon: Laptop,
-    refresh_token: "current_session_token",
-  },
-  {
-    device: "Aplikasi Mobile Adelia",
-    location: "Surabaya, ID",
-    ip: "121.55.44.20",
-    isCurrent: false,
-    icon: Smartphone,
-    refresh_token: "other_session_token",
-  },
-]
+}
+
 
 export function Sessions() {
     const [loading, setLoading] = useState(true);
-    const [currentSession, setCurrentSession] = useState<Session | null>(null);
+    const [user, setUser] = useState<User | null>(null);
     const router = useRouter();
 
     useEffect(() => {
-        const fetchSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setCurrentSession(session);
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            setUser(user);
             setLoading(false);
-        };
-
-        fetchSession();
+        });
+        return () => unsubscribe();
     }, []);
 
     const handleSignOutAll = async () => {
-      // This will sign out the current session.
-      // To sign out all sessions, you'd typically need a server-side implementation.
-      const { error } = await supabase.auth.signOut();
-       if (error) {
+      try {
+        await auth.signOut();
         toast({
-            title: "Error",
-            description: "Gagal keluar dari semua sesi: " + error.message,
-            variant: "destructive",
-        });
-       } else {
-         toast({
             title: "Berhasil Keluar",
             description: "Anda telah berhasil keluar dari semua perangkat.",
         });
         router.push('/');
-       }
+      } catch(error: any) {
+         toast({
+            title: "Error",
+            description: "Gagal keluar dari semua sesi: " + error.message,
+            variant: "destructive",
+        });
+      }
     };
     
   if (loading) {
@@ -93,26 +79,22 @@ export function Sessions() {
       <CardHeader>
         <CardTitle>Sesi Aktif</CardTitle>
         <CardDescription>
-          Kelola dan keluar dari sesi aktif Anda di perangkat lain. (Fitur ini dalam pengembangan)
+          Di bawah ini adalah sesi Anda saat ini. Firebase tidak mendukung pengelolaan sesi individual dari sisi klien.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {mockSessions.map((session, index) => (
-          <div key={index} className="flex items-center justify-between p-3 rounded-md border">
+        {user && (
+          <div className="flex items-center justify-between p-3 rounded-md border">
             <div className="flex items-center gap-4">
-                <session.icon className="h-6 w-6 text-muted-foreground" />
+                <Laptop className="h-6 w-6 text-muted-foreground" />
                 <div>
-                    <p className="font-semibold">{session.device}</p>
-                    <p className="text-sm text-muted-foreground">{session.location} ({session.ip})</p>
+                    <p className="font-semibold">{mockCurrentSession.device}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
                 </div>
             </div>
-            {currentSession && session.refresh_token === "current_session_token" ? (
-                <span className="text-sm font-semibold text-primary">Sesi ini</span>
-            ) : (
-                <Button variant="outline" size="sm" disabled>Keluar</Button>
-            )}
+            <span className="text-sm font-semibold text-primary">Sesi ini</span>
           </div>
-        ))}
+        )}
       </CardContent>
       <CardFooter>
         <Button variant="destructive" onClick={handleSignOutAll}>Keluar dari semua sesi</Button>
