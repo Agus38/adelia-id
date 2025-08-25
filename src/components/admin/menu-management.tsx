@@ -46,7 +46,7 @@ import {
   AlertDialogTrigger,
 } from '../ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
-import { getMenuConfig, saveMenuConfig } from '@/lib/menu-store';
+import { getMenuConfig, saveMenuConfig, menuConfigListener } from '@/lib/menu-store';
 
 // Create a map for quick icon lookup
 const iconList = allIconsMap.reduce((acc, item) => {
@@ -70,14 +70,17 @@ export function MenuManagement() {
   const [iconSearchTerm, setIconSearchTerm] = useState("");
 
   useEffect(() => {
-    const fetchMenuData = async () => {
-      setIsLoading(true);
-      const config = await getMenuConfig();
+    const unsubscribe = menuConfigListener.subscribe((config) => {
       setMenuState(config);
       setIsLoading(false);
-    }
-    fetchMenuData();
+    });
+
+    // Initial fetch
+    getMenuConfig(); 
+    
+    return () => unsubscribe();
   }, []);
+
 
   const handleEdit = (item: MenuItem) => {
     setSelectedMenuItem(item);
