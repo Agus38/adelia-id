@@ -49,11 +49,19 @@ export default function RegisterPage() {
     setIsLoading(false);
 
     if (error) {
-      toast({
-        title: 'Pendaftaran Gagal',
-        description: error.message,
-        variant: 'destructive',
-      });
+       if (error.message.includes('User already registered')) {
+        toast({
+            title: 'Pendaftaran Gagal',
+            description: 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.',
+            variant: 'destructive',
+        });
+       } else {
+         toast({
+            title: 'Pendaftaran Gagal',
+            description: error.message,
+            variant: 'destructive',
+        });
+       }
     } else {
       toast({
         title: 'Pendaftaran Berhasil!',
