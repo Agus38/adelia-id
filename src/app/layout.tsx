@@ -1,3 +1,4 @@
+
 'use client';
 
 import './globals.css';
@@ -31,17 +32,23 @@ export default function RootLayout({
         .from('profiles')
         .select('*')
         .eq('id', authUser.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle() to prevent error if profile doesn't exist yet
       
-      if (error) {
+      if (error && error.code !== 'PGRST116') { // PGRST116 is for "exactly one row not found" which is fine
         console.error('Error fetching profile:', error.message);
         setUser({
           ...authUser,
           full_name: authUser.user_metadata.full_name,
           avatar_url: authUser.user_metadata.avatar_url,
         });
-      } else {
+      } else if (profile) {
         setUser({ ...authUser, ...profile });
+      } else {
+         setUser({
+          ...authUser,
+          full_name: authUser.user_metadata.full_name,
+          avatar_url: authUser.user_metadata.avatar_url,
+        });
       }
     };
 
