@@ -24,6 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserProfile = async (authUser: User) => {
@@ -51,18 +52,21 @@ export default function RootLayout({
       if (session?.user) {
         await fetchUserProfile(session.user);
       }
+      setLoading(false);
     };
     
     getInitialSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        setLoading(true);
         const currentUser = session?.user;
         if (currentUser) {
           await fetchUserProfile(currentUser);
         } else {
           setUser(null);
         }
+        setLoading(false);
       }
     );
 
@@ -94,7 +98,7 @@ export default function RootLayout({
             <div className="flex min-h-screen w-full flex-col bg-muted/40">
               <AppSidebar />
               <div className="flex flex-1 flex-col">
-                <Header user={user} />
+                <Header user={user} loading={loading} />
                 <main className="flex-1">
                   {children}
                 </main>

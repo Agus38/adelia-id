@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users } from 'lucide-react';
+import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
@@ -20,9 +20,10 @@ import type { UserProfile } from '@/app/layout';
 
 interface UserNavProps {
   user: UserProfile | null;
+  loading: boolean;
 }
 
-export function UserNav({ user }: UserNavProps) {
+export function UserNav({ user, loading }: UserNavProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -30,6 +31,15 @@ export function UserNav({ user }: UserNavProps) {
     router.push('/login');
     router.refresh();
   };
+
+  if (loading) {
+     return (
+        <Button size="sm" disabled className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+            Memuat...
+        </Button>
+     )
+  }
 
   if (!user) {
     return (
