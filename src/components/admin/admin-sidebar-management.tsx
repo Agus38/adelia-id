@@ -35,6 +35,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '../ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
 import { useAdminSidebarMenuConfig, saveAdminSidebarMenuConfig } from '@/lib/menu-store';
