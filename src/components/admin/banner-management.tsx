@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -24,58 +25,67 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import Image from 'next/image';
+import { useBannerConfig, saveBannerConfig, type BannerSlide } from '@/lib/menu-store';
+import { toast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
-const initialSlides = [
-  {
-    id: 1,
-    title: 'Solusi Inovatif',
-    description: 'Tingkatkan produktivitas bisnis Anda dengan alat canggih kami.',
-    image: 'https://images.unsplash.com/photo-1727488962328-75e3bf389128?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cHJvbW90aW9uYWwlMjBiYW5uZXJ8ZW58MHx8fHwxNzU1NTUwMzk2fDA&ixlib=rb-4.1.0&q=80&w=1080',
-    hint: 'promotional banner',
-    visible: true,
-  },
-  {
-    id: 2,
-    title: 'Analitik Cerdas',
-    description: 'Dapatkan wawasan mendalam dari data Anda dengan dasbor interaktif.',
-    image: 'https://images.unsplash.com/photo-1640158615573-cd28feb1bf4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZGF0YSUyMGFuYWx5dGljc3xlbnwwfHx8fDE3NTU1NTAzOTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    hint: 'data analytics',
-    visible: true,
-  },
-  {
-    id: 3,
-    title: 'Asisten AI Nexus',
-    description: 'Biarkan AI membantu Anda menyelesaikan tugas lebih cepat dan efisien.',
-    image: 'https://images.unsplash.com/photo-1593376893114-1aed528d80cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhcnRpZmljaWFsJTIwaW50ZWxsaWdlbmNlfGVufDB8fHx8MTc1NTU1MDM5NXww&ixlib=rb-4.1.0&q=80&w=1080',
-    hint: 'artificial intelligence',
-    visible: true,
-  },
-];
-
-type Slide = typeof initialSlides[0];
 
 export function BannerManagement() {
-  const [slides, setSlides] = useState(initialSlides);
+  const { bannerSlides, isLoading } = useBannerConfig();
+  const [slides, setSlides] = useState<BannerSlide[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedSlide, setSelectedSlide] = useState<Slide | null>(null);
+  const [selectedSlide, setSelectedSlide] = useState<BannerSlide | null>(null);
 
-  const handleEdit = (slide: Slide) => {
+  useEffect(() => {
+    if (bannerSlides) {
+        setSlides(bannerSlides);
+    }
+  }, [bannerSlides]);
+
+  const handleEdit = (slide: BannerSlide) => {
     setSelectedSlide(slide);
     setEditDialogOpen(true);
   };
   
-  const handleSaveChanges = () => {
-    // NOTE: This is a mock implementation.
-    // In a real application, you would send this data to your backend/database.
+  const handleDialogSave = () => {
     if (selectedSlide) {
       setSlides(slides.map(s => s.id === selectedSlide.id ? selectedSlide : s));
     }
     setEditDialogOpen(false);
   };
+  
+  const handleToggleVisibility = (slideId: number, visible: boolean) => {
+    setSlides(slides.map(s => s.id === slideId ? {...s, visible} : s));
+  }
 
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+        await saveBannerConfig(slides);
+        toast({
+            title: 'Perubahan Disimpan!',
+            description: 'Konfigurasi banner telah berhasil diperbarui.',
+        });
+    } catch (error) {
+         toast({
+            title: 'Gagal Menyimpan',
+            description: 'Terjadi kesalahan saat menyimpan konfigurasi banner.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsSaving(false);
+    }
+  }
 
   return (
     <>
+      <div className="flex justify-end mb-4">
+        <Button onClick={handleSaveChanges} disabled={isSaving || isLoading}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Simpan Perubahan
+        </Button>
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -87,7 +97,13 @@ export function BannerManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {slides.map((slide) => (
+            {isLoading ? (
+                 <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                    </TableCell>
+                </TableRow>
+            ) : slides.map((slide) => (
               <TableRow key={slide.id}>
                 <TableCell>
                   <Image
@@ -103,10 +119,7 @@ export function BannerManagement() {
                 <TableCell>
                   <Switch
                     checked={slide.visible}
-                    onCheckedChange={(checked) => {
-                       // NOTE: Mock implementation
-                      setSlides(slides.map(s => s.id === slide.id ? {...s, visible: checked} : s));
-                    }}
+                    onCheckedChange={(checked) => handleToggleVisibility(slide.id, checked)}
                     aria-label="Visibilitas slide"
                   />
                 </TableCell>
@@ -159,6 +172,15 @@ export function BannerManagement() {
                   className="col-span-3"
                 />
               </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="hint" className="text-right">Petunjuk AI</Label>
+                <Input
+                  id="hint"
+                  value={selectedSlide.hint}
+                  onChange={(e) => setSelectedSlide({...selectedSlide, hint: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
                <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="imageUrl" className="text-right">Preview</Label>
                  <Image
@@ -174,7 +196,7 @@ export function BannerManagement() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Batal</Button>
-            <Button type="submit" onClick={handleSaveChanges}>Simpan Perubahan</Button>
+            <Button type="submit" onClick={handleDialogSave}>Simpan Perubahan</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

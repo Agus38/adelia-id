@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import {
   type MenuItem,
@@ -22,18 +22,71 @@ const getIconComponent = (iconName?: string): LucideIcon => {
   return allIcons.Package; // Default icon
 };
 
-// Firestore data structure for a menu item
+// --- DTOs for Firestore ---
 interface MenuItemDTO {
   id: string;
   title: string;
   href: string;
-  iconName: string; // Store icon name as a string
-  access?: 'all' | 'admin';
-  comingSoon?: boolean;
+  iconName: string;
+  access: 'all' | 'admin';
+  comingSoon: boolean;
 }
 
+interface BannerSlideDTO {
+  id: number;
+  title: string;
+  description: string;
+  image: string;
+  hint: string;
+  visible: boolean;
+}
+
+
+// --- Type Definitions ---
+export interface BannerSlide {
+  id: number;
+  title: string;
+  description: string;
+  image: string;
+  hint: string;
+  visible: boolean;
+}
+
+
+// --- Firestore Document References ---
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
 const sidebarMenuConfigDocRef = doc(db, 'app-settings', 'sidebar-menu');
+const bannerConfigDocRef = doc(db, 'app-settings', 'banner-slides');
+
+
+// --- Default Data ---
+const defaultBannerSlides: BannerSlide[] = [
+  {
+    id: 1,
+    title: 'Solusi Inovatif',
+    description: 'Tingkatkan produktivitas bisnis Anda dengan alat canggih kami.',
+    image: 'https://images.unsplash.com/photo-1727488962328-75e3bf389128?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cHJvbW90aW9uYWwlMjBiYW5uZXJ8ZW58MHx8fHwxNzU1NTUwMzk2fDA&ixlib=rb-4.1.0&q=80&w=1080',
+    hint: 'promotional banner',
+    visible: true,
+  },
+  {
+    id: 2,
+    title: 'Analitik Cerdas',
+    description: 'Dapatkan wawasan mendalam dari data Anda dengan dasbor interaktif.',
+    image: 'https://images.unsplash.com/photo-1640158615573-cd28feb1bf4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZGF0YSUyMGFuYWx5dGljc3xlbnwwfHx8fDE3NTU1NTAzOTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    hint: 'data analytics',
+    visible: true,
+  },
+  {
+    id: 3,
+    title: 'Asisten AI Nexus',
+    description: 'Biarkan AI membantu Anda menyelesaikan tugas lebih cepat dan efisien.',
+    image: 'https://images.unsplash.com/photo-1593376893114-1aed528d80cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhcnRpZmljaWFsJTIwaW50ZWxsaWdlbmNlfGVufDB8fHx8MTc1NTU1MDM5NXww&ixlib=rb-4.1.0&q=80&w=1080',
+    hint: 'artificial intelligence',
+    visible: true,
+  }
+];
+
 
 // --- Menu Grid Store ---
 interface MenuStoreState {
@@ -51,22 +104,18 @@ const useMenuStore = create<MenuStoreState>((set) => ({
     const unsubscribe = onSnapshot(
       menuConfigDocRef,
       (docSnap) => {
-        if (docSnap.exists()) {
-          const storedItems = (docSnap.data()?.items || []) as MenuItemDTO[];
+        if (docSnap.exists() && docSnap.data()?.items) {
+          const storedItems = docSnap.data()?.items as MenuItemDTO[];
           const hydratedItems = storedItems.map((item) => ({
             ...item,
             icon: getIconComponent(item.iconName),
-            access: item.access ?? 'all',
-            comingSoon: item.comingSoon ?? false,
           }));
           set({ menuItems: hydratedItems, isLoading: false, error: null });
         } else {
-          console.log('No menu config found, providing defaults.');
           set({ menuItems: defaultMenuItems, isLoading: false, error: null });
         }
       },
       (error) => {
-        console.error('Error with real-time menu listener:', error);
         set({ menuItems: defaultMenuItems, isLoading: false, error });
       }
     );
@@ -88,12 +137,9 @@ export const saveMenuConfig = async (items: MenuItem[]) => {
     id: item.id,
     title: item.title,
     href: item.href,
-    iconName:
-      (item as any).iconName ||
-      (item.icon && (item.icon as any).displayName) ||
-      'Package',
-    access: item.access ?? 'all',
-    comingSoon: item.comingSoon ?? false,
+    iconName: (item as any).iconName || (item.icon && (item.icon as any).displayName) || 'Package',
+    access: item.access || 'all',
+    comingSoon: item.comingSoon || false,
   }));
   await setDoc(menuConfigDocRef, { items: itemsToStore });
 };
@@ -114,22 +160,18 @@ const useSidebarMenuStore = create<SidebarMenuStoreState>((set) => ({
     const unsubscribe = onSnapshot(
       sidebarMenuConfigDocRef,
       (docSnap) => {
-        if (docSnap.exists()) {
-          const storedItems = (docSnap.data()?.items || []) as MenuItemDTO[];
+        if (docSnap.exists() && docSnap.data()?.items) {
+          const storedItems = docSnap.data()?.items as MenuItemDTO[];
           const hydratedItems = storedItems.map((item) => ({
             ...item,
             icon: getIconComponent(item.iconName),
-            access: item.access ?? 'all',
-            comingSoon: item.comingSoon ?? false, // Should not be needed but for safety
           }));
           set({ sidebarMenuItems: hydratedItems, isLoading: false, error: null });
         } else {
-          console.log('No sidebar menu config found, providing defaults.');
           set({ sidebarMenuItems: defaultSidebarItems, isLoading: false, error: null });
         }
       },
       (error) => {
-        console.error('Error with real-time sidebar menu listener:', error);
         set({ sidebarMenuItems: defaultSidebarItems, isLoading: false, error });
       }
     );
@@ -151,12 +193,58 @@ export const saveSidebarMenuConfig = async (items: MenuItem[]) => {
     id: item.id,
     title: item.title,
     href: item.href,
-    iconName:
-      (item as any).iconName ||
-      (item.icon && (item.icon as any).displayName) ||
-      'Package',
-    access: item.access ?? 'all',
-    comingSoon: item.comingSoon ?? false,
+    iconName: (item as any).iconName || (item.icon && (item.icon as any).displayName) || 'Package',
+    access: item.access || 'all',
+    comingSoon: item.comingSoon || false,
   }));
   await setDoc(sidebarMenuConfigDocRef, { items: itemsToStore });
 };
+
+
+// --- Banner Slides Store ---
+interface BannerStoreState {
+  bannerSlides: BannerSlide[];
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const useBannerStore = create<BannerStoreState>((set) => ({
+    bannerSlides: [],
+    isLoading: true,
+    error: null,
+    initializeListener: () => {
+        const unsubscribe = onSnapshot(bannerConfigDocRef, (docSnap) => {
+            if (docSnap.exists() && docSnap.data()?.slides) {
+                const storedSlides = docSnap.data()?.slides as BannerSlideDTO[];
+                set({ bannerSlides: storedSlides, isLoading: false, error: null });
+            } else {
+                set({ bannerSlides: defaultBannerSlides, isLoading: false, error: null });
+            }
+        }, (error) => {
+            set({ bannerSlides: defaultBannerSlides, isLoading: false, error });
+        });
+        return unsubscribe;
+    }
+}));
+
+export const useBannerConfig = () => {
+    const { bannerSlides, isLoading, initializeListener } = useBannerStore();
+    React.useEffect(() => {
+        const unsubscribe = initializeListener();
+        return () => unsubscribe();
+    }, [initializeListener]);
+    return { bannerSlides, isLoading };
+}
+
+export const saveBannerConfig = async (slides: BannerSlide[]) => {
+    const slidesToStore: BannerSlideDTO[] = slides.map(slide => ({
+        id: slide.id,
+        title: slide.title,
+        description: slide.description,
+        image: slide.image,
+        hint: slide.hint,
+        visible: slide.visible,
+    }));
+    await setDoc(bannerConfigDocRef, { slides: slidesToStore });
+}
