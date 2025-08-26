@@ -45,10 +45,14 @@ export const addOrUpdateSmwReport = async (reportData: Omit<SmwReportData, 'id' 
     const reportDocRef = doc(db, 'smwManyarReports', reportId);
     
     try {
-        await setDoc(reportDocRef, {
+        // Ensure the date is a Firestore-compatible format before saving.
+        const dataToSave = {
             ...reportData,
+            date: reportData.date, // Keep the JS Date object for Firestore to convert
             createdAt: serverTimestamp(),
-        }, { merge: true });
+        };
+
+        await setDoc(reportDocRef, dataToSave, { merge: true });
     } catch (error) {
         console.error("Error saving SMW report to Firestore:", error);
         throw error;
