@@ -163,8 +163,6 @@ export default function DailyReportPage() {
       title: 'Laporan Disimpan!',
       description: 'Laporan keuangan harian telah berhasil disimpan.',
     });
-
-    router.push('/admin/daily-reports');
   };
   
   const handleAddExtraField = (type: 'pemasukan' | 'pengeluaran') => {
@@ -299,168 +297,169 @@ ${pemasukanText}
 
   return (
     <>
-    <div className="flex-1 space-y-4 pt-6">
-      <Card className="mx-1.5 md:mx-2">
-        <CardHeader>
-          <CardTitle>Laporan Keuangan Harian</CardTitle>
-          <CardDescription>
-            Isi formulir di bawah ini untuk mencatat laporan keuangan harian Anda.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Date and Shift */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Pilih Tanggal</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={'outline'}
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !date && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, 'dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                    locale={id}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-2">
-              <Label>Pilih Shift</Label>
-              <Tabs
-                defaultValue="pagi"
-                className="w-full pt-2"
-                onValueChange={(value) => setShift(value as 'pagi' | 'sore')}
-                value={shift}
-              >
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="pagi">Pagi</TabsTrigger>
-                  <TabsTrigger value="sore">Sore</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Main Financials */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="modalAwal">Modal Awal</Label>
-              <Input id="modalAwal" type="text" inputMode="numeric" placeholder="0" value={formatValue(modalAwal)} onChange={handleNumericInputChange(setModalAwal)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="omsetBersih">Omset Bersih</Label>
-              <Input id="omsetBersih" type="text" inputMode="numeric" placeholder="0" value={formatValue(omsetBersih)} onChange={handleNumericInputChange(setOmsetBersih)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pajak">Pajak</Label>
-              <Input id="pajak" type="text" inputMode="numeric" placeholder="0" value={formatValue(pajak)} onChange={handleNumericInputChange(setPajak)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Omset Kotor</Label>
-              <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold">
-                {formatCurrency(omsetKotor)}
+      <AppSidebar />
+      <div className="flex-1 space-y-4 pt-6 p-4 md:p-6">
+        <Card className="mx-1.5 md:mx-2">
+          <CardHeader>
+            <CardTitle>Laporan Keuangan Harian</CardTitle>
+            <CardDescription>
+              Isi formulir di bawah ini untuk mencatat laporan keuangan harian Anda.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Date and Shift */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>Pilih Tanggal</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={'outline'}
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !date && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? format(date, 'dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      initialFocus
+                      locale={id}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label>Pilih Shift</Label>
+                <Tabs
+                  defaultValue="pagi"
+                  className="w-full pt-2"
+                  onValueChange={(value) => setShift(value as 'pagi' | 'sore')}
+                  value={shift}
+                >
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="pagi">Pagi</TabsTrigger>
+                    <TabsTrigger value="sore">Sore</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
             </div>
-          </div>
 
-          <Accordion type="multiple" className="w-full">
-            <AccordionItem value="item-1">
-              <AccordionTrigger>Pemasukan Online</AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                  <div className="space-y-2"><Label>GoFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(goFood)} onChange={handleNumericInputChange(setGoFood)} /></div>
-                  <div className="space-y-2"><Label>GrabFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(grabFood)} onChange={handleNumericInputChange(setGrabFood)} /></div>
-                  <div className="space-y-2"><Label>ShopeeFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(shopeeFood)} onChange={handleNumericInputChange(setShopeeFood)} /></div>
-                  <div className="space-y-2"><Label>Qris Mandiri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(qrisMandiri)} onChange={handleNumericInputChange(setQrisMandiri)} /></div>
-                  <div className="space-y-2"><Label>Qris Bri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(qrisBri)} onChange={handleNumericInputChange(setQrisBri)} /></div>
-                  <div className="space-y-2"><Label>Debit Mandiri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(debitMandiri)} onChange={handleNumericInputChange(setDebitMandiri)} /></div>
-                  <div className="space-y-2"><Label>Debit Bri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(debitBri)} onChange={handleNumericInputChange(setDebitBri)} /></div>
-                </div>
-                 {extraPemasukan.map(field => (
-                  <div key={field.id} className="flex items-end gap-2">
-                    <div className="flex-1 space-y-2"><Label>Nama Pemasukan</Label><Input value={field.name} placeholder="cth: Transfer Bank" onChange={(e) => handleExtraFieldChange('pemasukan', field.id, 'name', e)} /></div>
-                    <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(field.value)} onChange={(e) => handleExtraFieldChange('pemasukan', field.id, 'value', e)} /></div>
-                    <Button variant="ghost" size="icon" onClick={() => confirmRemoveExtraField('pemasukan', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" onClick={() => handleAddExtraField('pemasukan')}><PlusCircle className="mr-2 h-4 w-4" /> Tambah Pemasukan</Button>
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-2">
-              <AccordionTrigger>Pengeluaran Offline</AccordionTrigger>
-              <AccordionContent className="space-y-4 pt-4">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                  <div className="space-y-2"><Label>Transport</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(transport)} onChange={handleNumericInputChange(setTransport)} /></div>
-                  <div className="space-y-2"><Label>Gosend</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(goSend)} onChange={handleNumericInputChange(setGoSend)} /></div>
-                  <div className="space-y-2"><Label>Iuran Bulanan</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(iuranBulanan)} onChange={handleNumericInputChange(setIuranBulanan)} /></div>
-                  <div className="space-y-2"><Label>Bonus</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(bonus)} onChange={handleNumericInputChange(setBonus)} /></div>
-                  <div className="space-y-2"><Label>Lembur</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(lembur)} onChange={handleNumericInputChange(setLembur)} /></div>
-                </div>
-                {extraPengeluaran.map(field => (
-                  <div key={field.id} className="flex items-end gap-2">
-                    <div className="flex-1 space-y-2"><Label>Nama Pengeluaran</Label><Input value={field.name} placeholder="cth: Beli Gas" onChange={(e) => handleExtraFieldChange('pengeluaran', field.id, 'name', e)} /></div>
-                    <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(field.value)} onChange={(e) => handleExtraFieldChange('pengeluaran', field.id, 'value', e)} /></div>
-                    <Button variant="ghost" size="icon" onClick={() => confirmRemoveExtraField('pengeluaran', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </div>
-                ))}
-                <Button variant="outline" size="sm" onClick={() => handleAddExtraField('pengeluaran')}><PlusCircle className="mr-2 h-4 w-4" /> Tambah Pengeluaran</Button>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+            <Separator />
 
-          <Separator />
-          
-          {/* Totals */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Ringkasan Keuangan</h3>
-             <div className="space-y-2 rounded-lg border bg-muted/50 p-4">
-                <SummaryRow label="Modal Awal" value={formatCurrency(modalAwal)} />
-                <SummaryRow label="Omset Bersih" value={formatCurrency(omsetBersih)} />
-                <SummaryRow label="Pajak" value={formatCurrency(pajak)} />
-                <SummaryRow label="Omset Kotor" value={formatCurrency(omsetKotor)} isBold />
-                <Separator className="my-2" />
-                <SummaryRow label="Pemasukan Online" value={formatCurrency(totalPemasukanOnline)} />
-                <SummaryRow label="Pengeluaran Offline" value={formatCurrency(totalPengeluaranOffline)} />
-                <Separator className="my-2" />
-                <SummaryRow label="Total Pengeluaran" value={formatCurrency(totalPengeluaran)} isDestructive />
-                <SummaryRow label="Sisa Omset" value={formatCurrency(sisaOmset)} isBold />
-                <SummaryRow label="Omset + Pajak" value={formatCurrency(sisaOmsetPlusPajak)} isBold />
-                <Separator className="my-2" />
-                <SummaryRow label="Total Akhir (Setor)" value={formatCurrency(totalAkhir)} isBold />
+            {/* Main Financials */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="modalAwal">Modal Awal</Label>
+                <Input id="modalAwal" type="text" inputMode="numeric" placeholder="0" value={formatValue(modalAwal)} onChange={handleNumericInputChange(setModalAwal)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="omsetBersih">Omset Bersih</Label>
+                <Input id="omsetBersih" type="text" inputMode="numeric" placeholder="0" value={formatValue(omsetBersih)} onChange={handleNumericInputChange(setOmsetBersih)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pajak">Pajak</Label>
+                <Input id="pajak" type="text" inputMode="numeric" placeholder="0" value={formatValue(pajak)} onChange={handleNumericInputChange(setPajak)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Omset Kotor</Label>
+                <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold">
+                  {formatCurrency(omsetKotor)}
+                </div>
+              </div>
             </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between gap-4">
-          <Button
-            className="flex-1 bg-primary text-white hover:bg-primary/90"
-            onClick={handleSaveReport}
-          >
-            <Save className="mr-2 h-4 w-4" />
-            Simpan
-          </Button>
-          <Button 
-            className="flex-1 bg-green-600 text-white hover:bg-green-700"
-            onClick={handleSendWhatsApp}
-          >
-             <Send className="mr-2 h-4 w-4" />
-            Kirim WA
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
+
+            <Accordion type="multiple" className="w-full">
+              <AccordionItem value="item-1">
+                <AccordionTrigger>Pemasukan Online</AccordionTrigger>
+                <AccordionContent className="space-y-4 pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <div className="space-y-2"><Label>GoFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(goFood)} onChange={handleNumericInputChange(setGoFood)} /></div>
+                    <div className="space-y-2"><Label>GrabFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(grabFood)} onChange={handleNumericInputChange(setGrabFood)} /></div>
+                    <div className="space-y-2"><Label>ShopeeFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(shopeeFood)} onChange={handleNumericInputChange(setShopeeFood)} /></div>
+                    <div className="space-y-2"><Label>Qris Mandiri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(qrisMandiri)} onChange={handleNumericInputChange(setQrisMandiri)} /></div>
+                    <div className="space-y-2"><Label>Qris Bri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(qrisBri)} onChange={handleNumericInputChange(setQrisBri)} /></div>
+                    <div className="space-y-2"><Label>Debit Mandiri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(debitMandiri)} onChange={handleNumericInputChange(setDebitMandiri)} /></div>
+                    <div className="space-y-2"><Label>Debit Bri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(debitBri)} onChange={handleNumericInputChange(setDebitBri)} /></div>
+                  </div>
+                  {extraPemasukan.map(field => (
+                    <div key={field.id} className="flex items-end gap-2">
+                      <div className="flex-1 space-y-2"><Label>Nama Pemasukan</Label><Input value={field.name} placeholder="cth: Transfer Bank" onChange={(e) => handleExtraFieldChange('pemasukan', field.id, 'name', e)} /></div>
+                      <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(field.value)} onChange={(e) => handleExtraFieldChange('pemasukan', field.id, 'value', e)} /></div>
+                      <Button variant="ghost" size="icon" onClick={() => confirmRemoveExtraField('pemasukan', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={() => handleAddExtraField('pemasukan')}><PlusCircle className="mr-2 h-4 w-4" /> Tambah Pemasukan</Button>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="item-2">
+                <AccordionTrigger>Pengeluaran Offline</AccordionTrigger>
+                <AccordionContent className="space-y-4 pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <div className="space-y-2"><Label>Transport</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(transport)} onChange={handleNumericInputChange(setTransport)} /></div>
+                    <div className="space-y-2"><Label>Gosend</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(goSend)} onChange={handleNumericInputChange(setGoSend)} /></div>
+                    <div className="space-y-2"><Label>Iuran Bulanan</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(iuranBulanan)} onChange={handleNumericInputChange(setIuranBulanan)} /></div>
+                    <div className="space-y-2"><Label>Bonus</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(bonus)} onChange={handleNumericInputChange(setBonus)} /></div>
+                    <div className="space-y-2"><Label>Lembur</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(lembur)} onChange={handleNumericInputChange(setLembur)} /></div>
+                  </div>
+                  {extraPengeluaran.map(field => (
+                    <div key={field.id} className="flex items-end gap-2">
+                      <div className="flex-1 space-y-2"><Label>Nama Pengeluaran</Label><Input value={field.name} placeholder="cth: Beli Gas" onChange={(e) => handleExtraFieldChange('pengeluaran', field.id, 'name', e)} /></div>
+                      <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(field.value)} onChange={(e) => handleExtraFieldChange('pengeluaran', field.id, 'value', e)} /></div>
+                      <Button variant="ghost" size="icon" onClick={() => confirmRemoveExtraField('pengeluaran', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={() => handleAddExtraField('pengeluaran')}><PlusCircle className="mr-2 h-4 w-4" /> Tambah Pengeluaran</Button>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            <Separator />
+            
+            {/* Totals */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Ringkasan Keuangan</h3>
+              <div className="space-y-2 rounded-lg border bg-muted/50 p-4">
+                  <SummaryRow label="Modal Awal" value={formatCurrency(modalAwal)} />
+                  <SummaryRow label="Omset Bersih" value={formatCurrency(omsetBersih)} />
+                  <SummaryRow label="Pajak" value={formatCurrency(pajak)} />
+                  <SummaryRow label="Omset Kotor" value={formatCurrency(omsetKotor)} isBold />
+                  <Separator className="my-2" />
+                  <SummaryRow label="Pemasukan Online" value={formatCurrency(totalPemasukanOnline)} />
+                  <SummaryRow label="Pengeluaran Offline" value={formatCurrency(totalPengeluaranOffline)} />
+                  <Separator className="my-2" />
+                  <SummaryRow label="Total Pengeluaran" value={formatCurrency(totalPengeluaran)} isDestructive />
+                  <SummaryRow label="Sisa Omset" value={formatCurrency(sisaOmset)} isBold />
+                  <SummaryRow label="Omset + Pajak" value={formatCurrency(sisaOmsetPlusPajak)} isBold />
+                  <Separator className="my-2" />
+                  <SummaryRow label="Total Akhir (Setor)" value={formatCurrency(totalAkhir)} isBold />
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between gap-4">
+            <Button
+              className="flex-1 bg-primary text-white hover:bg-primary/90"
+              onClick={handleSaveReport}
+            >
+              <Save className="mr-2 h-4 w-4" />
+              Simpan
+            </Button>
+            <Button 
+              className="flex-1 bg-green-600 text-white hover:bg-green-700"
+              onClick={handleSendWhatsApp}
+            >
+              <Send className="mr-2 h-4 w-4" />
+              Kirim WA
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
 
     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
       <AlertDialogContent>
