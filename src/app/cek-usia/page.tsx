@@ -1,8 +1,26 @@
 
+'use client';
+
 import { AgeCalculator } from "@/components/cek-usia/age-calculator";
-import { Cake } from 'lucide-react';
+import { Cake, Loader2 } from 'lucide-react';
+import { usePageAccess } from "@/hooks/use-page-access";
+
 
 export default function CekUsiaPage() {
+  const { hasAccess, isLoading } = usePageAccess('cek-usia');
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return null; // The hook will handle the redirect.
+  }
+
   return (
     <div className="flex flex-1 flex-col p-4 pt-6 md:p-8">
        <div className="flex-shrink-0">
