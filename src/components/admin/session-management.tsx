@@ -10,30 +10,55 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '../ui/button';
-import { supabase } from '@/lib/supabaseClient';
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { ExternalLink, Info, Loader2 } from 'lucide-react';
+import { ExternalLink, Info, Loader2, LogOut } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import Link from 'next/link';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 export function SessionManagement() {
   const [sessionDuration, setSessionDuration] = useState(24); // Default to 24 hours
   const [loading, setLoading] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const router = useRouter();
+
 
   const handleSaveChanges = () => {
-    // NOTE: This is a mock action. The actual configuration is in the Supabase dashboard.
+    // NOTE: This is a mock action. The actual configuration is in the Firebase dashboard.
     setLoading(true);
     setTimeout(() => {
         toast({
             title: "Konfigurasi Disimpan (Simulasi)",
-            description: `Durasi sesi telah diatur ke ${sessionDuration} jam. Jangan lupa untuk menerapkan ini di Supabase.`,
+            description: `Durasi sesi telah diatur ke ${sessionDuration} jam. Jangan lupa untuk menerapkan ini di Firebase.`,
         });
         setLoading(false);
     }, 1000);
   };
+
+  const handleSignOutAll = async () => {
+    setIsSigningOut(true);
+     try {
+        await signOut(auth);
+        toast({
+            title: "Berhasil Keluar",
+            description: "Anda telah berhasil keluar dari semua perangkat.",
+        });
+        router.push('/login');
+      } catch(error: any) {
+         toast({
+            title: "Error",
+            description: "Gagal keluar dari sesi Anda: " + error.message,
+            variant: "destructive",
+        });
+      } finally {
+        setIsSigningOut(false);
+      }
+  }
 
   return (
     <div className="space-y-6">
@@ -47,9 +72,9 @@ export function SessionManagement() {
         <CardContent className="space-y-4">
            <Alert>
               <Info className="h-4 w-4" />
-              <AlertTitle>Penting: Konfigurasi di Dasbor Supabase</AlertTitle>
+              <AlertTitle>Penting: Konfigurasi di Dasbor Firebase</AlertTitle>
               <AlertDescription>
-                Pengaturan durasi sesi yang sebenarnya dikontrol melalui dasbor Supabase Anda, bukan dari aplikasi ini. Form di bawah ini adalah untuk pencatatan dan panduan. Anda harus menerapkan nilai yang sama di Supabase agar berfungsi.
+                Pengaturan durasi sesi sebenarnya dikontrol melalui Dasbor Otentikasi Firebase Anda, bukan dari aplikasi ini. Form di bawah ini adalah untuk pencatatan dan panduan. Anda harus menerapkan nilai yang sama di Firebase.
               </AlertDescription>
            </Alert>
 
@@ -68,14 +93,14 @@ export function SessionManagement() {
            </div>
         </CardContent>
         <CardFooter className="flex justify-between border-t pt-6">
-          <Button onClick={handleSaveChanges}>
+          <Button onClick={handleSaveChanges} disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Simpan Konfigurasi (Simulasi)
           </Button>
           <Button variant="outline" asChild>
-            <Link href="https://supabase.com/dashboard" target="_blank">
+            <Link href="https://console.firebase.google.com/" target="_blank">
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Buka Pengaturan Supabase
+                Buka Konsol Firebase
             </Link>
           </Button>
         </CardFooter>
@@ -83,17 +108,23 @@ export function SessionManagement() {
       
       <Card>
         <CardHeader>
-            <CardTitle>Cara Mengatur Durasi Sesi di Supabase</CardTitle>
+            <CardTitle>Tindakan Sesi</CardTitle>
+            <CardDescription>
+                Kelola sesi aktif untuk akun Anda saat ini.
+            </CardDescription>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-            <ol className="list-decimal list-inside space-y-2">
-                <li>Buka dasbor proyek Supabase Anda.</li>
-                <li>Navigasi ke bagian <strong>Authentication</strong>, lalu pilih tab <strong>Providers</strong>.</li>
-                <li>Pilih provider <strong>Email</strong>, di bawahnya akan ada opsi <strong>Session length</strong>.</li>
-                <li>Masukkan durasi sesi yang Anda inginkan dalam detik (misalnya, 24 jam = 86400 detik).</li>
-                <li>Klik <strong>Save</strong> untuk menyimpan perubahan.</li>
-            </ol>
+        <CardContent className="text-sm text-muted-foreground space-y-4">
+            <p>
+               Jika Anda menduga akun Anda diakses dari perangkat yang tidak sah, Anda dapat keluar dari semua sesi aktif. Tindakan ini akan mengeluarkan Anda dari semua perangkat, termasuk yang ini.
+            </p>
         </CardContent>
+         <CardFooter>
+             <Button variant="destructive" onClick={handleSignOutAll} disabled={isSigningOut}>
+                {isSigningOut && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <LogOut className="mr-2 h-4 w-4" />
+                Keluar dari Semua Sesi Saya
+            </Button>
+        </CardFooter>
       </Card>
     </div>
   );
