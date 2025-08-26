@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
+import { useSessionManager } from '@/hooks/use-session-manager';
 
 export type UserProfile = User & {
   fullName?: string;
@@ -18,6 +19,9 @@ export type UserProfile = User & {
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Initialize session manager hook
+  useSessionManager();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (authUser) => {

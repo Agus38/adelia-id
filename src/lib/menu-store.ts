@@ -66,6 +66,10 @@ interface DeveloperInfoDTO {
     socialLinks: SocialLinkDTO[];
 }
 
+interface SessionConfigDTO {
+    durationMinutes: number;
+}
+
 
 // --- Type Definitions ---
 export interface BannerSlide {
@@ -100,6 +104,10 @@ export interface DeveloperInfo {
     socialLinks: SocialLink[];
 }
 
+export interface SessionConfig {
+    durationMinutes: number;
+}
+
 
 // --- Firestore Document References ---
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
@@ -108,6 +116,7 @@ const adminSidebarMenuConfigDocRef = doc(db, 'app-settings', 'admin-sidebar-menu
 const bannerConfigDocRef = doc(db, 'app-settings', 'banner-slides');
 const brandingConfigDocRef = doc(db, 'app-settings', 'branding');
 const developerInfoDocRef = doc(db, 'app-settings', 'developer-info');
+const sessionConfigDocRef = doc(db, 'app-settings', 'sessionConfig');
 
 
 // --- Default Data ---
@@ -157,6 +166,10 @@ const defaultDeveloperInfo: DeveloperInfo = {
     { name: 'Website', url: 'https://aguseka.dev', iconName: 'Globe', icon: getIconComponent('Globe') },
     { name: 'Email', url: 'mailto:contact@aguseka.dev', iconName: 'Mail', icon: getIconComponent('Mail') },
   ],
+};
+
+const defaultSessionConfig: SessionConfig = {
+  durationMinutes: 120, // Default to 2 hours
 };
 
 
@@ -493,4 +506,47 @@ export const saveDeveloperInfoConfig = async (info: DeveloperInfo) => {
         })),
     };
     await setDoc(developerInfoDocRef, infoToStore);
+};
+
+// --- Session Config Store ---
+interface SessionConfigState {
+  sessionConfig: SessionConfig;
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const useSessionConfigStore = create<SessionConfigState>((set) => ({
+    sessionConfig: defaultSessionConfig,
+    isLoading: true,
+    error: null,
+    initializeListener: () => {
+        const unsubscribe = onSnapshot(sessionConfigDocRef, (docSnap) => {
+            if (docSnap.exists() && docSnap.data()) {
+                set({ sessionConfig: docSnap.data() as SessionConfig, isLoading: false, error: null });
+            } else {
+                set({ sessionConfig: defaultSessionConfig, isLoading: false, error: null });
+            }
+        }, (error) => {
+            console.error("Error fetching session config: ", error);
+            set({ sessionConfig: defaultSessionConfig, isLoading: false, error });
+        });
+        return unsubscribe;
+    }
+}));
+
+export const useSessionConfig = () => {
+    const { sessionConfig, isLoading, initializeListener } = useSessionConfigStore();
+    React.useEffect(() => {
+        const unsubscribe = initializeListener();
+        return () => unsubscribe();
+    }, [initializeListener]);
+    return { sessionConfig, isLoading };
+};
+
+export const saveSessionConfig = async (config: SessionConfig) => {
+    const configToStore: SessionConfigDTO = {
+        durationMinutes: config.durationMinutes,
+    };
+    await setDoc(sessionConfigDocRef, configToStore);
 };
