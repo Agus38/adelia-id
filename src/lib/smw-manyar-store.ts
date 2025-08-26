@@ -45,11 +45,15 @@ export const addOrUpdateSmwReport = async (reportData: Omit<SmwReportData, 'id' 
     const reportDocRef = doc(db, 'smwManyarReports', reportId);
     
     try {
-        // Ensure the date is a Firestore-compatible format before saving.
+        // Explicitly construct the object to be saved to Firestore
+        // to avoid any issues with spreading objects that might contain
+        // incompatible types or structures from the client-side.
         const dataToSave = {
-            ...reportData,
-            date: reportData.date, // Keep the JS Date object for Firestore to convert
-            createdAt: serverTimestamp(),
+            date: reportData.date,
+            formData: reportData.formData,
+            createdBy: reportData.createdBy,
+            userId: reportData.userId,
+            createdAt: serverTimestamp(), // Use server timestamp for consistency
         };
 
         await setDoc(reportDocRef, dataToSave, { merge: true });
