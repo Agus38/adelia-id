@@ -21,12 +21,12 @@ service cloud.firestore {
 
     // Rules for user profiles
     match /users/{userId} {
-      // Allow users to read their own profile, and Admin to read any profile.
+      // Admin can read any profile, users can read their own.
       allow read: if isAdmin() || request.auth.uid == userId;
-      // Allow Admin to create new users from the panel.
-      allow create: if isAdmin();
-      // Allow users to update their own profile.
-      allow update: if request.auth.uid == userId;
+      
+      // Users can create and update their own profile. Admin can write to any profile.
+      allow write: if isAdmin() || request.auth.uid == userId;
+
       // Only Admin can delete or list all users.
       allow delete, list: if isAdmin();
     }
