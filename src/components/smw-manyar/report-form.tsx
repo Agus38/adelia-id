@@ -9,8 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Send, Trash2 } from 'lucide-react';
+import { Send, Save, Loader2, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Calendar } from '../ui/calendar';
+import { cn } from '@/lib/utils';
+import { auth } from '@/lib/firebase';
+import type { User } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
+import { getSmwReport, addOrUpdateSmwReport, type SmwReportData } from '@/lib/smw-manyar-store';
 
 const sisaIkanItems = [
   { id: 'daging', label: 'DAGING' },
@@ -54,11 +61,56 @@ type FormData = {
 
 export function SmwManyarReportForm() {
   const [formData, setFormData] = React.useState<FormData>({});
-  const [date, setDate] = React.useState<Date | undefined>();
+  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = React.useState(true);
+  const [isFetchingReport, setIsFetchingReport] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const { toast } = useToast();
 
   React.useEffect(() => {
-    setDate(new Date());
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+        setCurrentUser(user);
+        setIsLoadingUser(false);
+    });
+    return () => unsubscribe();
   }, []);
+
+  const resetForm = React.useCallback(() => {
+    setFormData({});
+  }, []);
+
+  const populateForm = React.useCallback((report: { formData: FormData }) => {
+     setFormData(report.formData);
+  }, []);
+  
+  React.useEffect(() => {
+    if (!date || !currentUser) return;
+
+    const fetchReport = async () => {
+      setIsFetchingReport(true);
+      try {
+        const report = await getSmwReport(date, currentUser.uid);
+        if (report) {
+          populateForm(report);
+        } else {
+          resetForm();
+        }
+      } catch (error) {
+         toast({
+          title: 'Gagal Memuat Laporan',
+          description: 'Terjadi kesalahan saat mengambil data dari database.',
+          variant: 'destructive',
+        });
+        resetForm();
+      } finally {
+        setIsFetchingReport(false);
+      }
+    };
+
+    fetchReport();
+  }, [date, currentUser, resetForm, populateForm, toast]);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -94,8 +146,26 @@ export function SmwManyarReportForm() {
   
   const grossTotal = onlineSalesItems.reduce((sum, item) => sum + (Number(formData[`online-${item.id}`]) || 0), 0);
 
-  const handleClear = () => {
-    setFormData({});
+  const handleSaveReport = async () => {
+    if (!date || !currentUser) {
+        toast({ title: 'Data Tidak Lengkap', description: 'Tanggal harus dipilih dan Anda harus login.', variant: 'destructive' });
+        return;
+    }
+    setIsSaving(true);
+    try {
+        const reportData: Omit<SmwReportData, 'id' | 'createdAt'> = {
+            date,
+            formData,
+            createdBy: currentUser.displayName || 'Pengguna',
+            userId: currentUser.uid,
+        };
+        await addOrUpdateSmwReport(reportData);
+        toast({ title: 'Laporan Disimpan', description: 'Data laporan SMW Manyar telah berhasil disimpan.' });
+    } catch (error) {
+        toast({ title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan laporan.', variant: 'destructive' });
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleSendWhatsApp = () => {
@@ -139,13 +209,50 @@ ${onlineSalesText}\`\`\`
     window.open(whatsappUrl, '_blank');
   };
 
+  if (isLoadingUser) {
+    return (
+        <div className="flex h-64 w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    );
+  }
+
   return (
-    <Card>
+    <Card className="relative">
+         {isFetchingReport && (
+            <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg z-10">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="ml-2">Memuat data laporan...</span>
+            </div>
+        )}
       <CardHeader>
         <CardTitle>Formulir Laporan</CardTitle>
-        <CardDescription>
-          {date ? format(date, 'eeee, dd MMMM yyyy', { locale: id }) : 'Memuat tanggal...'}
-        </CardDescription>
+         <div className="space-y-2 pt-2">
+            <Label>Pilih Tanggal Laporan</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={'outline'}
+                  className={cn(
+                    'w-full max-w-sm justify-start text-left font-normal',
+                    !date && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, 'eeee, dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                  locale={id}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
       </CardHeader>
       <CardContent className="space-y-8">
         <Tabs defaultValue="sisa-ikan">
@@ -215,9 +322,10 @@ ${onlineSalesText}\`\`\`
 
       </CardContent>
       <CardFooter className="flex flex-col-reverse sm:flex-row justify-between gap-4 border-t pt-6">
-        <Button variant="destructive" onClick={handleClear} className="w-full sm:w-auto">
-          <Trash2 className="mr-2 h-4 w-4" />
-          Hapus Semua
+        <Button onClick={handleSaveReport} disabled={isSaving} className="w-full sm:w-auto">
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Save className="mr-2 h-4 w-4" />
+            Simpan Laporan
         </Button>
         <Button onClick={handleSendWhatsApp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
           <Send className="mr-2 h-4 w-4" />

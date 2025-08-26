@@ -2,6 +2,8 @@
 import { SmwManyarReportForm } from "@/components/smw-manyar/report-form";
 import { FileText } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default function SmwManyarPage() {
   return (
     <div className="flex flex-1 flex-col p-4 pt-6 md:p-8 space-y-4">
