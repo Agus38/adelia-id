@@ -7,7 +7,7 @@ import { PasswordForm } from "@/components/profile/password-form";
 import { Sessions } from "@/components/profile/sessions";
 import { User, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { UserProfile } from "../layout";
+import type { UserProfile } from "../main-layout";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
