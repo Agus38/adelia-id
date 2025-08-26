@@ -65,7 +65,7 @@ const defaultBannerSlides: BannerSlide[] = [
     id: 1,
     title: 'Solusi Inovatif',
     description: 'Tingkatkan produktivitas bisnis Anda dengan alat canggih kami.',
-    image: 'https://images.unsplash.com/photo-1727488962328-75e3bf389128?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cHJvbW90aW9uYWwlMjBiYW5uZXJ8ZW58MHx8fHwxNzU1NTUwMzk2fDA&ixlib=rb-4.1.0&q=80&w=1080',
+    image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvbW90aW9uYWwlMjBiYW5uZXJ8ZW58MHx8fHwxNzU1NTUwMzk2fDA',
     hint: 'promotional banner',
     visible: true,
   },
@@ -73,7 +73,7 @@ const defaultBannerSlides: BannerSlide[] = [
     id: 2,
     title: 'Analitik Cerdas',
     description: 'Dapatkan wawasan mendalam dari data Anda dengan dasbor interaktif.',
-    image: 'https://images.unsplash.com/photo-1640158615573-cd28feb1bf4e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZGF0YSUyMGFuYWx5dGljc3xlbnwwfHx8fDE3NTU1NTAzOTZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZGF0YSUyMGFuYWx5dGljc3xlbnwwfHx8fDE3NTU1NTAzOTZ8MA',
     hint: 'data analytics',
     visible: true,
   },
@@ -81,7 +81,7 @@ const defaultBannerSlides: BannerSlide[] = [
     id: 3,
     title: 'Asisten AI Nexus',
     description: 'Biarkan AI membantu Anda menyelesaikan tugas lebih cepat dan efisien.',
-    image: 'https://images.unsplash.com/photo-1593376893114-1aed528d80cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxhcnRpZmljaWFsJTIwaW50ZWxsaWdlbmNlfGVufDB8fHx8MTc1NTU1MDM5NXww&ixlib=rb-4.1.0&q=80&w=1080',
+    image: 'https://images.unsplash.com/photo-1620712943543-285f716a8ae6?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8YXJ0aWZpY2lhbCUyMGludGVsbGlnZW5jZXxlbnwwfHx8fDE3NTU1NTAzOTV8MA',
     hint: 'artificial intelligence',
     visible: true,
   }
@@ -116,6 +116,7 @@ const useMenuStore = create<MenuStoreState>((set) => ({
         }
       },
       (error) => {
+        console.error("Error fetching menu config: ", error);
         set({ menuItems: defaultMenuItems, isLoading: false, error });
       }
     );
@@ -172,6 +173,7 @@ const useSidebarMenuStore = create<SidebarMenuStoreState>((set) => ({
         }
       },
       (error) => {
+         console.error("Error fetching sidebar menu config: ", error);
         set({ sidebarMenuItems: defaultSidebarItems, isLoading: false, error });
       }
     );
@@ -222,6 +224,7 @@ const useBannerStore = create<BannerStoreState>((set) => ({
                 set({ bannerSlides: defaultBannerSlides, isLoading: false, error: null });
             }
         }, (error) => {
+             console.error("Error fetching banner config: ", error);
             set({ bannerSlides: defaultBannerSlides, isLoading: false, error });
         });
         return unsubscribe;
