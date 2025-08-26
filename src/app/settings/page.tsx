@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Info, Printer, Bluetooth, XCircle, Loader2, CheckCircle, ExternalLink } from 'lucide-react';
+import { Info, Printer, Bluetooth, XCircle, Loader2, CheckCircle, ExternalLink, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
