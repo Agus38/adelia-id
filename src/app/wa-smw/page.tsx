@@ -15,7 +15,7 @@ export default function WaSmwPage() {
           <CardDescription>Kirim pesan WhatsApp melalui SMW.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Halaman ini sedang dalam pengembangan. Segera hadir!</p>
+          <p>Halaman ini tidak lagi digunakan dan akan dihapus. Silakan gunakan halaman 'WA Sender'.</p>
         </CardContent>
       </Card>
     </div>

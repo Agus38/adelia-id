@@ -70,6 +70,7 @@ import {
   PlusCircle,
   Bolt,
   ShieldCheck,
+  Printer,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -118,18 +119,10 @@ export const menuItems: MenuItem[] = [
     icon: FileText,
   },
   {
-    id: 'kalkulator',
-    title: 'Kalkulator',
-    href: '/kalkulator',
-    icon: Calculator,
-    comingSoon: true,
-  },
-  {
-    id: 'wa-smw',
-    title: 'WA SMW',
-    href: '/wa-smw',
-    icon: Send,
-    comingSoon: true,
+    id: 'wa-sender',
+    title: 'WA Sender',
+    href: '/wa-sender',
+    icon: Printer,
   },
   {
     id: 'nexus-ai',
@@ -142,6 +135,13 @@ export const menuItems: MenuItem[] = [
     title: 'Cek Usia',
     href: '/cek-usia',
     icon: Cake,
+  },
+  {
+    id: 'kalkulator',
+    title: 'Kalkulator',
+    href: '/kalkulator',
+    icon: Calculator,
+    comingSoon: true,
   },
   {
     id: 'convert',
@@ -404,6 +404,7 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Palette,
   PanelLeft,
   PlusCircle,
+  Printer,
   Repeat,
   Send,
   Settings,
