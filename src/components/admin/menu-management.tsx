@@ -43,6 +43,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '../ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
 import { useMenuConfig, saveMenuConfig } from '@/lib/menu-store';
