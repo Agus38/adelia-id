@@ -1,34 +1,56 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+  
+    // Helper function to check for Admin role
+    function isAdmin() {
+      return request.auth.token.role == 'Admin';
+    }
     
-    // Rules for the daily financial reports
-    match /dailyReports/{reportId} {
-      // Admins have full access to read and write any report
-      allow read, write: if request.auth.token.role == 'Admin';
-      
-      // Regular users can create a report if the userId in the new data matches their own uid.
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      
-      // Regular users can read or update their own reports.
-      allow read, update: if request.auth != null && resource.data.userId == request.auth.uid;
+    // Helper function to check if the user is the owner of the resource
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
 
-    // Rules for user data
+    // Rules for the 'users' collection
     match /users/{userId} {
-      // Users can read and update their own profile.
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      // Admins can list all users (for management page) and create new user documents.
-      allow list, create: if request.auth.token.role == 'Admin';
+      // Admin can do anything
+      // A user can create their own document
+      // A user can only update/delete their own document
+      allow read: if isAdmin() || isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isAdmin() || isOwner(userId);
+      allow delete: if isAdmin();
+    }
+    
+    // Rules for the 'app-settings' collection
+    match /app-settings/{setting} {
+      // Anyone can read settings
+      allow get;
+      // Only admins can write settings
+      allow write: if isAdmin();
     }
 
-    // Rules for general application settings
-    match /app-settings/{document=**} {
-      // Anyone can read application settings (like menu items, branding).
-      allow read: if true;
-      // Only admins can change application settings.
-      allow write: if request.auth.token.role == 'Admin';
+    // Rules for the 'dailyReports' collection
+    match /dailyReports/{reportId} {
+        // CREATE: A logged-in user can create a report if the report's userId matches their own.
+        allow create: if isOwner(request.resource.data.userId);
+
+        // READ, UPDATE, DELETE:
+        // An owner can read, update, and delete their own report.
+        // An admin can read, update, and delete any report.
+        allow read, update, delete: if isAdmin() || isOwner(resource.data.userId);
+    }
+    
+    // Admins need list access to manage collections in the admin panel
+    match /users/{document=**} {
+        allow list: if isAdmin();
+    }
+    
+    match /dailyReports/{document=**} {
+        allow list: if isAdmin();
     }
   }
 }
