@@ -103,27 +103,36 @@ export function TransactionHistoryPaketData() {
             <head>
                 <title>Struk Transaksi ${selectedTx.id}</title>
                 <style>
-                    body { font-family: 'sans-serif'; margin: 0; padding: 20px; color: #333; font-size: 14px; }
-                    .container { max-width: 320px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 8px; }
-                    h2 { text-align: center; margin-top: 0; margin-bottom: 10px; font-size: 1.2rem; }
-                    p { text-align: center; margin: 0; font-size: 0.8rem; color: #777; }
-                    hr { border: none; border-top: 1px dashed #ccc; margin: 20px 0; }
+                    @page { margin: 0; }
+                    body { 
+                        font-family: 'monospace', 'sans-serif'; 
+                        margin: 0; 
+                        padding: 10px; 
+                        color: #000; 
+                        font-size: 10pt;
+                        width: 58mm; /* Standard thermal printer width */
+                    }
+                    .container { width: 100%; }
+                    h2 { text-align: center; margin: 0; font-size: 12pt; }
+                    p { text-align: center; margin: 5px 0; }
+                    hr { border: none; border-top: 1px dashed #000; margin: 10px 0; }
                     table { width: 100%; border-collapse: collapse; }
-                    td { padding: 5px 0; word-break: break-all; }
-                    .label { color: #555; }
-                    .value { text-align: right; font-weight: 500; }
-                    .total .value { font-weight: bold; font-size: 1.1rem; }
-                    .footer { text-align: center; margin-top: 20px; font-size: 0.8rem; color: #999; }
+                    td { padding: 2px 0; vertical-align: top; }
+                    .label { }
+                    .value { text-align: right; }
+                    .total .label { font-weight: bold; }
+                    .total .value { font-weight: bold; font-size: 11pt; }
+                    .footer { text-align: center; margin-top: 10px; font-size: 8pt; }
                 </style>
             </head>
             <body>
                 <div class="container">
-                    <h2>Struk Pembelian Paket Data</h2>
-                    <p>Adelia-ID</p>
+                    <h2>Adelia-ID</h2>
+                    <p>Struk Pembelian Paket Data</p>
                     <hr>
                     <table>
-                        <tr><td class="label">ID Transaksi</td><td class="value">${selectedTx.id}</td></tr>
-                        <tr><td class="label">Tanggal</td><td class="value">${format(selectedTx.date, 'd MMM yyyy, HH:mm', { locale: id })}</td></tr>
+                        <tr><td class="label">ID</td><td class="value">${selectedTx.id}</td></tr>
+                        <tr><td class="label">Tanggal</td><td class="value">${format(selectedTx.date, 'dd/MM/yy HH:mm', { locale: id })}</td></tr>
                     </table>
                     <hr>
                     <table>
@@ -136,12 +145,12 @@ export function TransactionHistoryPaketData() {
                         <tr class="total"><td class="label">TOTAL</td><td class="value">${formatCurrency(finalPrice)}</td></tr>
                     </table>
                     <hr>
-                    <p class="footer">Terima kasih telah bertransaksi!</p>
+                    <p class="footer">Terima kasih!</p>
                 </div>
                 <script>
                     window.onload = function() {
                         window.print();
-                        setTimeout(function() { window.close(); }, 100);
+                        setTimeout(function() { window.close(); }, 300);
                     }
                 <\/script>
             </body>
