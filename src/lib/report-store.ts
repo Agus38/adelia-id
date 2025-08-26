@@ -1,7 +1,24 @@
 
 'use client';
 
-import type { DailyReport } from '@/components/admin/daily-report-management';
+import type { User } from 'firebase/auth';
+
+// The DailyReport interface now includes userId
+export interface DailyReport {
+  id: string;
+  date: Date;
+  shift: 'pagi' | 'sore';
+  omsetBersih: number;
+  totalSetor: number;
+  createdBy: string;
+  userId: string; // Added user ID for ownership
+  details: {
+    modalAwal: number;
+    pajak: number;
+    pemasukan: { name: string; value: number }[];
+    pengeluaran: { name: string; value: number }[];
+  };
+}
 
 let reports: DailyReport[] = [
     {
@@ -11,6 +28,7 @@ let reports: DailyReport[] = [
         omsetBersih: 5250000,
         totalSetor: 4850000,
         createdBy: 'Adelia',
+        userId: 'user-adelia-id', // Example userId
         details: {
             modalAwal: 500000,
             pajak: 525000,
@@ -33,6 +51,7 @@ let reports: DailyReport[] = [
         omsetBersih: 6100000,
         totalSetor: 5950000,
         createdBy: 'Budi',
+        userId: 'user-budi-id', // Example userId
         details: {
             modalAwal: 1000000,
             pajak: 610000,
@@ -43,25 +62,6 @@ let reports: DailyReport[] = [
             ],
             pengeluaran: [
                  { name: 'Transport', value: 50000 },
-            ],
-        },
-    },
-    {
-        id: 'RPT-003',
-        date: new Date('2024-07-22'),
-        shift: 'pagi',
-        omsetBersih: 4800000,
-        totalSetor: 4500000,
-        createdBy: 'Adelia',
-        details: {
-            modalAwal: 500000,
-            pajak: 480000,
-            pemasukan: [
-                 { name: 'GoFood', value: 1800000 },
-                 { name: 'GrabFood', value: 1500000 },
-            ],
-            pengeluaran: [
-                { name: 'Iuran Bulanan', value: 150000 },
             ],
         },
     },
@@ -98,13 +98,41 @@ export const getReports = (): DailyReport[] => {
   return reports;
 };
 
-export const addReport = (reportData: Omit<DailyReport, 'id'>) => {
-  const newReport: DailyReport = {
-    ...reportData,
-    id: generateId(),
-  };
-  reports.push(newReport);
-  listeners.notify();
+// Function to find a specific report
+export const getReport = (date: Date, shift: 'pagi' | 'sore', userId: string): DailyReport | undefined => {
+    return reports.find(
+        (r) =>
+            r.date.toDateString() === date.toDateString() &&
+            r.shift === shift &&
+            r.userId === userId
+    );
+};
+
+
+export const addOrUpdateReport = (reportData: Omit<DailyReport, 'id'>) => {
+    const existingReportIndex = reports.findIndex(
+        (r) =>
+            r.date.toDateString() === reportData.date.toDateString() &&
+            r.shift === reportData.shift &&
+            r.userId === reportData.userId
+    );
+
+    if (existingReportIndex > -1) {
+        // Update existing report
+        reports[existingReportIndex] = {
+            ...reports[existingReportIndex],
+            ...reportData,
+        };
+    } else {
+        // Add new report
+        const newReport: DailyReport = {
+            ...reportData,
+            id: generateId(),
+        };
+        reports.push(newReport);
+    }
+
+    listeners.notify();
 };
 
 export const deleteReport = (reportId: string) => {

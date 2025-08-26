@@ -19,7 +19,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Calendar as CalendarIcon, PlusCircle, Save, Send, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, PlusCircle, Save, Send, Trash2, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -37,10 +37,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { addReport } from '@/lib/report-store';
+import { addOrUpdateReport, getReport } from '@/lib/report-store';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { AppSidebar } from '@/components/layout/sidebar';
+import { auth } from '@/lib/firebase';
+import type { User } from 'firebase/auth';
 
 
 type ExtraField = {
@@ -57,6 +59,9 @@ type DeletionInfo = {
 export default function DailyReportPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [shift, setShift] = React.useState<'pagi' | 'sore'>('pagi');
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
   const { toast } = useToast();
   const router = useRouter();
 
@@ -88,6 +93,70 @@ export default function DailyReportPage() {
   const [isDeleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [itemToDelete, setItemToDelete] = React.useState<DeletionInfo>(null);
 
+  React.useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+        setCurrentUser(user);
+        setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const resetForm = React.useCallback(() => {
+    setModalAwal(0);
+    setOmsetBersih(0);
+    setPajak(0);
+    setGoFood(0);
+    setGrabFood(0);
+    setShopeeFood(0);
+    setQrisMandiri(0);
+    setQrisBri(0);
+    setDebitMandiri(0);
+    setDebitBri(0);
+    setTransport(0);
+    setGoSend(0);
+    setIuranBulanan(0);
+    setBonus(0);
+    setLembur(0);
+    setExtraPemasukan([]);
+    setExtraPengeluaran([]);
+  }, []);
+
+  React.useEffect(() => {
+    if (!date || !currentUser) return;
+
+    const report = getReport(date, shift, currentUser.uid);
+
+    if (report) {
+        setModalAwal(report.details.modalAwal);
+        setOmsetBersih(report.omsetBersih);
+        setPajak(report.details.pajak);
+        
+        const pemasukanMap = new Map(report.details.pemasukan.map(p => [p.name, p.value]));
+        setGoFood(pemasukanMap.get('GoFood') || 0);
+        setGrabFood(pemasukanMap.get('GrabFood') || 0);
+        setShopeeFood(pemasukanMap.get('ShopeeFood') || 0);
+        setQrisMandiri(pemasukanMap.get('Qris Mandiri') || 0);
+        setQrisBri(pemasukanMap.get('Qris Bri') || 0);
+        setDebitMandiri(pemasukanMap.get('Debit Mandiri') || 0);
+        setDebitBri(pemasukanMap.get('Debit Bri') || 0);
+
+        const pengeluaranMap = new Map(report.details.pengeluaran.map(p => [p.name, p.value]));
+        setTransport(pengeluaranMap.get('Transport') || 0);
+        setGoSend(pengeluaranMap.get('GoSend') || 0);
+        setIuranBulanan(pengeluaranMap.get('Iuran Bulanan') || 0);
+        setBonus(pengeluaranMap.get('Bonus') || 0);
+        setLembur(pengeluaranMap.get('Lembur') || 0);
+
+        setExtraPemasukan(report.details.pemasukan.filter(p => !['GoFood', 'GrabFood', 'ShopeeFood', 'Qris Mandiri', 'Qris Bri', 'Debit Mandiri', 'Debit Bri'].includes(p.name)).map(p => ({...p, id: Math.random()})));
+        setExtraPengeluaran(report.details.pengeluaran.filter(p => !['Transport', 'GoSend', 'Iuran Bulanan', 'Bonus', 'Lembur'].includes(p.name)).map(p => ({...p, id: Math.random()})));
+
+    } else {
+        resetForm();
+    }
+
+  }, [date, shift, currentUser, resetForm]);
+
+
   // Calculations
   const omsetKotor = omsetBersih + pajak;
 
@@ -116,10 +185,10 @@ export default function DailyReportPage() {
   const totalAkhir = sisaOmsetPlusPajak + modalAwal;
 
   const handleSaveReport = () => {
-    if (!date || omsetBersih === 0) {
+    if (!date || !currentUser || omsetBersih === 0) {
        toast({
         title: 'Data Tidak Lengkap',
-        description: 'Pastikan tanggal dan omset bersih telah diisi sebelum menyimpan.',
+        description: 'Pastikan tanggal, omset bersih, dan Anda sudah login sebelum menyimpan.',
         variant: 'destructive',
       });
       return;
@@ -146,12 +215,13 @@ export default function DailyReportPage() {
     ].filter(item => item.value > 0);
 
 
-    addReport({
+    addOrUpdateReport({
       date,
       shift,
       omsetBersih,
       totalSetor: totalAkhir,
-      createdBy: 'Adelia', // Placeholder, replace with actual user later
+      createdBy: currentUser.displayName || 'Pengguna',
+      userId: currentUser.uid,
       details: {
           modalAwal,
           pajak,
@@ -295,6 +365,14 @@ ${pemasukanText}
       </div>
     </div>
   );
+  
+  if (isLoading) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    );
+  }
 
   return (
     <div className="flex">
