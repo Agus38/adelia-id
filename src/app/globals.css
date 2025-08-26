@@ -102,6 +102,7 @@
     vertical-align: top;
     align-items: center;
     position: relative;
+    text-align: center;
   }
   .dynamic-input-wrapper::after,
   .dynamic-input-wrapper input,

@@ -49,7 +49,7 @@ const DynamicWidthInput = React.memo(function DynamicWidthInput({
                 value={value}
                 onChange={onChange}
                 onKeyDown={onKeyDown}
-                className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-[11px] p-0 m-0 w-full"
+                className="h-8 bg-transparent border-0 shadow-none focus-visible:ring-0 text-[11px] p-0 m-0 w-full text-center"
                 maxLength={maxLength}
                 onFocus={(e) => e.target.scrollIntoView({ block: 'center', inline: 'nearest' })}
             />
