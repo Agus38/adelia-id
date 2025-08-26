@@ -36,7 +36,6 @@ export default function SettingsPage() {
     try {
       const requestedDevice = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
-        optionalServices: ['00001101-0000-1000-8000-00805f9b34fb'] // Standard SPP UUID
       });
 
       if (!requestedDevice) {
