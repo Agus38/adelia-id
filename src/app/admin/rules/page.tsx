@@ -16,7 +16,7 @@ service cloud.firestore {
   
     // Helper function to check for Admin role
     function isAdmin() {
-      return request.auth.token.role == 'Admin';
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
     }
 
     // Rules for user profiles
@@ -24,8 +24,7 @@ service cloud.firestore {
       // Allow users to read their own profile, and Admin to read any profile.
       allow read: if isAdmin() || request.auth.uid == userId;
       // Allow Admin to create new users from the panel.
-      // Allow users to create their own profile during sign-up (covered by register logic).
-      allow create: if isAdmin() || request.auth.uid == userId;
+      allow create: if isAdmin();
       // Allow users to update their own profile.
       allow update: if request.auth.uid == userId;
       // Only Admin can delete or list all users.
