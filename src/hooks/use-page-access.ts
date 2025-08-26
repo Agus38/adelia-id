@@ -16,7 +16,7 @@ export function usePageAccess(pageId: string) {
   const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
         const userDocRef = doc(db, 'users', authUser.uid);
         const userDoc = await getDoc(userDocRef);
@@ -45,7 +45,15 @@ export function usePageAccess(pageId: string) {
       setHasAccess(true);
       return;
     }
+    
+    // First, check for authentication requirement.
+    if (menuItem.requiresAuth && !user) {
+        router.push('/login');
+        setHasAccess(false);
+        return;
+    }
 
+    // Then, check for role-based access.
     if (menuItem.access === 'admin' && user?.role !== 'Admin') {
       router.push('/unauthorized');
       setHasAccess(false);

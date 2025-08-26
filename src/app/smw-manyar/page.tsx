@@ -1,10 +1,27 @@
 
+'use client';
+
 import { SmwManyarReportForm } from "@/components/smw-manyar/report-form";
-import { FileText } from 'lucide-react';
+import { usePageAccess } from "@/hooks/use-page-access";
+import { FileText, Loader2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 export default function SmwManyarPage() {
+  const { hasAccess, isLoading } = usePageAccess('smw-manyar');
+  
+  if (isLoading) {
+    return (
+      <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return null; // The hook will handle the redirect.
+  }
+
   return (
     <div className="flex flex-1 flex-col p-4 pt-6 md:p-8 space-y-4">
       <div className="flex-shrink-0">

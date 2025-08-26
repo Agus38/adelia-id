@@ -42,6 +42,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AppSidebar } from '@/components/layout/sidebar';
 import { auth } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
+import { usePageAccess } from '@/hooks/use-page-access';
 
 
 type ExtraField = {
@@ -56,6 +57,7 @@ type DeletionInfo = {
 } | null;
 
 export default function DailyReportPage() {
+  const { hasAccess, isLoading: isLoadingAccess } = usePageAccess('laporan-smw-merr');
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [shift, setShift] = React.useState<'pagi' | 'sore'>('pagi');
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
@@ -402,13 +404,18 @@ ${pemasukanText}
     </div>
   );
   
-  if (isLoading) {
+  if (isLoading || isLoadingAccess) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
         </div>
     );
   }
+
+  if (!hasAccess) {
+    return null; // The hook handles redirection
+  }
+
 
   return (
     <div className="flex">

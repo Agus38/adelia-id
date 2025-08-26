@@ -24,6 +24,7 @@ import { auth } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { getStockReport, addOrUpdateStockReport, type StockItem, initialStockData } from '@/lib/stock-store';
+import { usePageAccess } from '@/hooks/use-page-access';
 
 
 // Memoize the input component to prevent unnecessary re-renders causing focus loss.
@@ -60,6 +61,7 @@ const DynamicWidthInput = React.memo(function DynamicWidthInput({
 
 
 export default function StokProdukPage() {
+  const { hasAccess, isLoading: isLoadingAccess } = usePageAccess('stok-produk');
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [shift, setShift] = React.useState<'pagi' | 'sore'>('pagi');
   const [stockData, setStockData] = React.useState<StockItem[]>(initialStockData);
@@ -191,12 +193,16 @@ export default function StokProdukPage() {
   }, [stockData.length]);
 
 
-  if (isLoadingUser) {
+  if (isLoadingUser || isLoadingAccess) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
         </div>
     );
+  }
+  
+  if (!hasAccess) {
+    return null; // The hook handles redirection
   }
 
   return (
