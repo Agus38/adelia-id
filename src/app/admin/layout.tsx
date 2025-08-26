@@ -41,7 +41,7 @@ export default function AdminLayout({
   }, [router]);
 
   if (isAuthorized === null) {
-    // Show a loading state while checking authorization
+    // Show a full-screen loading state while checking authorization to prevent flickering.
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -49,5 +49,6 @@ export default function AdminLayout({
     );
   }
 
+  // Only render children if authorized. If not, the redirect is happening, so render nothing.
   return isAuthorized ? <>{children}</> : null;
 }
