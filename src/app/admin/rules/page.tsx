@@ -48,6 +48,13 @@ service cloud.firestore {
       allow delete, list: if isAdmin();
     }
 
+    // Rules for SMW Manyar reports
+    match /smwManyarReports/{reportId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, update: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow delete, list: if isAdmin();
+    }
+
     // Rules for general app settings
     match /app-settings/{setting} {
       // Anyone can read app settings (e.g., menu configuration).
