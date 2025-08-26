@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -47,12 +48,26 @@ export default function SettingsPage() {
       const server = await requestedDevice.gatt?.connect();
       if (!server) throw new Error("Gagal terhubung ke GATT server.");
 
-      // This is a common service/characteristic for many thermal printers, but may vary
-      // You might need to discover services and characteristics if this fails
-      const service = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb');
-      const char = await service.getCharacteristic('00001102-0000-1000-8000-00805f9b34fb');
+      // Dynamically find a writable characteristic
+      const services = await server.getPrimaryServices();
+      let foundCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
 
-      setCharacteristic(char);
+      for (const service of services) {
+        const characteristics = await service.getCharacteristics();
+        for (const char of characteristics) {
+          if (char.properties.write || char.properties.writeWithoutResponse) {
+            foundCharacteristic = char;
+            break;
+          }
+        }
+        if (foundCharacteristic) break;
+      }
+      
+      if (!foundCharacteristic) {
+        throw new Error("Tidak ditemukan karakteristik yang dapat ditulis pada perangkat ini.");
+      }
+
+      setCharacteristic(foundCharacteristic);
       setIsConnected(true);
       toast({
         title: 'Printer Terhubung!',
@@ -61,13 +76,15 @@ export default function SettingsPage() {
 
     } catch (err: any) {
       console.error('Koneksi Gagal:', err);
+      let errorMessage = `Koneksi Gagal: ${err.message}`;
       if (err.name === 'NotFoundError') {
-        setError('Tidak ada perangkat yang dipilih atau ditemukan.');
+        errorMessage = 'Tidak ada perangkat yang dipilih atau ditemukan.';
       } else if (err.name === 'SecurityError' || err.name === 'NotAllowedError') {
-        setError('Akses Bluetooth dibatasi oleh kebijakan keamanan browser. Coba buka aplikasi di tab baru atau pastikan Anda menggunakan koneksi aman (HTTPS).');
-      } else {
-        setError(`Koneksi Gagal: ${err.message}`);
+        errorMessage = 'Akses Bluetooth dibatasi oleh kebijakan keamanan browser. Coba buka aplikasi di tab baru atau pastikan Anda menggunakan koneksi aman (HTTPS).';
+      } else if (err.message.includes('GATT Server is disconnected')) {
+         errorMessage = 'Koneksi ke perangkat terputus. Pastikan perangkat berada dalam jangkauan dan coba lagi.';
       }
+       setError(errorMessage);
        toast({
         title: 'Koneksi Gagal',
         description: err.message,
