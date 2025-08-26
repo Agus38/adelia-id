@@ -50,6 +50,20 @@ interface BrandingConfigDTO {
   imageUrl?: string;
 }
 
+interface SocialLinkDTO {
+  name: string;
+  url: string;
+  iconName: string;
+}
+
+interface DeveloperInfoDTO {
+    name: string;
+    title: string;
+    avatarUrl: string;
+    bio: string;
+    socialLinks: SocialLinkDTO[];
+}
+
 
 // --- Type Definitions ---
 export interface BannerSlide {
@@ -69,11 +83,28 @@ export interface BrandingConfig {
   imageUrl?: string;
 }
 
+export interface SocialLink {
+    name: string;
+    url: string;
+    iconName: string;
+    icon: LucideIcon;
+}
+
+export interface DeveloperInfo {
+    name: string;
+    title: string;
+    avatarUrl: string;
+    bio: string;
+    socialLinks: SocialLink[];
+}
+
+
 // --- Firestore Document References ---
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
 const sidebarMenuConfigDocRef = doc(db, 'app-settings', 'sidebar-menu');
 const bannerConfigDocRef = doc(db, 'app-settings', 'banner-slides');
 const brandingConfigDocRef = doc(db, 'app-settings', 'branding');
+const developerInfoDocRef = doc(db, 'app-settings', 'developer-info');
 
 
 // --- Default Data ---
@@ -110,6 +141,19 @@ const defaultBrandingConfig: BrandingConfig = {
   icon: Logo,
   iconName: 'Logo',
   imageUrl: ''
+};
+
+const defaultDeveloperInfo: DeveloperInfo = {
+  name: 'Agus Eka',
+  title: 'Full-Stack Developer & UI/UX Enthusiast',
+  avatarUrl: 'https://placehold.co/150x150.png',
+  bio: 'Saya adalah seorang pengembang perangkat lunak dengan hasrat untuk menciptakan solusi teknologi yang inovatif dan aplikasi yang ramah pengguna. Berkomitmen pada pembelajaran berkelanjutan dan keunggulan dalam pengembangan.',
+  socialLinks: [
+    { name: 'GitHub', url: 'https://github.com/aguseka', iconName: 'Github', icon: getIconComponent('Github') },
+    { name: 'LinkedIn', url: 'https://linkedin.com/in/aguseka', iconName: 'Linkedin', icon: getIconComponent('Linkedin') },
+    { name: 'Website', url: 'https://aguseka.dev', iconName: 'Globe', icon: getIconComponent('Globe') },
+    { name: 'Email', url: 'mailto:contact@aguseka.dev', iconName: 'Mail', icon: getIconComponent('Mail') },
+  ],
 };
 
 
@@ -329,4 +373,61 @@ export const saveBrandingConfig = async (config: BrandingConfig) => {
         imageUrl: config.imageUrl,
     };
     await setDoc(brandingConfigDocRef, configToStore);
+};
+
+
+// --- Developer Info Store ---
+interface DeveloperInfoState {
+  developerInfo: DeveloperInfo;
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const useDeveloperInfoStore = create<DeveloperInfoState>((set) => ({
+    developerInfo: defaultDeveloperInfo,
+    isLoading: true,
+    error: null,
+    initializeListener: () => {
+        const unsubscribe = onSnapshot(developerInfoDocRef, (docSnap) => {
+            if (docSnap.exists() && docSnap.data()) {
+                const dto = docSnap.data() as DeveloperInfoDTO;
+                const hydratedInfo: DeveloperInfo = {
+                    ...dto,
+                    socialLinks: dto.socialLinks.map(link => ({
+                        ...link,
+                        icon: getIconComponent(link.iconName),
+                    })),
+                };
+                set({ developerInfo: hydratedInfo, isLoading: false, error: null });
+            } else {
+                set({ developerInfo: defaultDeveloperInfo, isLoading: false, error: null });
+            }
+        }, (error) => {
+            console.error("Error fetching developer info: ", error);
+            set({ developerInfo: defaultDeveloperInfo, isLoading: false, error });
+        });
+        return unsubscribe;
+    }
+}));
+
+export const useDeveloperInfoConfig = () => {
+    const { developerInfo, isLoading, initializeListener } = useDeveloperInfoStore();
+    React.useEffect(() => {
+        const unsubscribe = initializeListener();
+        return () => unsubscribe();
+    }, [initializeListener]);
+    return { developerInfo, isLoading };
+};
+
+export const saveDeveloperInfoConfig = async (info: DeveloperInfo) => {
+    const infoToStore: DeveloperInfoDTO = {
+        ...info,
+        socialLinks: info.socialLinks.map(link => ({
+            name: link.name,
+            url: link.url,
+            iconName: link.iconName,
+        })),
+    };
+    await setDoc(developerInfoDocRef, infoToStore);
 };

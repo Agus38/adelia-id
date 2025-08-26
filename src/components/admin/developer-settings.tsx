@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,47 +15,103 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Github, Linkedin, Mail, Globe, Trash2 } from 'lucide-react';
+import { Trash2, Loader2, PlusCircle, Globe } from 'lucide-react';
 import Image from 'next/image';
+import { useDeveloperInfoConfig, saveDeveloperInfoConfig, type DeveloperInfo, type SocialLink } from '@/lib/menu-store';
+import { toast } from '@/hooks/use-toast';
+import { allIcons } from '@/lib/menu-items-v2';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
-const initialDeveloperInfo = {
-  name: 'Agus Eka',
-  title: 'Full-Stack Developer & UI/UX Enthusiast',
-  avatarUrl: 'https://placehold.co/150x150.png',
-  bio: 'Saya adalah seorang pengembang perangkat lunak dengan hasrat untuk menciptakan solusi teknologi yang inovatif dan aplikasi yang ramah pengguna. Berkomitmen pada pembelajaran berkelanjutan dan keunggulan dalam pengembangan.',
-  socialLinks: [
-    { name: 'GitHub', url: 'https://github.com/aguseka', icon: 'Github' },
-    { name: 'LinkedIn', url: 'https://linkedin.com/in/aguseka', icon: 'Linkedin' },
-    { name: 'Website', url: 'https://aguseka.dev', icon: 'Globe' },
-    { name: 'Email', url: 'mailto:contact@aguseka.dev', icon: 'Mail' },
-  ],
-};
-
-const iconMap: { [key: string]: React.ElementType } = {
-  Github,
-  Linkedin,
-  Mail,
-  Globe,
-};
-
+const iconMap: { [key: string]: React.ElementType } = allIcons;
 
 export function DeveloperSettings() {
-  const [developerInfo, setDeveloperInfo] = useState(initialDeveloperInfo);
+  const { developerInfo, isLoading } = useDeveloperInfoConfig();
+  const [localInfo, setLocalInfo] = useState<DeveloperInfo | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleInfoChange = (field: keyof typeof developerInfo, value: string) => {
-    setDeveloperInfo((prev) => ({ ...prev, [field]: value }));
-  };
-  
-  const handleLinkChange = (index: number, field: 'name' | 'url', value: string) => {
-      const newLinks = [...developerInfo.socialLinks];
-      newLinks[index] = {...newLinks[index], [field]: value};
-      setDeveloperInfo(prev => ({...prev, socialLinks: newLinks}));
+  useEffect(() => {
+    if (developerInfo) {
+      setLocalInfo(JSON.parse(JSON.stringify(developerInfo)));
+    }
+  }, [developerInfo]);
+
+  if (isLoading || !localInfo) {
+    return (
+      <Card>
+          <CardHeader>
+              <CardTitle>Formulir Informasi Developer</CardTitle>
+              <CardDescription>
+              Perbarui detail yang ditampilkan di halaman developer. Perubahan akan
+              terlihat setelah disimpan.
+              </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </CardContent>
+      </Card>
+    )
   }
 
-  const handleSaveChanges = () => {
-    // NOTE: Mock implementation. In a real app, you would save this to a database.
-    console.log('Saving changes:', developerInfo);
-    alert('Perubahan disimpan! (Simulasi)');
+  const handleInfoChange = (field: keyof Omit<DeveloperInfo, 'socialLinks'>, value: string) => {
+    if (!localInfo) return;
+    setLocalInfo({ ...localInfo, [field]: value });
+  };
+  
+  const handleLinkChange = (index: number, field: keyof SocialLink, value: string) => {
+    if (!localInfo) return;
+    const newLinks = [...localInfo.socialLinks];
+    const linkToUpdate = { ...newLinks[index] };
+    
+    if (field === 'iconName') {
+        linkToUpdate.iconName = value;
+        linkToUpdate.icon = iconMap[value];
+    } else if (field === 'name' || field === 'url') {
+        linkToUpdate[field] = value;
+    }
+    
+    newLinks[index] = linkToUpdate;
+    setLocalInfo(prev => prev ? ({...prev, socialLinks: newLinks}) : null);
+  }
+
+  const handleAddLink = () => {
+    if (!localInfo) return;
+    const newLink: SocialLink = {
+        name: '',
+        url: '',
+        iconName: 'Globe',
+        icon: Globe
+    };
+    setLocalInfo({
+        ...localInfo,
+        socialLinks: [...localInfo.socialLinks, newLink]
+    });
+  }
+  
+  const handleRemoveLink = (index: number) => {
+    if (!localInfo) return;
+    const newLinks = [...localInfo.socialLinks];
+    newLinks.splice(index, 1);
+    setLocalInfo({ ...localInfo, socialLinks: newLinks });
+  }
+
+  const handleSaveChanges = async () => {
+    if (!localInfo) return;
+    setIsSaving(true);
+    try {
+        await saveDeveloperInfoConfig(localInfo);
+        toast({
+            title: 'Perubahan Disimpan!',
+            description: 'Informasi developer telah berhasil diperbarui.',
+        });
+    } catch (error) {
+        toast({
+            title: 'Gagal Menyimpan',
+            description: 'Terjadi kesalahan saat menyimpan data.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   return (
@@ -69,17 +126,17 @@ export function DeveloperSettings() {
       <CardContent className="space-y-6">
         <div className="flex items-center space-x-4">
              <Image
-                src={developerInfo.avatarUrl}
-                alt={developerInfo.name}
+                src={localInfo.avatarUrl}
+                alt={localInfo.name}
                 width={80}
                 height={80}
-                className="rounded-full"
+                className="rounded-full object-cover"
               />
             <div className="w-full space-y-2">
                 <Label htmlFor="avatarUrl">URL Avatar</Label>
                 <Input
                     id="avatarUrl"
-                    value={developerInfo.avatarUrl}
+                    value={localInfo.avatarUrl}
                     onChange={(e) => handleInfoChange('avatarUrl', e.target.value)}
                 />
             </div>
@@ -89,7 +146,7 @@ export function DeveloperSettings() {
           <Label htmlFor="name">Nama</Label>
           <Input
             id="name"
-            value={developerInfo.name}
+            value={localInfo.name}
             onChange={(e) => handleInfoChange('name', e.target.value)}
           />
         </div>
@@ -97,7 +154,7 @@ export function DeveloperSettings() {
           <Label htmlFor="title">Jabatan</Label>
           <Input
             id="title"
-            value={developerInfo.title}
+            value={localInfo.title}
             onChange={(e) => handleInfoChange('title', e.target.value)}
           />
         </div>
@@ -105,7 +162,7 @@ export function DeveloperSettings() {
           <Label htmlFor="bio">Bio</Label>
           <Textarea
             id="bio"
-            value={developerInfo.bio}
+            value={localInfo.bio}
             onChange={(e) => handleInfoChange('bio', e.target.value)}
             rows={4}
           />
@@ -114,34 +171,50 @@ export function DeveloperSettings() {
         <div>
             <Label>Tautan Sosial Media</Label>
             <div className="space-y-4 pt-2">
-                {developerInfo.socialLinks.map((link, index) => {
-                    const Icon = iconMap[link.icon];
+                {localInfo.socialLinks.map((link, index) => {
+                    const Icon = iconMap[link.iconName];
                     return (
                          <div key={index} className="flex items-center gap-2 p-2 border rounded-md">
-                            {Icon && <Icon className="h-5 w-5 text-muted-foreground" />}
+                            <Select value={link.iconName} onValueChange={(value) => handleLinkChange(index, 'iconName', value)}>
+                                <SelectTrigger className="w-[80px]">
+                                    <SelectValue>
+                                        {Icon && <Icon className="h-5 w-5 text-muted-foreground" />}
+                                    </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {Object.keys(iconMap).sort().map(iconName => (
+                                        <SelectItem key={iconName} value={iconName}>
+                                            <div className="flex items-center gap-2">
+                                                {React.createElement(iconMap[iconName], { className: "h-4 w-4" })}
+                                                <span>{iconName}</span>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                              <Input
-                                placeholder="Nama Link (cth: GitHub)"
-                                value={link.name}
-                                onChange={(e) => handleLinkChange(index, 'name', e.target.value)}
-                                className="flex-1"
-                            />
-                            <Input
                                 placeholder="URL Lengkap"
                                 value={link.url}
                                 onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
                                 className="flex-1"
                             />
-                             <Button variant="ghost" size="icon">
+                             <Button variant="ghost" size="icon" onClick={() => handleRemoveLink(index)}>
                                 <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                         </div>
                     )
                 })}
+                 <Button variant="outline" size="sm" onClick={handleAddLink}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Tambah Tautan
+                </Button>
             </div>
         </div>
       </CardContent>
       <CardFooter>
-        <Button onClick={handleSaveChanges}>Simpan Perubahan</Button>
+        <Button onClick={handleSaveChanges} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Simpan Perubahan
+        </Button>
       </CardFooter>
     </Card>
   );

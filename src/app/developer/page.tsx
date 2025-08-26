@@ -1,41 +1,29 @@
 
+'use client';
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Github, Linkedin, Mail, Globe, Code } from 'lucide-react';
+import { Code, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-
-const developerInfo = {
-  name: 'Agus Eka',
-  title: 'Full-Stack Developer & UI/UX Enthusiast',
-  avatarUrl: 'https://placehold.co/150x150.png',
-  avatarFallback: 'AE',
-  bio: 'Saya adalah seorang pengembang perangkat lunak dengan hasrat untuk menciptakan solusi teknologi yang inovatif dan aplikasi yang ramah pengguna. Berkomitmen pada pembelajaran berkelanjutan dan keunggulan dalam pengembangan.',
-  socialLinks: [
-    {
-      name: 'GitHub',
-      url: 'https://github.com/aguseka',
-      icon: Github,
-    },
-    {
-      name: 'LinkedIn',
-      url: 'https://linkedin.com/in/aguseka',
-      icon: Linkedin,
-    },
-    {
-      name: 'Website',
-      url: 'https://aguseka.dev',
-      icon: Globe,
-    },
-    {
-      name: 'Email',
-      url: 'mailto:contact@aguseka.dev',
-      icon: Mail,
-    },
-  ]
-};
+import { useDeveloperInfoConfig } from '@/lib/menu-store';
+import { allIcons } from '@/lib/menu-items-v2';
 
 export default function DeveloperPage() {
+  const { developerInfo, isLoading } = useDeveloperInfoConfig();
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 space-y-4 p-4 pt-6 md:p-8 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const getAvatarFallback = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  }
+
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8 flex items-center justify-center">
        <Card className="w-full max-w-2xl">
@@ -49,7 +37,7 @@ export default function DeveloperPage() {
            <div className="flex-shrink-0 relative">
              <Avatar className="h-32 w-32 border-4 border-primary/20">
                <AvatarImage src={developerInfo.avatarUrl} alt={developerInfo.name} data-ai-hint="developer portrait" />
-               <AvatarFallback>{developerInfo.avatarFallback}</AvatarFallback>
+               <AvatarFallback>{getAvatarFallback(developerInfo.name)}</AvatarFallback>
              </Avatar>
               <div className="absolute bottom-1 right-1 bg-background p-1.5 rounded-full shadow-md">
                 <Code className="h-4 w-4 text-primary" />
@@ -66,14 +54,18 @@ export default function DeveloperPage() {
          <CardFooter className="flex flex-col items-center gap-4 pt-6">
            <p className="text-sm text-muted-foreground">Terhubung dengan saya:</p>
            <div className="flex gap-4">
-             {developerInfo.socialLinks.map((link) => (
-                <Link href={link.url} key={link.name} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" size="icon">
-                    <link.icon className="h-5 w-5" />
-                    <span className="sr-only">{link.name}</span>
-                  </Button>
-                </Link>
-             ))}
+             {developerInfo.socialLinks.map((link) => {
+                const IconComponent = allIcons[link.iconName as keyof typeof allIcons];
+                if (!IconComponent) return null;
+                return (
+                    <Link href={link.url} key={link.name} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="icon">
+                        <IconComponent className="h-5 w-5" />
+                        <span className="sr-only">{link.name}</span>
+                    </Button>
+                    </Link>
+                );
+            })}
            </div>
          </CardFooter>
        </Card>
