@@ -411,7 +411,7 @@ ${pemasukanText}
   }
 
   return (
-    <>
+    <div className="flex">
       <AppSidebar />
       <div className="flex-1 space-y-4 pt-6 p-4 md:p-6">
         <Card className="mx-1.5 md:mx-2 relative">
@@ -598,9 +598,11 @@ ${pemasukanText}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-    </>
+    </div>
   );
 }
 
+
+    
 
     
