@@ -1,4 +1,3 @@
-
 'use client';
 
 import { collection, setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
@@ -45,18 +44,19 @@ export const addOrUpdateSmwReport = async (reportData: Omit<SmwReportData, 'id' 
     const reportDocRef = doc(db, 'smwManyarReports', reportId);
     
     try {
-        // Explicitly construct the object to be saved to Firestore
-        // to avoid any issues with spreading objects that might contain
-        // incompatible types or structures from the client-side.
+        // Construct the data object explicitly to ensure correctness.
+        // This is the most reliable way to handle "add or update" logic.
+        // setDoc without merge will either create the document or completely
+        // overwrite it if it already exists, which is what we want.
         const dataToSave = {
             date: reportData.date,
             formData: reportData.formData,
             createdBy: reportData.createdBy,
             userId: reportData.userId,
-            createdAt: serverTimestamp(), // Use server timestamp for consistency
+            createdAt: serverTimestamp(),
         };
 
-        await setDoc(reportDocRef, dataToSave, { merge: true });
+        await setDoc(reportDocRef, dataToSave);
     } catch (error) {
         console.error("Error saving SMW report to Firestore:", error);
         throw error;
