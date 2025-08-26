@@ -119,12 +119,6 @@ export const menuItems: MenuItem[] = [
     icon: FileText,
   },
   {
-    id: 'wa-sender',
-    title: 'WA Sender',
-    href: '/wa-sender',
-    icon: Printer,
-  },
-  {
     id: 'nexus-ai',
     title: 'Nexus AI',
     href: '/ai-assistant',

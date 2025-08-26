@@ -24,21 +24,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -72,97 +59,19 @@ const statusVariant: Record<TransactionStatus, 'default' | 'destructive' | 'seco
 export function TransactionHistoryTokenListrik() {
   const [isDetailOpen, setDetailOpen] = React.useState(false);
   const [selectedTx, setSelectedTx] = React.useState<Transaction | null>(null);
-  const [editablePrice, setEditablePrice] = React.useState('');
   const { toast } = useToast();
 
   const handleRowClick = (tx: Transaction) => {
     setSelectedTx(tx);
-    setEditablePrice(tx.price.toString());
     setDetailOpen(true);
   };
   
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value.replace(/\D/g, '');
-      setEditablePrice(value);
-  }
-
   const handleCopySn = (sn: string) => {
     navigator.clipboard.writeText(sn);
     toast({
         title: "Token Berhasil Disalin!",
         description: "Token listrik telah disalin ke clipboard Anda.",
     });
-  }
-
-  const handlePrintReceipt = () => {
-    if (!selectedTx) return;
-
-    const finalPrice = Number(editablePrice) || selectedTx.price;
-
-    const receiptContent = `
-        <html>
-            <head>
-                <title>Struk Transaksi ${selectedTx.id}</title>
-                 <style>
-                    @page { margin: 0; }
-                    body { 
-                        font-family: 'monospace', 'sans-serif'; 
-                        margin: 0; 
-                        padding: 10px; 
-                        color: #000; 
-                        font-size: 10pt;
-                        width: 58mm; /* Standard thermal printer width */
-                    }
-                    .container { width: 100%; }
-                    h2 { text-align: center; margin: 0; font-size: 12pt; }
-                    p { text-align: center; margin: 5px 0; }
-                    hr { border: none; border-top: 1px dashed #000; margin: 10px 0; }
-                    table { width: 100%; border-collapse: collapse; }
-                    td { padding: 2px 0; vertical-align: top; word-break: break-all; }
-                    .label { }
-                    .value { text-align: right; }
-                    .token-label { text-align: center; margin-top: 10px; margin-bottom: 5px; font-size: 9pt;}
-                    .token-value { text-align: center; font-weight: bold; font-size: 12pt; padding: 5px; border: 1px solid #000; border-radius: 4px; letter-spacing: 1px; }
-                    .total .label { font-weight: bold; }
-                    .total .value { font-weight: bold; font-size: 11pt; }
-                    .footer { text-align: center; margin-top: 10px; font-size: 8pt; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <h2>Adelia-ID</h2>
-                    <p>Struk Pembelian Token Listrik</p>
-                    <hr>
-                    <table>
-                        <tr><td class="label">ID Transaksi</td><td class="value">${selectedTx.id}</td></tr>
-                        <tr><td class="label">Tanggal</td><td class="value">${format(selectedTx.date, 'dd/MM/yy HH:mm', { locale: id })}</td></tr>
-                        <tr><td class="label">ID Pelanggan</td><td class="value">${selectedTx.customerId}</td></tr>
-                        <tr><td class="label">Nama</td><td class="value">${selectedTx.customerName}</td></tr>
-                        <tr><td class="label">Produk</td><td class="value">${selectedTx.product}</td></tr>
-                    </table>
-                    <hr>
-                    <p class="token-label">TOKEN:</p>
-                    <div class="token-value">${selectedTx.sn}</div>
-                    <hr>
-                     <table>
-                        <tr class="total"><td class="label">TOTAL</td><td class="value">${formatCurrency(finalPrice)}</td></tr>
-                    </table>
-                    <hr>
-                    <p class="footer">Terima kasih!</p>
-                </div>
-                <script>
-                    window.onload = function() {
-                        window.print();
-                        setTimeout(function() { window.close(); }, 300);
-                    }
-                <\/script>
-            </body>
-        </html>
-    `;
-    
-    const printWindow = window.open('', '_blank');
-    printWindow?.document.write(receiptContent);
-    printWindow?.document.close();
   }
 
   return (
@@ -300,41 +209,10 @@ export function TransactionHistoryTokenListrik() {
               </div>
             )}
         </div>
-        <SheetFooter className="grid grid-cols-2 gap-2 pt-4">
+        <SheetFooter className="grid grid-cols-1 pt-4">
           <Button variant="outline" onClick={() => setDetailOpen(false)}>
               <X className="mr-2 h-4 w-4"/> Tutup
           </Button>
-          <AlertDialog>
-              <AlertDialogTrigger asChild>
-                  <Button disabled={selectedTx?.status !== 'Berhasil'}>
-                      <Receipt className="mr-2 h-4 w-4"/> Cetak Struk
-                  </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
-                  <AlertDialogHeader>
-                      <AlertDialogTitle>Cetak Struk</AlertDialogTitle>
-                      <AlertDialogDescription>
-                          Anda dapat mengubah harga jual di bawah ini sebelum mencetak struk. Harga asli adalah {selectedTx ? formatCurrency(selectedTx.price) : ''}.
-                      </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <div className="py-2">
-                    <Label htmlFor="editable-price">Harga Jual (Opsional)</Label>
-                    <Input 
-                        id="editable-price"
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="Masukkan harga jual baru"
-                        value={editablePrice.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
-                        onChange={handlePriceChange}
-                        className="mt-2 text-right font-bold"
-                    />
-                  </div>
-                  <AlertDialogFooter>
-                      <AlertDialogCancel>Batal</AlertDialogCancel>
-                      <AlertDialogAction onClick={handlePrintReceipt}>Cetak</AlertDialogAction>
-                  </AlertDialogFooter>
-              </AlertDialogContent>
-          </AlertDialog>
         </SheetFooter>
       </SheetContent>
     </Sheet>
