@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -34,12 +33,15 @@ export default function SettingsPage() {
     setIsConnecting(true);
     setError(null);
     try {
-      // Common UUID for Serial Port Profile (SPP), often used by Bluetooth printers
       const requestedDevice = await navigator.bluetooth.requestDevice({
-        filters: [{ services: ['00001101-0000-1000-8000-00805f9b34fb'] }],
-        // acceptAllDevices: true, // Use this if the filter above doesn't work
+        acceptAllDevices: true,
+        optionalServices: ['00001101-0000-1000-8000-00805f9b34fb'] // Standard SPP UUID
       });
 
+      if (!requestedDevice) {
+        throw new Error('Tidak ada perangkat yang dipilih.');
+      }
+      
       setDevice(requestedDevice);
       
       const server = await requestedDevice.gatt?.connect();
@@ -64,7 +66,7 @@ export default function SettingsPage() {
       } else if (err.name === 'SecurityError' || err.name === 'NotAllowedError') {
         setError('Akses Bluetooth dibatasi oleh kebijakan keamanan browser. Coba buka aplikasi di tab baru atau pastikan Anda menggunakan koneksi aman (HTTPS).');
       } else {
-        setError(err.message);
+        setError(`Koneksi Gagal: ${err.message}`);
       }
        toast({
         title: 'Koneksi Gagal',
@@ -144,7 +146,7 @@ export default function SettingsPage() {
                   <Info className="h-4 w-4" />
                   <AlertTitle>Cara Kerja & Kompatibilitas</AlertTitle>
                   <AlertDescription>
-                     Fitur ini menggunakan Web Bluetooth API yang paling baik didukung di browser Chrome (Desktop & Android). Pastikan printer Bluetooth Anda sudah terhubung (paired) dengan perangkat Anda sebelum memulai.
+                     Fitur ini menggunakan Web Bluetooth API yang paling baik didukung di browser Chrome (Desktop & Android). Pastikan printer Bluetooth Anda sudah terhubung (paired) dengan perangkat Anda sebelum memulai. Metode koneksi ini akan mencari semua perangkat Bluetooth di sekitar.
                      <Link href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API#browser_compatibility" target="_blank" className="text-primary hover:underline flex items-center gap-1 mt-2">
                         Lihat kompatibilitas browser <ExternalLink className="h-3 w-3"/>
                      </Link>
