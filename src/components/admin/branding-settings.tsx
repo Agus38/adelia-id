@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,14 +15,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { allIconsMap } from '@/lib/menu-items-v2';
+import { allIconsMap, type MenuItem } from '@/lib/menu-items-v2';
 import type { LucideIcon } from 'lucide-react';
 import { Logo } from '../icons';
 import { ScrollArea } from '../ui/scroll-area';
-import { Search } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import Image from 'next/image';
+import { useBrandingConfig, saveBrandingConfig, type BrandingConfig } from '@/lib/menu-store';
 
 const iconList = allIconsMap.reduce((acc, item) => {
     if (item.icon && typeof item.icon.displayName === 'string' && !acc.find(i => i.name === item.icon.displayName)) {
@@ -32,29 +34,63 @@ const iconList = allIconsMap.reduce((acc, item) => {
 
 
 export function BrandingSettings() {
-  const [appName, setAppName] = useState('Adelia-ID');
-  const [logoType, setLogoType] = useState<'icon' | 'image'>('icon');
-  const [appIcon, setAppIcon] = useState<LucideIcon>(() => Logo);
-  const [appImageUrl, setAppImageUrl] = useState('');
+  const { brandingConfig, isLoading } = useBrandingConfig();
+  const [localConfig, setLocalConfig] = useState<BrandingConfig | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   const [isIconPickerOpen, setIconPickerOpen] = useState(false);
   const [iconSearchTerm, setIconSearchTerm] = useState("");
 
+  useEffect(() => {
+    if (brandingConfig) {
+      setLocalConfig(brandingConfig);
+    }
+  }, [brandingConfig]);
+
+
   const handleIconSelect = (icon: {name: string, component: LucideIcon}) => {
-    setAppIcon(() => icon.component);
+    if (!localConfig) return;
+    setLocalConfig({ ...localConfig, icon: icon.component, iconName: icon.name });
     setIconPickerOpen(false);
   }
 
-  const handleSaveChanges = () => {
-    // NOTE: Mock implementation. In a real app, you would save this to a database or config file.
-    console.log('Saving changes:', { appName, logoType, appIcon: (appIcon as any).displayName, appImageUrl });
-    toast({
-      title: 'Perubahan Disimpan!',
-      description: 'Pengaturan tampilan aplikasi telah berhasil diperbarui.',
-    });
+  const handleSaveChanges = async () => {
+    if (!localConfig) return;
+    setIsSaving(true);
+    try {
+      await saveBrandingConfig(localConfig);
+      toast({
+        title: 'Perubahan Disimpan!',
+        description: 'Pengaturan tampilan aplikasi telah berhasil diperbarui.',
+      });
+    } catch (error) {
+       toast({
+        title: 'Gagal Menyimpan',
+        description: 'Terjadi kesalahan saat menyimpan pengaturan.',
+        variant: 'destructive',
+      });
+    } finally {
+        setIsSaving(false);
+    }
   };
+  
+  if (isLoading || !localConfig) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Identitas Aplikasi</CardTitle>
+                <CardDescription>
+                Atur nama dan logo aplikasi yang akan ditampilkan di header.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </CardContent>
+        </Card>
+    )
+  }
 
-  const AppIcon = appIcon;
+  const AppIcon = localConfig.icon || Logo;
 
   const filteredIcons = iconList.filter(icon => 
     icon.name.toLowerCase().includes(iconSearchTerm.toLowerCase())
@@ -74,14 +110,18 @@ export function BrandingSettings() {
             <Label htmlFor="appName">Nama Aplikasi</Label>
             <Input
               id="appName"
-              value={appName}
-              onChange={(e) => setAppName(e.target.value)}
+              value={localConfig.appName}
+              onChange={(e) => setLocalConfig({...localConfig, appName: e.target.value})}
             />
           </div>
 
           <div className="space-y-4">
             <Label>Jenis Logo</Label>
-            <RadioGroup value={logoType} onValueChange={(value: 'icon' | 'image') => setLogoType(value)} className="flex gap-4">
+            <RadioGroup 
+              value={localConfig.logoType} 
+              onValueChange={(value: 'icon' | 'image') => setLocalConfig({...localConfig, logoType: value})} 
+              className="flex gap-4"
+            >
                  <div className="flex items-center space-x-2">
                     <RadioGroupItem value="icon" id="r1" />
                     <Label htmlFor="r1">Ikon</Label>
@@ -93,7 +133,7 @@ export function BrandingSettings() {
             </RadioGroup>
           </div>
 
-          {logoType === 'icon' ? (
+          {localConfig.logoType === 'icon' ? (
              <div className="space-y-2">
                 <Label>Ikon Aplikasi</Label>
                 <div className='flex items-center gap-4'>
@@ -112,8 +152,8 @@ export function BrandingSettings() {
                 <Label htmlFor="imageUrl">URL Logo Gambar</Label>
                 <Input
                     id="imageUrl"
-                    value={appImageUrl}
-                    onChange={(e) => setAppImageUrl(e.target.value)}
+                    value={localConfig.imageUrl}
+                    onChange={(e) => setLocalConfig({...localConfig, imageUrl: e.target.value})}
                     placeholder="https://example.com/logo.png"
                 />
             </div>
@@ -123,18 +163,21 @@ export function BrandingSettings() {
              <Label>Pratinjau Header</Label>
             <div className="flex h-20 w-full items-center justify-center rounded-md border border-dashed">
                 <div className="flex items-center gap-3 text-lg font-semibold text-primary">
-                    {logoType === 'icon' ? (
+                    {localConfig.logoType === 'icon' ? (
                         <AppIcon className="h-7 w-7" />
                     ) : (
-                        appImageUrl && <Image src={appImageUrl} alt="App Logo Preview" width={32} height={32} className="h-8 w-8 object-contain" />
+                        localConfig.imageUrl && <Image src={localConfig.imageUrl} alt="App Logo Preview" width={32} height={32} className="h-8 w-8 object-contain" />
                     )}
-                    <span>{appName}</span>
+                    <span>{localConfig.appName}</span>
                 </div>
             </div>
           </div>
         </CardContent>
         <CardFooter>
-          <Button onClick={handleSaveChanges}>Simpan Perubahan</Button>
+          <Button onClick={handleSaveChanges} disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Simpan Perubahan
+          </Button>
         </CardFooter>
       </Card>
 

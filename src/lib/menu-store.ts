@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import {
   type MenuItem,
@@ -13,6 +13,8 @@ import {
   type LucideIcon,
 } from './menu-items-v2';
 import { create } from 'zustand';
+import { Logo } from '@/components/icons';
+
 
 // Helper function to get icon component from its name string
 const getIconComponent = (iconName?: string): LucideIcon => {
@@ -41,6 +43,13 @@ interface BannerSlideDTO {
   visible: boolean;
 }
 
+interface BrandingConfigDTO {
+  appName: string;
+  logoType: 'icon' | 'image';
+  iconName?: string;
+  imageUrl?: string;
+}
+
 
 // --- Type Definitions ---
 export interface BannerSlide {
@@ -52,11 +61,19 @@ export interface BannerSlide {
   visible: boolean;
 }
 
+export interface BrandingConfig {
+  appName: string;
+  logoType: 'icon' | 'image';
+  icon?: LucideIcon;
+  iconName?: string;
+  imageUrl?: string;
+}
 
 // --- Firestore Document References ---
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
 const sidebarMenuConfigDocRef = doc(db, 'app-settings', 'sidebar-menu');
 const bannerConfigDocRef = doc(db, 'app-settings', 'banner-slides');
+const brandingConfigDocRef = doc(db, 'app-settings', 'branding');
 
 
 // --- Default Data ---
@@ -86,6 +103,14 @@ const defaultBannerSlides: BannerSlide[] = [
     visible: true,
   }
 ];
+
+const defaultBrandingConfig: BrandingConfig = {
+  appName: 'Adelia-ID',
+  logoType: 'icon',
+  icon: Logo,
+  iconName: 'Logo',
+  imageUrl: ''
+};
 
 
 // --- Menu Grid Store ---
@@ -251,3 +276,57 @@ export const saveBannerConfig = async (slides: BannerSlide[]) => {
     }));
     await setDoc(bannerConfigDocRef, { slides: slidesToStore });
 }
+
+// --- Branding Config Store ---
+interface BrandingStoreState {
+  brandingConfig: BrandingConfig;
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const useBrandingStore = create<BrandingStoreState>((set) => ({
+    brandingConfig: defaultBrandingConfig,
+    isLoading: true,
+    error: null,
+    initializeListener: () => {
+        const unsubscribe = onSnapshot(brandingConfigDocRef, (docSnap) => {
+            if (docSnap.exists() && docSnap.data()) {
+                const dto = docSnap.data() as BrandingConfigDTO;
+                const hydratedConfig: BrandingConfig = {
+                    appName: dto.appName,
+                    logoType: dto.logoType,
+                    icon: getIconComponent(dto.iconName),
+                    iconName: dto.iconName,
+                    imageUrl: dto.imageUrl,
+                };
+                set({ brandingConfig: hydratedConfig, isLoading: false, error: null });
+            } else {
+                set({ brandingConfig: defaultBrandingConfig, isLoading: false, error: null });
+            }
+        }, (error) => {
+            console.error("Error fetching branding config: ", error);
+            set({ brandingConfig: defaultBrandingConfig, isLoading: false, error });
+        });
+        return unsubscribe;
+    }
+}));
+
+export const useBrandingConfig = () => {
+    const { brandingConfig, isLoading, initializeListener } = useBrandingStore();
+    React.useEffect(() => {
+        const unsubscribe = initializeListener();
+        return () => unsubscribe();
+    }, [initializeListener]);
+    return { brandingConfig, isLoading };
+}
+
+export const saveBrandingConfig = async (config: BrandingConfig) => {
+    const configToStore: BrandingConfigDTO = {
+        appName: config.appName,
+        logoType: config.logoType,
+        iconName: config.iconName,
+        imageUrl: config.imageUrl,
+    };
+    await setDoc(brandingConfigDocRef, configToStore);
+};
