@@ -1,21 +1,13 @@
 
-'use client';
-
+import type { Metadata } from 'next';
 import './globals.css';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
-import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
-import { Footer } from '@/components/layout/footer';
-import { useEffect, useState } from 'react';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import type { User } from 'firebase/auth';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { MainLayout } from './main-layout';
 
-export type UserProfile = User & {
-  fullName?: string;
-  role?: string;
+export const metadata: Metadata = {
+  title: 'Adelia-ID',
+  description: 'Aplikasi web Adelia-ID',
 };
 
 export default function RootLayout({
@@ -23,34 +15,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
-      if (authUser) {
-        const userDocRef = doc(db, 'users', authUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser({
-            ...authUser,
-            fullName: userData.fullName || authUser.displayName,
-            role: userData.role,
-          });
-        } else {
-           // Fallback if user doc doesn't exist for some reason
-           setUser(authUser);
-        }
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
@@ -60,8 +24,6 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         ></link>
-        <title>Adelia-ID</title>
-        <meta name="description" content="Aplikasi web Adelia-ID" />
       </head>
       <body className="font-body antialiased">
         <ThemeProvider
@@ -71,18 +33,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SidebarProvider>
-            <div className="flex min-h-screen w-full bg-muted/40">
-              <AppSidebar />
-              <div className="flex flex-1 flex-col">
-                <Header user={user} loading={loading} />
-                <main className="flex-1">
-                  {children}
-                </main>
-                <Footer />
-              </div>
-            </div>
+            <MainLayout>{children}</MainLayout>
           </SidebarProvider>
-          <Toaster />
         </ThemeProvider>
       </body>
     </html>
