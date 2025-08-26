@@ -19,8 +19,8 @@ export default function AdminLayout({
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        // 1. If user is not logged in, redirect to the login page.
-        router.push('/login');
+        // 1. If user is not logged in, redirect to the unauthorized page.
+        router.push('/unauthorized');
         return;
       }
 
