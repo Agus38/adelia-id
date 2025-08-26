@@ -40,6 +40,7 @@ import {
 import { addReport } from '@/lib/report-store';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { AppSidebar } from '@/components/layout/sidebar';
 
 
 type ExtraField = {
@@ -296,7 +297,7 @@ ${pemasukanText}
   );
 
   return (
-    <>
+    <div className="flex">
       <AppSidebar />
       <div className="flex-1 space-y-4 pt-6 p-4 md:p-6">
         <Card className="mx-1.5 md:mx-2">
@@ -475,6 +476,6 @@ ${pemasukanText}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-    </>
+    </div>
   );
 }
