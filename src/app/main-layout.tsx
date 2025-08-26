@@ -12,6 +12,7 @@ import type { User } from 'firebase/auth';
 export type UserProfile = User & {
   fullName?: string;
   role?: string;
+  avatarUrl?: string;
 };
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
@@ -29,6 +30,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             ...authUser,
             fullName: userData.fullName || authUser.displayName,
             role: userData.role,
+            avatarUrl: userData.avatarUrl || authUser.photoURL,
           });
         } else {
           setUser(authUser);

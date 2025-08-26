@@ -16,7 +16,7 @@ import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users,
 import Link from 'next/link';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import type { UserProfile } from '@/app/layout';
+import type { UserProfile } from '@/app/main-layout';
 
 interface UserNavProps {
   user: UserProfile | null;
@@ -67,7 +67,7 @@ export function UserNav({ user, loading }: UserNavProps) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user.photoURL || ''} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
+            <AvatarImage src={user.avatarUrl || user.photoURL || ''} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
             <AvatarFallback>{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
           </Avatar>
         </Button>

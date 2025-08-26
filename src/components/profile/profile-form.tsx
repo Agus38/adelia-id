@@ -19,7 +19,7 @@ import { toast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Camera, Loader2 } from "lucide-react"
-import type { UserProfile } from "@/app/layout"
+import type { UserProfile } from "@/app/main-layout"
 import { auth, db, storage } from "@/lib/firebase"
 import { updateProfile } from "firebase/auth"
 import { doc, updateDoc } from "firebase/firestore"
@@ -32,7 +32,7 @@ const profileFormSchema = z.object({
     message: "Nama harus memiliki setidaknya 2 karakter.",
   }),
   email: z.string().email(),
-  photoURL: z.string().url().optional(),
+  photoURL: z.string().url().optional().or(z.literal('')),
 })
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
@@ -83,7 +83,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
         await updateProfile(auth.currentUser, { photoURL });
         const userDocRef = doc(db, 'users', auth.currentUser.uid);
-        await updateDoc(userDocRef, { avatarUrl: photoURL });
+        await updateDoc(userDocRef, { avatarUrl: photoURL, photoURL: photoURL });
 
         form.setValue('photoURL', photoURL, { shouldDirty: true });
         toast({
@@ -103,7 +103,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
   }
 
   async function onSubmit(data: ProfileFormValues) {
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) {
+        toast({ title: "Error", description: "Tidak ada pengguna yang login.", variant: "destructive" });
+        return;
+    };
     
     try {
         // Update Firebase Auth profile
@@ -117,6 +120,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
             title: "Profil Diperbarui",
             description: "Informasi profil Anda telah berhasil disimpan.",
         });
+        form.reset(data); // Reset form with new data to make it "not dirty"
         router.refresh();
     } catch (error) {
         toast({
@@ -126,6 +130,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
         });
     }
   }
+  
+  const isButtonDisabled = isUploading || form.formState.isSubmitting || !form.formState.isDirty;
 
   return (
      <Card>
@@ -193,7 +199,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                      />
                 </CardContent>
                 <CardFooter>
-                    <Button type="submit" disabled={form.formState.isSubmitting || isUploading}>
+                    <Button type="submit" disabled={isButtonDisabled}>
                        {(form.formState.isSubmitting || isUploading) && <Loader2 className="mr-2 animate-spin" />}
                        Simpan Perubahan
                     </Button>
