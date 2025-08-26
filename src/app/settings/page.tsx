@@ -59,7 +59,13 @@ export default function SettingsPage() {
 
     } catch (err: any) {
       console.error('Koneksi Gagal:', err);
-      setError(err.message);
+      if (err.name === 'NotFoundError') {
+        setError('Tidak ada perangkat yang dipilih atau ditemukan.');
+      } else if (err.name === 'SecurityError' || err.name === 'NotAllowedError') {
+        setError('Akses Bluetooth dibatasi oleh kebijakan keamanan browser. Coba buka aplikasi di tab baru atau pastikan Anda menggunakan koneksi aman (HTTPS).');
+      } else {
+        setError(err.message);
+      }
        toast({
         title: 'Koneksi Gagal',
         description: err.message,
