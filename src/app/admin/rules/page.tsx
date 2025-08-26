@@ -1,11 +1,10 @@
 
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Copy, ShieldCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
@@ -15,30 +14,44 @@ const firestoreRules = `rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
+    // Helper function to check for Admin role
     function isAdmin() {
       return request.auth.token.role == 'Admin';
     }
 
     // Rules for user profiles
     match /users/{userId} {
-      allow create: if isAdmin();
+      // Allow Admin to create new users from the panel.
+      // Allow users to create their own profile during sign-up (covered by register logic).
+      allow create: if isAdmin() || request.auth.uid == userId;
+
+      // Allow users to read their own profile, and Admin to read any profile.
       allow read: if isAdmin() || request.auth.uid == userId;
+
+      // Allow users to update their own profile.
       allow update: if request.auth.uid == userId;
-      allow delete: if isAdmin();
-      allow list: if isAdmin();
+
+      // Only Admin can delete or list all users.
+      allow delete, list: if isAdmin();
     }
 
     // Rules for daily financial reports
     match /dailyReports/{reportId} {
-      allow create: if request.auth.uid == request.resource.data.userId;
-      allow read, update: if isAdmin() || request.auth.uid == resource.data.userId;
-      allow delete: if isAdmin();
-      allow list: if isAdmin();
+      // Allow authenticated users to create a report if the userId in the report data matches their own uid.
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      
+      // Allow users to read/update their own reports, and Admin to read/update any report.
+      allow read, update: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      
+      // Only Admin can delete or list all reports.
+      allow delete, list: if isAdmin();
     }
 
     // Rules for general app settings
     match /app-settings/{setting} {
+      // Anyone can read app settings (e.g., menu configuration).
       allow read: if true;
+      // Only Admin can write to app settings.
       allow write: if isAdmin();
     }
   }
@@ -46,6 +59,8 @@ service cloud.firestore {
 `;
 
 export default function FirestoreRulesPage() {
+  
+  const { toast } = useToast();
   
   const handleCopyRules = () => {
     navigator.clipboard.writeText(firestoreRules.trim());
@@ -97,3 +112,4 @@ export default function FirestoreRulesPage() {
     </div>
   );
 }
+
