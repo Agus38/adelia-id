@@ -4,6 +4,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import * as React from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -19,7 +20,7 @@ import { toast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card"
 import { auth } from "@/lib/firebase"
 import { updatePassword } from "firebase/auth"
-import { Loader2 } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 
 const passwordFormSchema = z.object({
   newPassword: z.string().min(6, {message: "Kata sandi baru minimal 6 karakter."}),
@@ -37,6 +38,9 @@ const defaultValues: Partial<PasswordFormValues> = {
 }
 
 export function PasswordForm() {
+  const [showNewPassword, setShowNewPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordFormSchema),
     defaultValues,
@@ -85,7 +89,25 @@ export function PasswordForm() {
                         <FormItem>
                         <FormLabel>Kata Sandi Baru</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="Masukkan kata sandi baru" {...field} />
+                          <div className="relative">
+                            <Input type={showNewPassword ? "text" : "password"} placeholder="Masukkan kata sandi baru" {...field} />
+                             <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute inset-y-0 right-0 h-full px-3"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                            >
+                              {showNewPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                              <span className="sr-only">
+                                {showNewPassword ? 'Sembunyikan' : 'Tampilkan'} kata sandi
+                              </span>
+                            </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -98,7 +120,25 @@ export function PasswordForm() {
                         <FormItem>
                         <FormLabel>Konfirmasi Kata Sandi Baru</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="Konfirmasi kata sandi baru" {...field} />
+                          <div className="relative">
+                            <Input type={showConfirmPassword ? "text" : "password"} placeholder="Konfirmasi kata sandi baru" {...field} />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute inset-y-0 right-0 h-full px-3"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            >
+                              {showConfirmPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                              <span className="sr-only">
+                                {showConfirmPassword ? 'Sembunyikan' : 'Tampilkan'} kata sandi
+                              </span>
+                            </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                         </FormItem>
