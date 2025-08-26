@@ -1,17 +1,20 @@
 
 'use client';
 
+import { collection, query, where, getDocs, setDoc, doc, deleteDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { db } from './firebase';
 import type { User } from 'firebase/auth';
 
 // The DailyReport interface now includes userId
 export interface DailyReport {
-  id: string;
+  id: string; // Firestore document ID
   date: Date;
   shift: 'pagi' | 'sore';
   omsetBersih: number;
   totalSetor: number;
   createdBy: string;
-  userId: string; // Added user ID for ownership
+  userId: string;
+  createdAt: any; // Firestore Timestamp
   details: {
     modalAwal: number;
     pajak: number;
@@ -20,162 +23,80 @@ export interface DailyReport {
   };
 }
 
-const LOCAL_STORAGE_KEY = 'daily-reports';
+const reportsCollection = collection(db, 'dailyReports');
 
-const initialReports: DailyReport[] = [
-    {
-        id: 'RPT-001',
-        date: new Date('2024-07-23'),
-        shift: 'pagi',
-        omsetBersih: 5250000,
-        totalSetor: 4850000,
-        createdBy: 'Adelia',
-        userId: 'user-adelia-id', // Example userId
-        details: {
-            modalAwal: 500000,
-            pajak: 525000,
-            pemasukan: [
-                { name: 'GoFood', value: 1200000 },
-                { name: 'GrabFood', value: 1100000 },
-                { name: 'ShopeeFood', value: 950000 },
-                { name: 'Qris Mandiri', value: 800000 },
-            ],
-            pengeluaran: [
-                { name: 'Transport', value: 50000 },
-                { name: 'Lembur', value: 150000 },
-            ],
-        },
-    },
-    {
-        id: 'RPT-002',
-        date: new Date('2024-07-23'),
-        shift: 'sore',
-        omsetBersih: 6100000,
-        totalSetor: 5950000,
-        createdBy: 'Budi',
-        userId: 'user-budi-id', // Example userId
-        details: {
-            modalAwal: 1000000,
-            pajak: 610000,
-            pemasukan: [
-                { name: 'GoFood', value: 2200000 },
-                { name: 'GrabFood', value: 2100000 },
-                { name: 'Qris Bri', value: 1000000 },
-            ],
-            pengeluaran: [
-                 { name: 'Transport', value: 50000 },
-            ],
-        },
-    },
-];
+// Helper to generate a consistent ID for Firestore documents
+const generateReportId = (date: Date, shift: 'pagi' | 'sore', userId: string) => {
+    const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    return `${userId}-${dateString}-${shift}`;
+};
 
-let reports: DailyReport[] = [];
 
-// Load initial data from localStorage if available
-if (typeof window !== 'undefined') {
+export const getReports = async (): Promise<DailyReport[]> => {
+  try {
+    const snapshot = await getDocs(reportsCollection);
+    const reports = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            ...data,
+            id: doc.id,
+            date: data.date.toDate(), // Convert Firestore Timestamp to JS Date
+            createdAt: data.createdAt?.toDate() || new Date(),
+        } as DailyReport;
+    });
+    return reports.sort((a, b) => b.date.getTime() - a.date.getTime()); // Sort by most recent
+  } catch (error) {
+    console.error("Error fetching reports from Firestore:", error);
+    return [];
+  }
+};
+
+
+export const getReport = async (date: Date, shift: 'pagi' | 'sore', userId: string): Promise<DailyReport | null> => {
+    if (!date || !shift || !userId) return null;
     try {
-        const storedReports = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (storedReports) {
-            reports = JSON.parse(storedReports, (key, value) => {
-                 if (key === 'date') return new Date(value);
-                 return value;
-            });
-        } else {
-            reports = initialReports;
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(reports));
+        const reportId = generateReportId(date, shift, userId);
+        const reportDocRef = doc(db, 'dailyReports', reportId);
+        const docSnap = await getDoc(reportDocRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            return {
+                ...data,
+                id: docSnap.id,
+                date: data.date.toDate(),
+                createdAt: data.createdAt?.toDate(),
+            } as DailyReport;
         }
+        return null;
     } catch (error) {
-        console.error("Failed to access localStorage for reports:", error);
-        reports = initialReports;
+        console.error("Error fetching single report from Firestore:", error);
+        return null;
     }
-} else {
-    reports = initialReports;
-}
-
-
-type Listener = (data: DailyReport[]) => void;
-let listener: Listener | null = null;
-
-export const listeners = {
-  subscribe: (newListener: Listener): (() => void) => {
-    listener = newListener;
-    // Immediately notify with current data
-    listeners.notify();
-    return () => {
-      listener = null;
-    };
-  },
-  notify: () => {
-    if (listener) {
-      listener([...reports]);
-    }
-  },
-};
-
-const saveReportsToLocalStorage = () => {
-    if (typeof window !== 'undefined') {
-        try {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(reports));
-        } catch (error) {
-            console.error("Failed to save reports to localStorage:", error);
-        }
-    }
-}
-
-const generateId = (): string => {
-    const lastIdNumber = reports.reduce((maxId, report) => {
-        const currentId = parseInt(report.id.split('-')[1], 10);
-        return isNaN(currentId) ? maxId : Math.max(maxId, currentId);
-    }, 0);
-    const newId = (lastIdNumber + 1).toString().padStart(3, '0');
-    return `RPT-${newId}`;
-}
-
-
-export const getReports = (): DailyReport[] => {
-  return reports;
-};
-
-// Function to find a specific report
-export const getReport = (date: Date, shift: 'pagi' | 'sore', userId: string): DailyReport | undefined => {
-    return reports.find(
-        (r) =>
-            r.date.toDateString() === date.toDateString() &&
-            r.shift === shift &&
-            r.userId === userId
-    );
 };
 
 
-export const addOrUpdateReport = (reportData: Omit<DailyReport, 'id'>) => {
-    const existingReportIndex = reports.findIndex(
-        (r) =>
-            r.date.toDateString() === reportData.date.toDateString() &&
-            r.shift === reportData.shift &&
-            r.userId === reportData.userId
-    );
-
-    if (existingReportIndex > -1) {
-        // Update existing report
-        reports[existingReportIndex] = {
-            ...reports[existingReportIndex],
-            ...reportData,
-        };
-    } else {
-        // Add new report
-        const newReport: DailyReport = {
-            ...reportData,
-            id: generateId(),
-        };
-        reports.push(newReport);
-    }
+export const addOrUpdateReport = async (reportData: Omit<DailyReport, 'id' | 'createdAt'>) => {
+    const reportId = generateReportId(reportData.date, reportData.shift, reportData.userId);
+    const reportDocRef = doc(db, 'dailyReports', reportId);
     
-    saveReportsToLocalStorage();
-    listeners.notify();
+    try {
+        await setDoc(reportDocRef, {
+            ...reportData,
+            createdAt: serverTimestamp(),
+        }, { merge: true }); // Use merge: true to update if it exists, or create if not.
+    } catch (error) {
+        console.error("Error saving report to Firestore:", error);
+        throw error; // re-throw to be caught by the calling function
+    }
 };
 
-export const deleteReport = (reportId: string) => {
-  reports = reports.filter(r => r.id !== reportId);
-  saveReportsToLocalStorage();
-  listeners.notify();
+export const deleteReport = async (reportId: string) => {
+    try {
+        const reportDocRef = doc(db, 'dailyReports', reportId);
+        await deleteDoc(reportDocRef);
+    } catch(error) {
+        console.error("Error deleting report from Firestore:", error);
+        throw error;
+    }
 }

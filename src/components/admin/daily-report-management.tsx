@@ -44,6 +44,7 @@ import {
   TrendingDown,
   Receipt,
   Filter,
+  Loader2
 } from 'lucide-react';
 import {
   Dialog,
@@ -57,29 +58,15 @@ import { Input } from '../ui/input';
 import { Checkbox } from '../ui/checkbox';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { getReports, deleteReport, listeners } from '@/lib/report-store';
+import { getReports, deleteReport, type DailyReport } from '@/lib/report-store';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import Link from 'next/link';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
+import { useToast } from '@/hooks/use-toast';
 
-
-export interface DailyReport {
-  id: string;
-  date: Date;
-  shift: 'pagi' | 'sore';
-  omsetBersih: number;
-  totalSetor: number;
-  createdBy: string;
-  details: {
-    modalAwal: number;
-    pajak: number;
-    pemasukan: { name: string; value: number }[];
-    pengeluaran: { name: string; value: number }[];
-  };
-}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('id-ID', {
@@ -103,18 +90,36 @@ const globalFilterFn: FilterFn<DailyReport> = (row, columnId, value, addMeta) =>
 
   const reportId = row.original.id.toLowerCase();
   const shift = row.original.shift.toLowerCase();
+  const createdBy = row.original.createdBy.toLowerCase();
   const date = format(row.original.date, 'd MMMM yyyy', { locale: id }).toLowerCase();
   
-  return reportId.includes(search) || shift.includes(search) || date.includes(search);
+  return reportId.includes(search) || shift.includes(search) || date.includes(search) || createdBy.includes(search);
 }
 
 export function DailyReportManagement() {
-  const [data, setData] = React.useState(() => getReports());
+  const [data, setData] = React.useState<DailyReport[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const { toast } = useToast();
+
+  const fetchReports = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const reports = await getReports();
+      setData(reports);
+    } catch (error) {
+      toast({
+        title: "Gagal memuat laporan",
+        description: "Terjadi kesalahan saat mengambil data laporan dari database.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
 
   React.useEffect(() => {
-    const unsubscribe = listeners.subscribe(setData);
-    return () => unsubscribe();
-  }, []);
+    fetchReports();
+  }, [fetchReports]);
 
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -138,9 +143,15 @@ export function DailyReportManagement() {
     setDeleteDialogOpen(true);
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if(selectedReport) {
-      deleteReport(selectedReport.id);
+      try {
+        await deleteReport(selectedReport.id);
+        toast({ title: "Laporan Dihapus", description: "Laporan telah berhasil dihapus." });
+        fetchReports(); // Refresh data from Firestore
+      } catch (error) {
+        toast({ title: "Gagal Menghapus", description: "Terjadi kesalahan saat menghapus laporan.", variant: "destructive" });
+      }
     }
     setDeleteDialogOpen(false);
   }
@@ -429,7 +440,14 @@ export function DailyReportManagement() {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+                <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground mt-2">Memuat data laporan...</p>
+                    </TableCell>
+                </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

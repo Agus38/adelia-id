@@ -39,7 +39,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { addOrUpdateReport, getReport } from '@/lib/report-store';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { AppSidebar } from '@/components/layout/sidebar';
 import { auth } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
@@ -61,10 +60,10 @@ export default function DailyReportPage() {
   const [shift, setShift] = React.useState<'pagi' | 'sore'>('pagi');
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isFetchingReport, setIsFetchingReport] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
 
   const { toast } = useToast();
-  const router = useRouter();
-
 
   // Financial State
   const [modalAwal, setModalAwal] = React.useState(0);
@@ -121,40 +120,57 @@ export default function DailyReportPage() {
     setExtraPengeluaran([]);
   }, []);
 
+  const populateForm = React.useCallback((report: any) => {
+    setModalAwal(report.details.modalAwal);
+    setOmsetBersih(report.omsetBersih);
+    setPajak(report.details.pajak);
+    
+    const pemasukanMap = new Map(report.details.pemasukan.map((p: any) => [p.name, p.value]));
+    setGoFood(pemasukanMap.get('GoFood') || 0);
+    setGrabFood(pemasukanMap.get('GrabFood') || 0);
+    setShopeeFood(pemasukanMap.get('ShopeeFood') || 0);
+    setQrisMandiri(pemasukanMap.get('Qris Mandiri') || 0);
+    setQrisBri(pemasukanMap.get('Qris Bri') || 0);
+    setDebitMandiri(pemasukanMap.get('Debit Mandiri') || 0);
+    setDebitBri(pemasukanMap.get('Debit Bri') || 0);
+
+    const pengeluaranMap = new Map(report.details.pengeluaran.map((p: any) => [p.name, p.value]));
+    setTransport(pengeluaranMap.get('Transport') || 0);
+    setGoSend(pengeluaranMap.get('GoSend') || 0);
+    setIuranBulanan(pengeluaranMap.get('Iuran Bulanan') || 0);
+    setBonus(pengeluaranMap.get('Bonus') || 0);
+    setLembur(pengeluaranMap.get('Lembur') || 0);
+
+    setExtraPemasukan(report.details.pemasukan.filter((p: any) => !['GoFood', 'GrabFood', 'ShopeeFood', 'Qris Mandiri', 'Qris Bri', 'Debit Mandiri', 'Debit Bri'].includes(p.name)).map((p: any) => ({...p, id: Math.random()})));
+    setExtraPengeluaran(report.details.pengeluaran.filter((p: any) => !['Transport', 'GoSend', 'Iuran Bulanan', 'Bonus', 'Lembur'].includes(p.name)).map((p: any) => ({...p, id: Math.random()})));
+  }, []);
+
   React.useEffect(() => {
     if (!date || !currentUser) return;
 
-    const report = getReport(date, shift, currentUser.uid);
-
-    if (report) {
-        setModalAwal(report.details.modalAwal);
-        setOmsetBersih(report.omsetBersih);
-        setPajak(report.details.pajak);
-        
-        const pemasukanMap = new Map(report.details.pemasukan.map(p => [p.name, p.value]));
-        setGoFood(pemasukanMap.get('GoFood') || 0);
-        setGrabFood(pemasukanMap.get('GrabFood') || 0);
-        setShopeeFood(pemasukanMap.get('ShopeeFood') || 0);
-        setQrisMandiri(pemasukanMap.get('Qris Mandiri') || 0);
-        setQrisBri(pemasukanMap.get('Qris Bri') || 0);
-        setDebitMandiri(pemasukanMap.get('Debit Mandiri') || 0);
-        setDebitBri(pemasukanMap.get('Debit Bri') || 0);
-
-        const pengeluaranMap = new Map(report.details.pengeluaran.map(p => [p.name, p.value]));
-        setTransport(pengeluaranMap.get('Transport') || 0);
-        setGoSend(pengeluaranMap.get('GoSend') || 0);
-        setIuranBulanan(pengeluaranMap.get('Iuran Bulanan') || 0);
-        setBonus(pengeluaranMap.get('Bonus') || 0);
-        setLembur(pengeluaranMap.get('Lembur') || 0);
-
-        setExtraPemasukan(report.details.pemasukan.filter(p => !['GoFood', 'GrabFood', 'ShopeeFood', 'Qris Mandiri', 'Qris Bri', 'Debit Mandiri', 'Debit Bri'].includes(p.name)).map(p => ({...p, id: Math.random()})));
-        setExtraPengeluaran(report.details.pengeluaran.filter(p => !['Transport', 'GoSend', 'Iuran Bulanan', 'Bonus', 'Lembur'].includes(p.name)).map(p => ({...p, id: Math.random()})));
-
-    } else {
+    const fetchReport = async () => {
+      setIsFetchingReport(true);
+      try {
+        const report = await getReport(date, shift, currentUser.uid);
+        if (report) {
+          populateForm(report);
+        } else {
+          resetForm();
+        }
+      } catch (error) {
+         toast({
+          title: 'Gagal Memuat Laporan',
+          description: 'Terjadi kesalahan saat mengambil data dari database.',
+          variant: 'destructive',
+        });
         resetForm();
-    }
+      } finally {
+        setIsFetchingReport(false);
+      }
+    };
 
-  }, [date, shift, currentUser, resetForm]);
+    fetchReport();
+  }, [date, shift, currentUser, resetForm, populateForm, toast]);
 
 
   // Calculations
@@ -184,56 +200,74 @@ export default function DailyReportPage() {
   const sisaOmsetPlusPajak = sisaOmset + pajak;
   const totalAkhir = sisaOmsetPlusPajak + modalAwal;
 
-  const handleSaveReport = () => {
-    if (!date || !currentUser || omsetBersih === 0) {
+  const handleSaveReport = async () => {
+    if (!date || !currentUser) {
        toast({
         title: 'Data Tidak Lengkap',
-        description: 'Pastikan tanggal, omset bersih, dan Anda sudah login sebelum menyimpan.',
+        description: 'Pastikan tanggal telah dipilih dan Anda sudah login.',
+        variant: 'destructive',
+      });
+      return;
+    }
+     if (omsetBersih === 0) {
+       toast({
+        title: 'Omset Bersih Kosong',
+        description: 'Harap isi omset bersih sebelum menyimpan laporan.',
         variant: 'destructive',
       });
       return;
     }
     
-    const pemasukanDetails = [
-        { name: 'GoFood', value: goFood },
-        { name: 'GrabFood', value: grabFood },
-        { name: 'ShopeeFood', value: shopeeFood },
-        { name: 'Qris Mandiri', value: qrisMandiri },
-        { name: 'Qris Bri', value: qrisBri },
-        { name: 'Debit Mandiri', value: debitMandiri },
-        { name: 'Debit Bri', value: debitBri },
-        ...extraPemasukan,
-    ].filter(item => item.value > 0);
+    setIsSaving(true);
+    try {
+        const pemasukanDetails = [
+            { name: 'GoFood', value: goFood },
+            { name: 'GrabFood', value: grabFood },
+            { name: 'ShopeeFood', value: shopeeFood },
+            { name: 'Qris Mandiri', value: qrisMandiri },
+            { name: 'Qris Bri', value: qrisBri },
+            { name: 'Debit Mandiri', value: debitMandiri },
+            { name: 'Debit Bri', value: debitBri },
+            ...extraPemasukan.map(({ id, ...rest }) => rest),
+        ].filter(item => item.value > 0);
 
-    const pengeluaranDetails = [
-        { name: 'Transport', value: transport },
-        { name: 'GoSend', value: goSend },
-        { name: 'Iuran Bulanan', value: iuranBulanan },
-        { name: 'Bonus', value: bonus },
-        { name: 'Lembur', value: lembur },
-        ...extraPengeluaran
-    ].filter(item => item.value > 0);
+        const pengeluaranDetails = [
+            { name: 'Transport', value: transport },
+            { name: 'GoSend', value: goSend },
+            { name: 'Iuran Bulanan', value: iuranBulanan },
+            { name: 'Bonus', value: bonus },
+            { name: 'Lembur', value: lembur },
+            ...extraPengeluaran.map(({ id, ...rest }) => rest),
+        ].filter(item => item.value > 0);
 
-
-    addOrUpdateReport({
-      date,
-      shift,
-      omsetBersih,
-      totalSetor: totalAkhir,
-      createdBy: currentUser.displayName || 'Pengguna',
-      userId: currentUser.uid,
-      details: {
-          modalAwal,
-          pajak,
-          pemasukan: pemasukanDetails,
-          pengeluaran: pengeluaranDetails,
-      }
-    });
-    
-    toast({
-      title: 'Laporan Disimpan!',
-      description: 'Laporan keuangan harian telah berhasil disimpan.',
-    });
+        await addOrUpdateReport({
+          date,
+          shift,
+          omsetBersih,
+          totalSetor: totalAkhir,
+          createdBy: currentUser.displayName || 'Pengguna',
+          userId: currentUser.uid,
+          details: {
+              modalAwal,
+              pajak,
+              pemasukan: pemasukanDetails,
+              pengeluaran: pengeluaranDetails,
+          }
+        });
+        
+        toast({
+          title: 'Laporan Disimpan!',
+          description: 'Laporan keuangan harian telah berhasil disimpan di database.',
+        });
+    } catch(error) {
+        toast({
+          title: 'Gagal Menyimpan',
+          description: 'Terjadi kesalahan saat menyimpan laporan ke database.',
+          variant: 'destructive',
+        });
+    } finally {
+        setIsSaving(false);
+    }
   };
   
   const handleAddExtraField = (type: 'pemasukan' | 'pengeluaran') => {
@@ -375,10 +409,16 @@ ${pemasukanText}
   }
 
   return (
-    <div className="flex">
+    <>
       <AppSidebar />
       <div className="flex-1 space-y-4 pt-6 p-4 md:p-6">
-        <Card className="mx-1.5 md:mx-2">
+        <Card className="mx-1.5 md:mx-2 relative">
+          {isFetchingReport && (
+            <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg z-10">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="ml-2">Memuat data laporan...</span>
+            </div>
+          )}
           <CardHeader>
             <CardTitle>Laporan Keuangan Harian</CardTitle>
             <CardDescription>
@@ -525,7 +565,9 @@ ${pemasukanText}
             <Button
               className="flex-1 bg-primary text-white hover:bg-primary/90"
               onClick={handleSaveReport}
+              disabled={isSaving}
             >
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Save className="mr-2 h-4 w-4" />
               Simpan
             </Button>
@@ -554,6 +596,6 @@ ${pemasukanText}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-    </div>
+    </>
   );
 }
