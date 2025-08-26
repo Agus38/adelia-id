@@ -69,6 +69,7 @@ import {
   Smartphone,
   PlusCircle,
   Bolt,
+  ShieldCheck,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -279,6 +280,14 @@ export const adminMenuItems: MenuItem[] = [
     access: 'admin',
   },
   {
+    id: 'firestore-rules',
+    title: 'Aturan Firestore',
+    href: '/admin/rules',
+    icon: ShieldCheck,
+    description: 'Salin dan kelola aturan keamanan database.',
+    access: 'admin',
+  },
+  {
     id: 'system-settings',
     title: 'Pengaturan Sistem',
     href: '/admin/setup',
@@ -400,6 +409,7 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Settings,
   Settings2,
   Shield,
+  ShieldCheck,
   Smartphone,
   Sprout,
   Star,

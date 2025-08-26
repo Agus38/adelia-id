@@ -4,53 +4,45 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Helper function to check for Admin role
     function isAdmin() {
+      // Check for custom claim `role` on the user's auth token
       return request.auth.token.role == 'Admin';
     }
-    
-    // Helper function to check if the user is the owner of the resource
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
 
-    // Rules for the 'users' collection
+    // Rules for user profiles
     match /users/{userId} {
-      // Admin can do anything
-      // A user can create their own document
-      // A user can only update/delete their own document
-      allow read: if isAdmin() || isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isAdmin() || isOwner(userId);
+      // Admins can create new user documents
+      allow create: if isAdmin();
+      // Users can read their own profile, Admins can read any profile
+      allow read: if isAdmin() || request.auth.uid == userId;
+      // Users can only update their own profile
+      allow update: if request.auth.uid == userId;
+      // Only Admins can delete user documents
       allow delete: if isAdmin();
-    }
-    
-    // Rules for the 'app-settings' collection
-    match /app-settings/{setting} {
-      // Anyone can read settings
-      allow get;
-      // Only admins can write settings
-      allow write: if isAdmin();
+      // Only Admins can list all users
+      allow list: if isAdmin();
     }
 
-    // Rules for the 'dailyReports' collection
+    // Rules for daily financial reports
     match /dailyReports/{reportId} {
-        // CREATE: A logged-in user can create a report if the report's userId matches their own.
-        allow create: if isOwner(request.resource.data.userId);
+      // A logged-in user can create a report for themselves
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // An admin can read any report. A user can only read their own reports.
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == resource.data.userId);
+       // A user can only update their own reports.
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Only Admins can delete reports
+      allow delete: if isAdmin();
+      // Only Admins can list all reports
+      allow list: if isAdmin();
+    }
 
-        // READ, UPDATE, DELETE:
-        // An owner can read, update, and delete their own report.
-        // An admin can read, update, and delete any report.
-        allow read, update, delete: if isAdmin() || isOwner(resource.data.userId);
-    }
-    
-    // Admins need list access to manage collections in the admin panel
-    match /users/{document=**} {
-        allow list: if isAdmin();
-    }
-    
-    match /dailyReports/{document=**} {
-        allow list: if isAdmin();
+    // Rules for general app settings (menus, banners, etc.)
+    match /app-settings/{setting} {
+      // Everyone can read the app settings
+      allow read: if true;
+      // Only Admins can change the app settings
+      allow write: if isAdmin();
     }
   }
 }
