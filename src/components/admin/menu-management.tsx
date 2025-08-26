@@ -24,7 +24,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import type { MenuItem } from '@/lib/menu-items-v2';
-import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon, Search, Loader2, Wrench } from 'lucide-react';
+import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon, Search, Loader2, Wrench, Lock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   Select,
@@ -98,6 +98,7 @@ export function MenuManagement() {
       comingSoon: false,
       badgeText: '',
       isUnderMaintenance: false,
+      requiresAuth: false,
     });
     setIsNew(true);
     setEditDialogOpen(true);
@@ -139,9 +140,22 @@ export function MenuManagement() {
     );
   }
 
+  const handleAuthChange = (id: string, requiresAuth: boolean) => {
+    setMenuState(prevState =>
+      prevState.map(item => item.id === id ? {...item, requiresAuth} : item)
+    );
+  }
+
   const handleAccessChange = (id: string, access: 'all' | 'admin') => {
      setMenuState(prevState => 
-        prevState.map(item => item.id === id ? {...item, access} : item)
+        prevState.map(item => {
+          if (item.id === id) {
+            // If access is 'admin', it must require authentication.
+            const requiresAuth = access === 'admin' ? true : item.requiresAuth;
+            return {...item, access, requiresAuth };
+          }
+          return item;
+        })
     );
   }
   
@@ -214,13 +228,14 @@ export function MenuManagement() {
               <TableHead>Visibilitas</TableHead>
               <TableHead>Maintenance</TableHead>
               <TableHead>Hak Akses</TableHead>
+              <TableHead>Wajib Login</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
                 <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                         <p>Memuat konfigurasi menu...</p>
                     </TableCell>
@@ -262,6 +277,14 @@ export function MenuManagement() {
                         <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                     </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={item.requiresAuth}
+                        onCheckedChange={(checked) => handleAuthChange(item.id, checked)}
+                        aria-label="Wajib Login"
+                        disabled={item.access === 'admin'}
+                      />
                     </TableCell>
                     <TableCell className="text-right space-x-0.5">
                     <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'up')} disabled={index === 0}>

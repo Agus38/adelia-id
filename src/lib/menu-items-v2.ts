@@ -86,6 +86,7 @@ export interface MenuItem {
   badgeText?: string;
   iconName?: string; // Added for serialization
   isUnderMaintenance?: boolean;
+  requiresAuth?: boolean; // Added for login requirement
 }
 
 export const homeMenuItem: MenuItem = {
@@ -95,6 +96,7 @@ export const homeMenuItem: MenuItem = {
   icon: Home,
   description: 'Kembali ke halaman utama.',
   access: 'all',
+  requiresAuth: false,
 }
 
 export const menuItems: MenuItem[] = [
@@ -103,36 +105,43 @@ export const menuItems: MenuItem[] = [
     title: 'Laporan Harian',
     href: '/laporan-smw-merr',
     icon: MessageSquare,
+    requiresAuth: true,
   },
   {
     id: 'digital-products',
     title: 'Produk Digital',
     href: '/digital-products',
     icon: Wallet,
+    requiresAuth: true,
   },
   {
     id: 'stok-produk',
     title: 'Stok Produk',
     href: '/stok-produk',
     icon: Package,
+    requiresAuth: true,
   },
   {
     id: 'smw-manyar',
     title: 'SMW Manyar',
     href: '/smw-manyar',
     icon: FileText,
+    requiresAuth: true,
   },
   {
     id: 'nexus-ai',
     title: 'Nexus AI',
     href: '/ai-assistant',
     icon: Bot,
+    requiresAuth: true,
   },
   {
     id: 'cek-usia',
     title: 'Cek Usia',
     href: '/cek-usia',
     icon: Cake,
+    access: 'all',
+    requiresAuth: false,
   },
   {
     id: 'kalkulator',
@@ -140,6 +149,7 @@ export const menuItems: MenuItem[] = [
     href: '/kalkulator',
     icon: Calculator,
     comingSoon: true,
+    requiresAuth: false,
   },
   {
     id: 'convert',
@@ -147,6 +157,7 @@ export const menuItems: MenuItem[] = [
     href: '/convert',
     icon: Repeat,
     comingSoon: true,
+    requiresAuth: false,
   },
   {
     id: 'diskon',
@@ -154,6 +165,7 @@ export const menuItems: MenuItem[] = [
     href: '/diskon',
     icon: Tag,
     comingSoon: true,
+    requiresAuth: false,
   },
   {
     id: 'stok-manyar',
@@ -161,6 +173,7 @@ export const menuItems: MenuItem[] = [
     href: '/stok-manyar',
     icon: Archive,
     comingSoon: true,
+    requiresAuth: true,
   },
 ];
 
@@ -172,6 +185,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: LayoutGrid,
     description: 'Tampilan ringkasan dan manajemen sistem.',
     access: 'admin',
+    requiresAuth: true,
   },
   {
     id: 'user-management',
@@ -180,6 +194,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: Users,
     description: 'Kelola pengguna, peran, dan hak akses.',
     access: 'admin',
+    requiresAuth: true,
   },
    {
     id: 'team-management',
@@ -188,6 +203,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: Users2,
     description: 'Kelola anggota tim yang ditampilkan.',
     access: 'admin',
+    requiresAuth: true,
   },
    {
     id: 'daily-report-management',
@@ -196,6 +212,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: FileText,
     description: 'Kelola semua laporan keuangan harian.',
     access: 'admin',
+    requiresAuth: true,
   },
   {
     id: 'smw-manyar-management',
@@ -204,6 +221,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: FileText,
     description: 'Kelola item dan pengaturan untuk laporan SMW Manyar.',
     access: 'admin',
+    requiresAuth: true,
   },
    {
     id: 'digital-product-management',
@@ -212,6 +230,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: Package,
     description: 'Kelola produk digital seperti pulsa, data, dll.',
     access: 'admin',
+    requiresAuth: true,
   },
   {
     id: 'digiflazz-integration',
@@ -220,6 +239,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: CreditCard,
     description: 'Kelola koneksi API dan sinkronisasi produk.',
     access: 'admin',
+    requiresAuth: true,
   },
   {
     id: 'menu-management',
@@ -228,6 +248,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: Settings,
     description: 'Sesuaikan item menu utama (grid).',
     access: 'admin',
+    requiresAuth: true,
   },
   {
     id: 'sidebar-management',
@@ -236,6 +257,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: PanelLeft,
     description: 'Sesuaikan item menu di sidebar utama.',
     access: 'admin',
+    requiresAuth: true,
   },
   {
     id: 'admin-sidebar-management',
@@ -244,6 +266,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: PanelLeft,
     description: 'Sesuaikan item menu di sidebar admin.',
     access: 'admin',
+    requiresAuth: true,
   },
     {
     id: 'banner-management',
@@ -252,6 +275,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: ImageIcon,
     description: 'Kelola banner dan slide di halaman utama.',
     access: 'admin',
+    requiresAuth: true,
   },
   {
     id: 'branding-settings',
@@ -259,7 +283,8 @@ export const defaultAdminMenuItems: MenuItem[] = [
     href: '/admin/branding',
     icon: Palette,
     description: 'Sesuaikan logo, nama, dan ikon aplikasi.',
-    access: 'admin'
+    access: 'admin',
+    requiresAuth: true,
   },
   {
     id: 'developer-settings',
@@ -268,6 +293,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: Code,
     description: 'Kelola informasi pada halaman developer.',
     access: 'admin',
+    requiresAuth: true,
   },
   {
     id: 'terms-settings',
@@ -276,6 +302,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: FileText,
     description: 'Kelola konten halaman Syarat & Ketentuan.',
     access: 'admin',
+    requiresAuth: true,
   },
   {
     id: 'session-management',
@@ -284,6 +311,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: Lock,
     description: 'Kelola sesi pengguna yang aktif.',
     access: 'admin',
+    requiresAuth: true,
   },
   {
     id: 'firestore-rules',
@@ -292,6 +320,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: ShieldCheck,
     description: 'Salin dan kelola aturan keamanan database.',
     access: 'admin',
+    requiresAuth: true,
   },
   {
     id: 'system-settings',
@@ -300,6 +329,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     icon: Settings2,
     description: 'Tutorial integrasi dan konfigurasi sistem.',
     access: 'admin',
+    requiresAuth: true,
   },
 ];
 
@@ -312,6 +342,7 @@ export const allMenuItems: MenuItem[] = [
     href: '/profile',
     icon: User,
     access: 'all',
+    requiresAuth: true,
   },
   {
     id: 'laporan-smw-merr-sidebar',
@@ -319,6 +350,7 @@ export const allMenuItems: MenuItem[] = [
     href: '/laporan-smw-merr',
     icon: MessageSquare,
     access: 'all',
+    requiresAuth: true,
   },
   {
     id: 'digital-products-sidebar',
@@ -326,13 +358,15 @@ export const allMenuItems: MenuItem[] = [
     href: '/digital-products',
     icon: Wallet,
     access: 'all',
+    requiresAuth: true,
   },
   {
     id: 'top-up',
     title: 'Top Up Saldo',
     href: '/top-up',
     icon: PlusCircle,
-    access: 'all'
+    access: 'all',
+    requiresAuth: true,
   },
   {
     id: 'ai-assistant',
@@ -341,6 +375,7 @@ export const allMenuItems: MenuItem[] = [
     icon: Bot,
     description: 'Bantuan cerdas untuk tugas Anda.',
     access: 'all',
+    requiresAuth: true,
   },
   {
     id: 'analytics',
@@ -349,6 +384,7 @@ export const allMenuItems: MenuItem[] = [
     icon: BarChart,
     description: 'Lihat dasbor dan laporan analitik.',
     access: 'all',
+    requiresAuth: true,
   },
   {
     id: 'admin-panel',
@@ -356,6 +392,7 @@ export const allMenuItems: MenuItem[] = [
     href: '/admin',
     icon: Shield,
     access: 'admin',
+    requiresAuth: true,
   },
 ];
 

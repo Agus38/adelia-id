@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import type { UserProfile } from "@/app/layout";
+import type { UserProfile } from "@/app/main-layout";
 import { cn } from "@/lib/utils";
 
 export function MenuGrid() {
@@ -42,10 +42,16 @@ export function MenuGrid() {
   }, []);
 
   const filteredMenuItems = menuItems.filter(item => {
+    // Hide if coming soon
+    if (item.comingSoon) return false;
+
+    // Admin sees everything that's not coming soon
     if (user?.role === 'Admin') {
-      return true; // Admin sees all menu items
+      return true;
     }
-    return item.access !== 'admin'; // Non-admins only see 'all' access items
+    
+    // Non-admins only see 'all' access items
+    return item.access !== 'admin';
   });
 
   if (isLoadingMenu || isLoadingUser) {
@@ -60,7 +66,12 @@ export function MenuGrid() {
     <div className="grid grid-cols-3 gap-4 md:grid-cols-4 md:gap-6">
       {filteredMenuItems.map((item) => {
         const isClickDisabled = item.comingSoon;
-        const href = item.isUnderMaintenance ? '/maintenance' : item.href;
+        let href = item.isUnderMaintenance ? '/maintenance' : item.href;
+
+        // Check for auth requirement
+        if (item.requiresAuth && !user) {
+          href = '/login';
+        }
         
         return (
             <Link href={href} key={item.id} className={cn(isClickDisabled && "pointer-events-none")}>
@@ -72,9 +83,9 @@ export function MenuGrid() {
                   <p className="text-[11px] leading-tight sm:text-sm text-center font-semibold text-foreground">
                     {item.title}
                   </p>
-                  {(item.comingSoon || item.isUnderMaintenance) && (
+                  {item.isUnderMaintenance && (
                     <Badge variant="destructive" className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5">
-                      {item.isUnderMaintenance ? (item.badgeText || 'Maintenance') : (item.badgeText || 'Segera')}
+                      {item.badgeText || 'Maintenance'}
                     </Badge>
                   )}
                 </CardContent>

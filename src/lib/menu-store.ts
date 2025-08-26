@@ -34,6 +34,7 @@ interface MenuItemDTO {
   comingSoon: boolean;
   badgeText?: string;
   isUnderMaintenance?: boolean;
+  requiresAuth?: boolean;
 }
 
 interface BannerSlideDTO {
@@ -195,6 +196,7 @@ const useMenuStore = create<MenuStoreState>((set) => ({
             ...item,
             icon: getIconComponent(item.iconName),
             isUnderMaintenance: item.isUnderMaintenance ?? false,
+            requiresAuth: item.requiresAuth ?? false,
           }));
           set({ menuItems: hydratedItems, isLoading: false, error: null });
         } else {
@@ -229,6 +231,7 @@ export const saveMenuConfig = async (items: MenuItem[]) => {
     comingSoon: item.comingSoon || false,
     badgeText: item.badgeText || '',
     isUnderMaintenance: item.isUnderMaintenance || false,
+    requiresAuth: item.requiresAuth || false,
   }));
   await setDoc(menuConfigDocRef, { items: itemsToStore });
 };
