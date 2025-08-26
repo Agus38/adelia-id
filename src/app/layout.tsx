@@ -71,7 +71,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SidebarProvider>
-            <div className="flex min-h-screen w-full flex-col bg-muted/40">
+            <div className="flex min-h-screen w-full bg-muted/40">
               <AppSidebar />
               <div className="flex flex-1 flex-col">
                 <Header user={user} loading={loading} />
