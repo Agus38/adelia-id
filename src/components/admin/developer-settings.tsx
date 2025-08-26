@@ -172,13 +172,16 @@ export function DeveloperSettings() {
             <Label>Tautan Sosial Media</Label>
             <div className="space-y-4 pt-2">
                 {localInfo.socialLinks.map((link, index) => {
-                    const Icon = iconMap[link.iconName];
+                    const Icon = iconMap[link.iconName] || Globe;
                     return (
                          <div key={index} className="flex items-center gap-2 p-2 border rounded-md">
                             <Select value={link.iconName} onValueChange={(value) => handleLinkChange(index, 'iconName', value)}>
-                                <SelectTrigger className="w-[80px]">
+                                <SelectTrigger className="w-[120px]">
                                     <SelectValue>
-                                        {Icon && <Icon className="h-5 w-5 text-muted-foreground" />}
+                                        <div className='flex items-center gap-2'>
+                                            <Icon className="h-4 w-4 text-muted-foreground" />
+                                            <span className='truncate'>{link.iconName}</span>
+                                        </div>
                                     </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>

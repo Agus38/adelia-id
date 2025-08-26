@@ -71,6 +71,8 @@ import {
   Bolt,
   ShieldCheck,
   Printer,
+  Github,
+  Linkedin,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -349,9 +351,9 @@ export const allMenuItems: MenuItem[] = [
   },
 ];
 
-
-// This is a list of all available icons for the icon picker.
-// We are using a selection of icons from lucide-react.
+// SINGLE SOURCE OF TRUTH for all available icons in the app for pickers.
+// The key is the string name that will be stored in Firestore.
+// The value is the actual Lucide icon component.
 export const allIcons: { [key: string]: LucideIcon } = {
   Activity,
   AlertTriangle,
@@ -361,12 +363,13 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Award,
   BarChart,
   Bell,
+  Bolt,
   BookOpen,
   Bot,
   Briefcase,
+  Cake,
   Calculator,
   Calendar,
-  Cake,
   Check,
   ChevronDown,
   ChevronLeft,
@@ -382,14 +385,18 @@ export const allIcons: { [key: string]: LucideIcon } = {
   File,
   FileText,
   Filter,
+  Github,
   Globe,
-  LayoutGrid, // Renamed from grid to avoid conflict
+  Grid, // Note: This is different from LayoutGrid
   Heart,
   Home,
   Image,
-  ImageIcon, // Renamed to avoid conflict
+  ImageIcon,
   Info,
+  LayoutGrid,
+  LifeBuoy,
   Link,
+  Linkedin,
   Lock,
   Mail,
   MapPin,
@@ -420,10 +427,4 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Users2,
   Wallet,
   Wand2,
-  Bolt,
 };
-
-export const allIconsMap: { id: string, icon: LucideIcon }[] = Object.entries(allIcons).map(([id, icon]) => ({
-    id: icon.displayName?.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase() || id,
-    icon
-}));

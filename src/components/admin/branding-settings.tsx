@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { allIconsMap, type MenuItem } from '@/lib/menu-items-v2';
+import { allIcons, type MenuItem } from '@/lib/menu-items-v2';
 import type { LucideIcon } from 'lucide-react';
 import { Logo } from '../icons';
 import { ScrollArea } from '../ui/scroll-area';
@@ -25,12 +25,7 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import Image from 'next/image';
 import { useBrandingConfig, saveBrandingConfig, type BrandingConfig } from '@/lib/menu-store';
 
-const iconList = allIconsMap.reduce((acc, item) => {
-    if (item.icon && typeof item.icon.displayName === 'string' && !acc.find(i => i.name === item.icon.displayName)) {
-        acc.push({ name: item.icon.displayName, component: item.icon });
-    }
-    return acc;
-}, [] as { name: string, component: LucideIcon }[]).sort((a,b) => a.name.localeCompare(b.name));
+const iconList = Object.entries(allIcons).map(([name, component]) => ({ name, component })).sort((a,b) => a.name.localeCompare(b.name));
 
 
 export function BrandingSettings() {

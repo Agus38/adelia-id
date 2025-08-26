@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { allIconsMap } from '@/lib/menu-items-v2';
+import { allIcons } from '@/lib/menu-items-v2';
 import {
   Dialog,
   DialogContent,
@@ -47,12 +47,8 @@ import {
 import { ScrollArea } from '../ui/scroll-area';
 import { useSidebarMenuConfig, saveSidebarMenuConfig } from '@/lib/menu-store';
 
-const iconList = allIconsMap.reduce((acc, item) => {
-    if (item.icon && typeof item.icon.displayName === 'string' && !acc.find(i => i.name === item.icon.displayName)) {
-        acc.push({ name: item.icon.displayName, component: item.icon });
-    }
-    return acc;
-}, [] as { name: string, component: LucideIcon }[]).sort((a,b) => a.name.localeCompare(b.name));
+
+const iconList = Object.entries(allIcons).map(([name, component]) => ({ name, component })).sort((a,b) => a.name.localeCompare(b.name));
 
 
 export function SidebarManagement() {
