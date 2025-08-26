@@ -239,8 +239,8 @@ export default function DailyReportPage() {
             { name: 'Lembur', value: lembur },
             ...extraPengeluaran.map(({ id, ...rest }) => rest),
         ].filter(item => item.value > 0);
-
-        await addOrUpdateReport({
+        
+        const reportData = {
           date,
           shift,
           omsetBersih,
@@ -253,7 +253,9 @@ export default function DailyReportPage() {
               pemasukan: pemasukanDetails,
               pengeluaran: pengeluaranDetails,
           }
-        });
+        };
+
+        await addOrUpdateReport(reportData);
         
         toast({
           title: 'Laporan Disimpan!',
@@ -599,3 +601,6 @@ ${pemasukanText}
     </>
   );
 }
+
+
+    
