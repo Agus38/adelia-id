@@ -107,7 +107,7 @@ export function PasswordForm() {
             </CardContent>
             <CardFooter>
                  <Button type="submit" disabled={form.formState.isSubmitting}>
-                   {form.formState.isSubmitting && <Loader2 className="mr-2 animate-spin" />}
+                   {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                    Perbarui Kata Sandi
                  </Button>
             </CardFooter>
