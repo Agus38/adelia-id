@@ -8,6 +8,7 @@ import {
   type MenuItem,
   menuItems as defaultMenuItems,
   allMenuItems as defaultSidebarItems,
+  defaultAdminMenuItems,
   allIcons,
   type LucideIcon,
 } from './menu-items-v2';
@@ -103,6 +104,7 @@ export interface DeveloperInfo {
 // --- Firestore Document References ---
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
 const sidebarMenuConfigDocRef = doc(db, 'app-settings', 'sidebar-menu');
+const adminSidebarMenuConfigDocRef = doc(db, 'app-settings', 'admin-sidebar-menu');
 const bannerConfigDocRef = doc(db, 'app-settings', 'banner-slides');
 const brandingConfigDocRef = doc(db, 'app-settings', 'branding');
 const developerInfoDocRef = doc(db, 'app-settings', 'developer-info');
@@ -273,6 +275,63 @@ export const saveSidebarMenuConfig = async (items: MenuItem[]) => {
     comingSoon: item.comingSoon || false,
   }));
   await setDoc(sidebarMenuConfigDocRef, { items: itemsToStore });
+};
+
+// --- Admin Sidebar Menu Store ---
+interface AdminSidebarMenuStoreState {
+  adminSidebarMenuItems: MenuItem[];
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const useAdminSidebarMenuStore = create<AdminSidebarMenuStoreState>((set) => ({
+  adminSidebarMenuItems: [],
+  isLoading: true,
+  error: null,
+  initializeListener: () => {
+    const unsubscribe = onSnapshot(
+      adminSidebarMenuConfigDocRef,
+      (docSnap) => {
+        if (docSnap.exists() && docSnap.data()?.items) {
+          const storedItems = docSnap.data()?.items as MenuItemDTO[];
+          const hydratedItems = storedItems.map((item) => ({
+            ...item,
+            icon: getIconComponent(item.iconName),
+          }));
+          set({ adminSidebarMenuItems: hydratedItems, isLoading: false, error: null });
+        } else {
+          set({ adminSidebarMenuItems: defaultAdminMenuItems, isLoading: false, error: null });
+        }
+      },
+      (error) => {
+         console.error("Error fetching admin sidebar menu config: ", error);
+        set({ adminSidebarMenuItems: defaultAdminMenuItems, isLoading: false, error });
+      }
+    );
+    return unsubscribe;
+  },
+}));
+
+export const useAdminSidebarMenuConfig = () => {
+  const { adminSidebarMenuItems, isLoading, initializeListener } = useAdminSidebarMenuStore();
+  React.useEffect(() => {
+    const unsubscribe = initializeListener();
+    return () => unsubscribe();
+  }, [initializeListener]);
+  return { adminSidebarMenuItems, isLoading };
+};
+
+export const saveAdminSidebarMenuConfig = async (items: MenuItem[]) => {
+  const itemsToStore: MenuItemDTO[] = items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    href: item.href,
+    iconName: (item as any).iconName || (item.icon && (item.icon as any).displayName) || 'Package',
+    access: 'admin',
+    comingSoon: item.comingSoon || false,
+  }));
+  await setDoc(adminSidebarMenuConfigDocRef, { items: itemsToStore });
 };
 
 

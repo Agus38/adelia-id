@@ -164,7 +164,7 @@ export const menuItems: MenuItem[] = [
   },
 ];
 
-export const adminMenuItems: MenuItem[] = [
+export const defaultAdminMenuItems: MenuItem[] = [
   {
     id: 'admin-dashboard',
     title: 'Dasbor Admin',
@@ -235,6 +235,14 @@ export const adminMenuItems: MenuItem[] = [
     href: '/admin/sidebar',
     icon: PanelLeft,
     description: 'Sesuaikan item menu di sidebar utama.',
+    access: 'admin',
+  },
+  {
+    id: 'admin-sidebar-management',
+    title: 'Manajemen Sidebar Admin',
+    href: '/admin/admin-sidebar',
+    icon: PanelLeft,
+    description: 'Sesuaikan item menu di sidebar admin.',
     access: 'admin',
   },
     {

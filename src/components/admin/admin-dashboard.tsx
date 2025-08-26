@@ -18,6 +18,7 @@ import {
   CreditCard,
   ImageIcon,
   Lock,
+  PanelLeft,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -67,6 +68,12 @@ const managementLinks = [
     href: "/admin/menus",
     icon: LayoutGrid,
     description: "Sesuaikan item menu, ikon, dan visibilitas.",
+  },
+  {
+    title: "Manajemen Sidebar Admin",
+    href: "/admin/admin-sidebar",
+    icon: PanelLeft,
+    description: "Sesuaikan item menu di sidebar admin.",
   },
   {
     title: "Manajemen Banner",

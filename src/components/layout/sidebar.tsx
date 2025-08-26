@@ -14,22 +14,23 @@ import {
   SidebarFooter,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { adminMenuItems } from '@/lib/menu-items-v2';
 import { Logo } from '../icons';
 import { UserNav } from './user-nav';
 import { Shield, Loader2 } from 'lucide-react';
 import { useSidebar } from '../ui/sidebar';
-import { useSidebarMenuConfig } from '@/lib/menu-store';
+import { useSidebarMenuConfig, useAdminSidebarMenuConfig } from '@/lib/menu-store';
 
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
-  const { sidebarMenuItems, isLoading } = useSidebarMenuConfig();
+  const { sidebarMenuItems, isLoading: isLoadingSidebar } = useSidebarMenuConfig();
+  const { adminSidebarMenuItems, isLoading: isLoadingAdminSidebar } = useAdminSidebarMenuConfig();
   const isAdminPage = pathname.startsWith('/admin');
 
-  // To-do: This filtering logic might need adjustment based on user roles
-  const itemsToDisplay = isAdminPage ? adminMenuItems : sidebarMenuItems.filter(item => item.access !== 'admin');
+  const isLoading = isLoadingSidebar || isLoadingAdminSidebar;
+
+  const itemsToDisplay = isAdminPage ? adminSidebarMenuItems : sidebarMenuItems.filter(item => item.access !== 'admin');
 
   const handleMenuItemClick = () => {
     if (isMobile) {
