@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -33,6 +32,7 @@ interface MenuItemDTO {
   access: 'all' | 'admin';
   comingSoon: boolean;
   badgeText?: string;
+  isUnderMaintenance?: boolean;
 }
 
 interface BannerSlideDTO {
@@ -179,6 +179,7 @@ const useMenuStore = create<MenuStoreState>((set) => ({
           const hydratedItems = storedItems.map((item) => ({
             ...item,
             icon: getIconComponent(item.iconName),
+            isUnderMaintenance: item.isUnderMaintenance ?? false,
           }));
           set({ menuItems: hydratedItems, isLoading: false, error: null });
         } else {
@@ -212,6 +213,7 @@ export const saveMenuConfig = async (items: MenuItem[]) => {
     access: item.access || 'all',
     comingSoon: item.comingSoon || false,
     badgeText: item.badgeText || '',
+    isUnderMaintenance: item.isUnderMaintenance || false,
   }));
   await setDoc(menuConfigDocRef, { items: itemsToStore });
 };

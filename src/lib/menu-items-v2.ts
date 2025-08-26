@@ -83,6 +83,7 @@ export interface MenuItem {
   comingSoon?: boolean;
   badgeText?: string;
   iconName?: string; // Added for serialization
+  isUnderMaintenance?: boolean;
 }
 
 export const homeMenuItem: MenuItem = {

@@ -24,7 +24,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import type { MenuItem } from '@/lib/menu-items-v2';
-import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon, Search, Loader2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon, Search, Loader2, Wrench } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   Select,
@@ -74,6 +74,16 @@ export function MenuManagement() {
     }
   }, [menuItems]);
 
+  const areAllUnderMaintenance = menuState.every(item => item.isUnderMaintenance);
+
+  const handleToggleAllMaintenance = () => {
+    const newState = !areAllUnderMaintenance;
+    setMenuState(menuState.map(item => ({...item, isUnderMaintenance: newState})));
+     toast({
+        title: `Mode Maintenance ${newState ? 'Diaktifkan' : 'Dinonaktifkan'}`,
+        description: `Semua item menu telah diatur ke mode maintenance ${newState ? 'aktif' : 'tidak aktif'}. Simpan perubahan untuk menerapkan.`,
+    });
+  }
 
   const handleEdit = (item: MenuItem) => {
     setSelectedMenuItem(item);
@@ -92,6 +102,7 @@ export function MenuManagement() {
       access: 'all',
       comingSoon: false,
       badgeText: '',
+      isUnderMaintenance: false,
     });
     setIsNew(true);
     setEditDialogOpen(true);
@@ -124,6 +135,12 @@ export function MenuManagement() {
   const handleVisibilityChange = (id: string, isVisible: boolean) => {
     setMenuState(prevState => 
         prevState.map(item => item.id === id ? {...item, comingSoon: !isVisible} : item)
+    );
+  }
+
+   const handleMaintenanceChange = (id: string, isUnderMaintenance: boolean) => {
+    setMenuState(prevState => 
+        prevState.map(item => item.id === id ? {...item, isUnderMaintenance } : item)
     );
   }
 
@@ -180,8 +197,14 @@ export function MenuManagement() {
 
   return (
     <div>
-        <div className="flex justify-between mb-4">
-            <Button variant="outline" onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> Tambah Menu Baru</Button>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <div className="flex gap-2">
+                <Button variant="outline" onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> Tambah Menu</Button>
+                <Button variant="secondary" onClick={handleToggleAllMaintenance}>
+                    <Wrench className="mr-2 h-4 w-4" /> 
+                    {areAllUnderMaintenance ? "Nonaktifkan Semua Maintenance" : "Aktifkan Semua Maintenance"}
+                </Button>
+            </div>
             <Button onClick={handleSaveChanges} disabled={isSaving || isLoading}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Simpan Semua Perubahan
@@ -194,6 +217,7 @@ export function MenuManagement() {
               <TableHead>Ikon</TableHead>
               <TableHead>Label</TableHead>
               <TableHead>Visibilitas</TableHead>
+              <TableHead>Maintenance</TableHead>
               <TableHead>Hak Akses</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
@@ -201,7 +225,7 @@ export function MenuManagement() {
           <TableBody>
             {isLoading ? (
                 <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                         <p>Memuat konfigurasi menu...</p>
                     </TableCell>
@@ -223,6 +247,12 @@ export function MenuManagement() {
                             {item.comingSoon ? (item.badgeText || 'Segera') : 'Terlihat'}
                         </Badge>
                     </div>
+                    </TableCell>
+                     <TableCell>
+                       <Switch 
+                            checked={item.isUnderMaintenance} 
+                            onCheckedChange={(checked) => handleMaintenanceChange(item.id, checked)}
+                            aria-label="Mode Maintenance" />
                     </TableCell>
                     <TableCell>
                     <Select 
@@ -321,7 +351,7 @@ export function MenuManagement() {
                        <span>{(selectedMenuItem as any).iconName || selectedMenuItem.icon.displayName}</span>
                     </Button>
                 </div>
-                 {selectedMenuItem.comingSoon && (
+                {(selectedMenuItem.comingSoon || selectedMenuItem.isUnderMaintenance) && (
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="badgeText" className="text-right">Teks Badge</Label>
                         <Input 
@@ -329,7 +359,7 @@ export function MenuManagement() {
                             value={selectedMenuItem.badgeText || ''} 
                             onChange={(e) => setSelectedMenuItem(prev => prev ? {...prev, badgeText: e.target.value} : null)}
                             className="col-span-3" 
-                            placeholder="Segera (default)"
+                            placeholder={selectedMenuItem.isUnderMaintenance ? 'Maintenance' : 'Segera'}
                         />
                     </div>
                 )}
