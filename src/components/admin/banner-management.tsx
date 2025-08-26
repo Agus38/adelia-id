@@ -28,6 +28,7 @@ import Image from 'next/image';
 import { useBannerConfig, saveBannerConfig, type BannerSlide } from '@/lib/menu-store';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { Skeleton } from '../ui/skeleton';
 
 
 export function BannerManagement() {
@@ -76,6 +77,16 @@ export function BannerManagement() {
     } finally {
         setIsSaving(false);
     }
+  }
+
+  const isValidHttpUrl = (string: string) => {
+    let url;
+    try {
+      url = new URL(string);
+    } catch (_) {
+      return false;  
+    }
+    return url.protocol === "http:" || url.protocol === "https:";
   }
 
   return (
@@ -183,14 +194,20 @@ export function BannerManagement() {
               </div>
                <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="imageUrl" className="text-right">Preview</Label>
-                 <Image
-                    src={selectedSlide.image}
-                    alt={selectedSlide.title}
-                    width={200}
-                    height={80}
-                    className="rounded-md object-cover col-span-3"
-                    data-ai-hint={selectedSlide.hint}
-                  />
+                 <div className="col-span-3 h-[80px] rounded-md border flex items-center justify-center bg-muted">
+                   {isValidHttpUrl(selectedSlide.image) ? (
+                      <Image
+                        src={selectedSlide.image}
+                        alt={selectedSlide.title}
+                        width={200}
+                        height={80}
+                        className="rounded-md object-contain h-full w-auto"
+                        data-ai-hint={selectedSlide.hint}
+                      />
+                   ) : (
+                      <span className="text-xs text-muted-foreground">URL Gambar tidak valid</span>
+                   )}
+                 </div>
               </div>
             </div>
           )}
