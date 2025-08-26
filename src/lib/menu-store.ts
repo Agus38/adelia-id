@@ -32,6 +32,7 @@ interface MenuItemDTO {
   iconName: string;
   access: 'all' | 'admin';
   comingSoon: boolean;
+  badgeText?: string;
 }
 
 interface BannerSlideDTO {
@@ -210,6 +211,7 @@ export const saveMenuConfig = async (items: MenuItem[]) => {
     iconName: (item as any).iconName || (item.icon && (item.icon as any).displayName) || 'Package',
     access: item.access || 'all',
     comingSoon: item.comingSoon || false,
+    badgeText: item.badgeText || '',
   }));
   await setDoc(menuConfigDocRef, { items: itemsToStore });
 };

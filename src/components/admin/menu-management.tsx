@@ -91,6 +91,7 @@ export function MenuManagement() {
       iconName: defaultIcon.name,
       access: 'all',
       comingSoon: false,
+      badgeText: '',
     });
     setIsNew(true);
     setEditDialogOpen(true);
@@ -219,7 +220,7 @@ export function MenuManagement() {
                             onCheckedChange={(checked) => handleVisibilityChange(item.id, checked)}
                             aria-label="Visibilitas menu" />
                         <Badge variant={item.comingSoon ? 'secondary' : 'default'} className="text-[10px] px-1.5 py-0.5">
-                            {item.comingSoon ? 'Segera' : 'Terlihat'}
+                            {item.comingSoon ? (item.badgeText || 'Segera') : 'Terlihat'}
                         </Badge>
                     </div>
                     </TableCell>
@@ -320,6 +321,18 @@ export function MenuManagement() {
                        <span>{(selectedMenuItem as any).iconName || selectedMenuItem.icon.displayName}</span>
                     </Button>
                 </div>
+                 {selectedMenuItem.comingSoon && (
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="badgeText" className="text-right">Teks Badge</Label>
+                        <Input 
+                            id="badgeText" 
+                            value={selectedMenuItem.badgeText || ''} 
+                            onChange={(e) => setSelectedMenuItem(prev => prev ? {...prev, badgeText: e.target.value} : null)}
+                            className="col-span-3" 
+                            placeholder="Segera (default)"
+                        />
+                    </div>
+                )}
             </div>
           )}
           <DialogFooter>

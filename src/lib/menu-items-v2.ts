@@ -81,6 +81,7 @@ export interface MenuItem {
   description?: string;
   access?: 'all' | 'admin';
   comingSoon?: boolean;
+  badgeText?: string;
   iconName?: string; // Added for serialization
 }
 

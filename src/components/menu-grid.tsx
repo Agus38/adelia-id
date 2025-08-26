@@ -69,7 +69,7 @@ export function MenuGrid() {
               </p>
                {item.comingSoon && (
                 <Badge variant="destructive" className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5">
-                  Segera
+                  {item.badgeText || 'Segera'}
                 </Badge>
               )}
             </CardContent>
