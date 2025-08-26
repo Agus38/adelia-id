@@ -50,8 +50,12 @@ service cloud.firestore {
 
     // Rules for SMW Manyar reports
     match /smwManyarReports/{reportId} {
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read, update: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      // Allow users to create or update their own reports.
+      // This single rule handles both creating a new report and updating an existing one.
+      allow write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      
+      // Rules for read, delete, and list remain more restrictive.
+      allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       allow delete, list: if isAdmin();
     }
 
