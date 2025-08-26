@@ -4,6 +4,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -24,8 +26,6 @@ import { auth, db, storage } from "@/lib/firebase"
 import { updateProfile } from "firebase/auth"
 import { doc, updateDoc } from "firebase/firestore"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
-import { useRouter } from "next/navigation"
-import { useRef, useState } from "react"
 
 const profileFormSchema = z.object({
   fullName: z.string().min(2, {
@@ -51,7 +51,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
     defaultValues: {
       fullName: user.fullName || "",
       email: user.email || "",
-      photoURL: user.photoURL || "",
+      photoURL: user.avatarUrl || user.photoURL || "",
     },
     mode: "onChange",
   })
@@ -94,7 +94,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
     } catch (error) {
          toast({
             title: "Upload Gagal",
-            description: "Gagal mengunggah avatar.",
+            description: "Gagal mengunggah avatar. Pastikan file adalah gambar dan coba lagi.",
             variant: "destructive"
         });
     } finally {
@@ -109,10 +109,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
     };
     
     try {
-        // Update Firebase Auth profile
         await updateProfile(auth.currentUser, { displayName: data.fullName });
         
-        // Update Firestore document
         const userDocRef = doc(db, 'users', auth.currentUser.uid);
         await updateDoc(userDocRef, { fullName: data.fullName });
 
@@ -120,7 +118,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
             title: "Profil Diperbarui",
             description: "Informasi profil Anda telah berhasil disimpan.",
         });
-        form.reset(data); // Reset form with new data to make it "not dirty"
+        form.reset(data);
         router.refresh();
     } catch (error) {
         toast({
@@ -200,7 +198,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                 </CardContent>
                 <CardFooter>
                     <Button type="submit" disabled={isButtonDisabled}>
-                       {(form.formState.isSubmitting || isUploading) && <Loader2 className="mr-2 animate-spin" />}
+                       {(form.formState.isSubmitting || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                        Simpan Perubahan
                     </Button>
                 </CardFooter>
