@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -13,18 +14,22 @@ import {
   SidebarFooter,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { allMenuItems, adminMenuItems } from '@/lib/menu-items-v2';
+import { adminMenuItems } from '@/lib/menu-items-v2';
 import { Logo } from '../icons';
 import { UserNav } from './user-nav';
-import { Shield } from 'lucide-react';
+import { Shield, Loader2 } from 'lucide-react';
 import { useSidebar } from '../ui/sidebar';
+import { useSidebarMenuConfig } from '@/lib/menu-store';
+
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
+  const { sidebarMenuItems, isLoading } = useSidebarMenuConfig();
   const isAdminPage = pathname.startsWith('/admin');
 
-  const itemsToDisplay = isAdminPage ? adminMenuItems : allMenuItems.filter(item => item.access !== 'admin');
+  // To-do: This filtering logic might need adjustment based on user roles
+  const itemsToDisplay = isAdminPage ? adminMenuItems : sidebarMenuItems.filter(item => item.access !== 'admin');
 
   const handleMenuItemClick = () => {
     if (isMobile) {
@@ -53,25 +58,31 @@ export function AppSidebar() {
         )}
 
         <SidebarMenu>
-          {itemsToDisplay.map((item) => (
-            <SidebarMenuItem key={item.id} onClick={handleMenuItemClick}>
-              <Link href={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === item.href}
-                  tooltip={{
-                    children: item.title,
-                    side: 'right',
-                  }}
-                >
-                  <span>
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </span>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          ))}
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            itemsToDisplay.map((item) => (
+              <SidebarMenuItem key={item.id} onClick={handleMenuItemClick}>
+                <Link href={item.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href}
+                    tooltip={{
+                      children: item.title,
+                      side: 'right',
+                    }}
+                  >
+                    <span>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            ))
+          )}
         </SidebarMenu>
         
         <SidebarFooter className="mt-auto group-data-[collapsible=icon]:hidden">

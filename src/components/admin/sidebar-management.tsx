@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -11,8 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { allMenuItems as initialMenuItems, allIconsMap } from '@/lib/menu-items-v2';
-import { Switch } from '@/components/ui/switch';
+import { allIconsMap } from '@/lib/menu-items-v2';
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import type { MenuItem } from '@/lib/menu-items-v2';
-import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon, Search, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   Select,
@@ -33,7 +33,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '../ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,8 +45,8 @@ import {
   AlertDialogTrigger,
 } from '../ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
+import { useSidebarMenuConfig, saveSidebarMenuConfig } from '@/lib/menu-store';
 
-// Create a map for quick icon lookup
 const iconList = allIconsMap.reduce((acc, item) => {
     if (item.icon && typeof item.icon.displayName === 'string' && !acc.find(i => i.name === item.icon.displayName)) {
         acc.push({ name: item.icon.displayName, component: item.icon });
@@ -57,14 +56,22 @@ const iconList = allIconsMap.reduce((acc, item) => {
 
 
 export function SidebarManagement() {
-  const [menuState, setMenuState] = useState<MenuItem[]>(initialMenuItems);
+  const { sidebarMenuItems, isLoading } = useSidebarMenuConfig();
+  const [menuState, setMenuState] = useState<MenuItem[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isNew, setIsNew] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
   
-  // Icon Picker State
   const [isIconPickerOpen, setIconPickerOpen] = useState(false);
   const [iconSearchTerm, setIconSearchTerm] = useState("");
+
+  useEffect(() => {
+    if (sidebarMenuItems) {
+      setMenuState(sidebarMenuItems);
+    }
+  }, [sidebarMenuItems]);
 
   const handleEdit = (item: MenuItem) => {
     setSelectedMenuItem(item);
@@ -73,11 +80,13 @@ export function SidebarManagement() {
   };
   
   const handleAddNew = () => {
+    const defaultIcon = iconList.find(i => i.name === 'Package') || iconList[0];
     setSelectedMenuItem({
       id: '',
       title: '',
       href: '/',
-      icon: iconList[0].component,
+      icon: defaultIcon.component,
+      iconName: defaultIcon.name,
       access: 'all',
       comingSoon: false,
     });
@@ -93,7 +102,7 @@ export function SidebarManagement() {
     setMenuState(menuState.filter(item => item.id !== id));
     toast({
         title: "Menu Dihapus",
-        description: `Menu dengan ID "${id}" telah berhasil dihapus.`,
+        description: `Menu dengan ID "${id}" telah dihapus dari daftar lokal. Simpan perubahan untuk menerapkan.`,
         variant: "destructive"
     });
   }
@@ -102,7 +111,6 @@ export function SidebarManagement() {
     const newMenuState = [...menuState];
     const item = newMenuState[index];
     
-    // Prevent moving the 'Beranda' item
     if (item.id === 'home') return;
 
     const swapIndex = direction === 'up' ? index - 1 : index + 1;
@@ -132,25 +140,35 @@ export function SidebarManagement() {
             return;
         }
         setMenuState([...menuState, selectedMenuItem]);
-        toast({ title: "Menu Ditambahkan", description: "Item menu baru telah berhasil ditambahkan." });
+        toast({ title: "Menu Ditambahkan", description: "Item menu baru telah ditambahkan ke daftar lokal." });
     } else {
         setMenuState(menuState.map(item => item.id === selectedMenuItem.id ? selectedMenuItem : item));
-        toast({ title: "Menu Diperbarui", description: "Item menu telah berhasil diperbarui." });
+        toast({ title: "Menu Diperbarui", description: "Item menu telah diperbarui di daftar lokal." });
     }
     setEditDialogOpen(false);
   }
 
-  const handleSaveChanges = () => {
-    // NOTE: Mock implementation. In a real app, you would save the new order.
-    console.log("Saving new menu state:", menuState);
-    toast({
-        title: "Perubahan Disimpan!",
-        description: "Konfigurasi sidebar telah berhasil diperbarui."
-    })
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+        await saveSidebarMenuConfig(menuState);
+        toast({
+            title: "Perubahan Disimpan!",
+            description: "Konfigurasi sidebar telah berhasil diperbarui di database."
+        })
+    } catch (error) {
+         toast({
+            title: "Gagal Menyimpan",
+            description: "Terjadi kesalahan saat menyimpan konfigurasi sidebar.",
+            variant: "destructive"
+        })
+    } finally {
+        setIsSaving(false);
+    }
   }
 
   const handleIconSelect = (icon: {name: string, component: LucideIcon}) => {
-    setSelectedMenuItem(prev => prev ? {...prev, icon: icon.component} : null);
+    setSelectedMenuItem(prev => prev ? {...prev, icon: icon.component, iconName: icon.name } : null);
     setIconPickerOpen(false);
   }
   
@@ -161,8 +179,11 @@ export function SidebarManagement() {
   return (
     <div>
         <div className="flex justify-between mb-4">
-            <Button variant="outline" onClick={handleAddNew}><PlusCircle className="mr-2" /> Tambah Menu Baru</Button>
-            <Button onClick={handleSaveChanges}>Simpan Semua Perubahan</Button>
+            <Button variant="outline" onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> Tambah Menu Baru</Button>
+            <Button onClick={handleSaveChanges} disabled={isSaving || isLoading}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Semua Perubahan
+            </Button>
         </div>
       <div className="rounded-md border">
         <Table>
@@ -175,57 +196,66 @@ export function SidebarManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {menuState.map((item, index) => (
-              <TableRow key={item.id}>
-                <TableCell>
-                  <item.icon className="h-5 w-5" />
-                </TableCell>
-                <TableCell className="font-medium">{item.title}</TableCell>
-                <TableCell>
-                  <Select 
-                    value={item.access || 'all'} 
-                    onValueChange={(value: 'all' | 'admin') => handleAccessChange(item.id, value)}
-                    disabled={item.id === 'home'}
-                  >
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Pilih akses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell className="text-right space-x-0.5">
-                   <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'up')} disabled={index <= 1}>
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'down')} disabled={index === 0 || index === menuState.length - 1}>
-                    <ArrowDown className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
-                    Edit
-                  </Button>
-                   <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                         <Button variant="destructive" size="sm" disabled={item.id === 'home'}>Hapus</Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Anda yakin ingin menghapus menu "{item.title}"?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tindakan ini tidak dapat dibatalkan. Ini akan menghapus item menu secara permanen.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Batal</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(item.id)}>Lanjutkan</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                </TableCell>
-              </TableRow>
-            ))}
+             {isLoading ? (
+                <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                        <p>Memuat konfigurasi sidebar...</p>
+                    </TableCell>
+                </TableRow>
+            ) : (
+                menuState.map((item, index) => (
+                <TableRow key={item.id}>
+                    <TableCell>
+                    <item.icon className="h-5 w-5" />
+                    </TableCell>
+                    <TableCell className="font-medium">{item.title}</TableCell>
+                    <TableCell>
+                    <Select 
+                        value={item.access || 'all'} 
+                        onValueChange={(value: 'all' | 'admin') => handleAccessChange(item.id, value)}
+                        disabled={item.id === 'home'}
+                    >
+                        <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Pilih akses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="all">Semua</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    </TableCell>
+                    <TableCell className="text-right space-x-0.5">
+                    <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'up')} disabled={index <= 1 || item.id === 'home'}>
+                        <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'down')} disabled={index === 0 || index === menuState.length - 1}>
+                        <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
+                        Edit
+                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm" disabled={item.id === 'home'}>Hapus</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Anda yakin ingin menghapus menu "{item.title}"?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Tindakan ini akan menghapus item menu dari daftar lokal. Simpan perubahan untuk menerapkan.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(item.id)}>Lanjutkan</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                        </AlertDialog>
+                    </TableCell>
+                </TableRow>
+                ))
+            )}
           </TableBody>
         </Table>
       </div>
@@ -277,7 +307,7 @@ export function SidebarManagement() {
                     <Label className="text-right">Ikon</Label>
                     <Button variant="outline" className="col-span-3 justify-start" onClick={() => setIconPickerOpen(true)}>
                        {selectedMenuItem.icon && <selectedMenuItem.icon className="mr-2 h-4 w-4" />}
-                       <span>{selectedMenuItem.icon.displayName}</span>
+                       <span>{(selectedMenuItem as any).iconName || selectedMenuItem.icon.displayName}</span>
                     </Button>
                 </div>
             </div>
