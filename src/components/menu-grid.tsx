@@ -6,11 +6,48 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "./ui/badge";
 import { useMenuConfig } from "@/lib/menu-store";
 import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import type { UserProfile } from "@/app/layout";
 
 export function MenuGrid() {
-  const { menuItems, isLoading } = useMenuConfig();
+  const { menuItems, isLoading: isLoadingMenu } = useMenuConfig();
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
-  if (isLoading) {
+   useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
+      if (authUser) {
+        const userDocRef = doc(db, 'users', authUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUser({
+            ...authUser,
+            fullName: userData.fullName || authUser.displayName,
+            role: userData.role,
+          });
+        } else {
+           setUser(authUser);
+        }
+      } else {
+        setUser(null);
+      }
+      setIsLoadingUser(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const filteredMenuItems = menuItems.filter(item => {
+    if (user?.role === 'Admin') {
+      return true; // Admin sees all menu items
+    }
+    return item.access !== 'admin'; // Non-admins only see 'all' access items
+  });
+
+  if (isLoadingMenu || isLoadingUser) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -20,7 +57,7 @@ export function MenuGrid() {
 
   return (
     <div className="grid grid-cols-3 gap-4 md:grid-cols-4 md:gap-6">
-      {menuItems.map((item) => (
+      {filteredMenuItems.map((item) => (
         <Link href={item.href} key={item.id} className={item.comingSoon ? "pointer-events-none" : ""}>
           <Card className="hover:bg-primary/20 transition-colors duration-200 aspect-square flex flex-col items-center justify-center p-2 sm:p-4 border-2 border-transparent hover:border-primary/50 dark:border-gray-800 dark:hover:border-primary/70 shadow-lg rounded-2xl relative">
             <CardContent className="p-0 flex flex-col items-center justify-center gap-2">
