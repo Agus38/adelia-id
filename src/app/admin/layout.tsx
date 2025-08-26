@@ -7,6 +7,7 @@ import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
+import { AppSidebar } from '@/components/layout/sidebar';
 
 export default function AdminLayout({
   children,
@@ -19,20 +20,16 @@ export default function AdminLayout({
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        // 1. If user is not logged in, redirect to the unauthorized page.
         router.push('/unauthorized');
         return;
       }
 
-      // 2. If user is logged in, check their role.
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists() && userDoc.data().role === 'Admin') {
-        // 4. If the user is an Admin, allow access.
         setIsAuthorized(true);
       } else {
-        // 3. If the role is not 'Admin', redirect to the unauthorized page.
         router.push('/unauthorized');
       }
     });
@@ -41,14 +38,23 @@ export default function AdminLayout({
   }, [router]);
 
   if (isAuthorized === null) {
-    // Show a full-screen loading state while checking authorization to prevent flickering.
     return (
-      <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
-  // Only render children if authorized. If not, the redirect is happening, so render nothing.
-  return isAuthorized ? <>{children}</> : null;
+  if (isAuthorized) {
+    return (
+      <div className="flex min-h-screen w-full bg-muted/40">
+        <AppSidebar />
+        <div className="flex flex-1 flex-col">
+            {children}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }

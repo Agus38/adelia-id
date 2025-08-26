@@ -1,7 +1,6 @@
 
 'use client';
 
-import { AppSidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { Toaster } from '@/components/ui/toaster';
 import { Footer } from '@/components/layout/footer';
@@ -45,13 +44,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <div className="flex min-h-screen w-full bg-muted/40">
-        <AppSidebar />
-        <div className="flex flex-1 flex-col">
+      <div className="flex min-h-screen w-full flex-col bg-muted/40">
           <Header user={user} loading={loading} />
           <main className="flex-1">{children}</main>
           <Footer />
-        </div>
       </div>
       <Toaster />
     </>

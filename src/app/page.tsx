@@ -1,6 +1,7 @@
 
 'use client'
 
+import { AppSidebar } from "@/components/layout/sidebar";
 import { MenuGrid } from "@/components/menu-grid";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,56 +63,59 @@ export default function Home() {
 
 
   return (
-    <div className="flex-1 flex flex-col p-4 md:p-6">
-      {/* Top Banner Carousel */}
-      <div className="mb-4">
-        <Carousel 
-          setApi={setApi}
-          plugins={[plugin.current]}
-          className="w-full"
-          opts={{
-            align: "start",
-            loop: true,
-          }}
-          onMouseEnter={plugin.current.stop}
-          onMouseLeave={plugin.current.reset}
-        >
-          <CarouselContent>
-            {carouselSlides.map((slide, index) => (
-              <CarouselItem key={index}>
-                 <div className="relative w-full h-28 md:h-36 rounded-lg overflow-hidden shadow-lg">
-                    <Image
-                      src={slide.image}
-                      alt={slide.title}
-                      fill
-                      objectFit="cover"
-                      data-ai-hint={slide.hint}
-                    />
-                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-6 text-white">
-                      <h2 className="text-3xl md:text-4xl font-bold">{slide.title}</h2>
-                      <p className="text-center mt-2 md:text-lg">{slide.description}</p>
+    <div className="flex">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col p-4 md:p-6">
+        {/* Top Banner Carousel */}
+        <div className="mb-4">
+            <Carousel 
+            setApi={setApi}
+            plugins={[plugin.current]}
+            className="w-full"
+            opts={{
+                align: "start",
+                loop: true,
+            }}
+            onMouseEnter={plugin.current.stop}
+            onMouseLeave={plugin.current.reset}
+            >
+            <CarouselContent>
+                {carouselSlides.map((slide, index) => (
+                <CarouselItem key={index}>
+                    <div className="relative w-full h-28 md:h-36 rounded-lg overflow-hidden shadow-lg">
+                        <Image
+                        src={slide.image}
+                        alt={slide.title}
+                        fill
+                        objectFit="cover"
+                        data-ai-hint={slide.hint}
+                        />
+                        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-6 text-white">
+                        <h2 className="text-3xl md:text-4xl font-bold">{slide.title}</h2>
+                        <p className="text-center mt-2 md:text-lg">{slide.description}</p>
+                        </div>
                     </div>
-                  </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-        </Carousel>
-        <div className="flex justify-center gap-2 mt-2">
-            {carouselSlides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => api?.scrollTo(index)}
-                className={`h-2 w-2 rounded-full transition-colors ${
-                  current === index ? 'bg-primary' : 'bg-muted'
-                }`}
-              />
-            ))}
-          </div>
-      </div>
+                </CarouselItem>
+                ))}
+            </CarouselContent>
+            </Carousel>
+            <div className="flex justify-center gap-2 mt-2">
+                {carouselSlides.map((_, index) => (
+                <button
+                    key={index}
+                    onClick={() => api?.scrollTo(index)}
+                    className={`h-2 w-2 rounded-full transition-colors ${
+                    current === index ? 'bg-primary' : 'bg-muted'
+                    }`}
+                />
+                ))}
+            </div>
+        </div>
 
-      <div className="flex-1 space-y-4 pt-6 md:pt-8">
-        <MenuGrid />
-      </div>
+        <div className="flex-1 space-y-4 pt-6 md:pt-8">
+            <MenuGrid />
+        </div>
+        </div>
     </div>
   );
 }
