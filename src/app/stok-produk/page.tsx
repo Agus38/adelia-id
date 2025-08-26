@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Save, Trash2 } from 'lucide-react';
+import { Save, Trash2, Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,23 +17,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-
-const initialStockData = [
-  { id: 1, name: 'Daging', morning: '', afternoon: '', order: '' },
-  { id: 2, name: 'Babat', morning: '', afternoon: '', order: '' },
-  { id: 3, name: 'Paru', morning: '', afternoon: '', order: '' },
-  { id: 4, name: 'Usus', morning: '', afternoon: '', order: '' },
-  { id: 5, name: 'Ati', morning: '', afternoon: '', order: '' },
-  { id: 6, name: 'Otak', morning: '', afternoon: '', order: '' },
-  { id: 7, name: 'Telur', morning: '', afternoon: '', order: '' },
-  { id: 8, name: 'Kuah', morning: '', afternoon: '', order: '' },
-  { id: 9, name: 'B-Goreng', morning: '', afternoon: '', order: '' },
-  { id: 10, name: 'Seledri', morning: '', afternoon: '', order: '' },
-  { id: 11, name: 'Garam', morning: '', afternoon: '', order: '' },
-];
-
-type StockItem = typeof initialStockData[0];
-type StockField = 'morning' | 'afternoon' | 'order';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { auth } from '@/lib/firebase';
+import type { User } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
+import { getStockReport, addOrUpdateStockReport, type StockItem, initialStockData } from '@/lib/stock-store';
 
 
 // Memoize the input component to prevent unnecessary re-renders causing focus loss.
@@ -70,16 +60,67 @@ const DynamicWidthInput = React.memo(function DynamicWidthInput({
 
 
 export default function StokProdukPage() {
-  const [date, setDate] = React.useState<Date | undefined>(undefined);
-  const [shift, setShift] = React.useState('pagi');
-  const [stockData, setStockData] = React.useState(initialStockData);
+  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [shift, setShift] = React.useState<'pagi' | 'sore'>('pagi');
+  const [stockData, setStockData] = React.useState<StockItem[]>(initialStockData);
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = React.useState(true);
+  const [isFetchingReport, setIsFetchingReport] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const { toast } = useToast();
 
   React.useEffect(() => {
-    // Set date only on client-side to avoid hydration mismatch
-    setDate(new Date());
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+        setCurrentUser(user);
+        setIsLoadingUser(false);
+    });
+    return () => unsubscribe();
   }, []);
 
-  const handleStockChange = React.useCallback((id: number, field: StockField, value: string) => {
+  const resetForm = React.useCallback(() => {
+    setStockData(initialStockData.map(item => ({...item, morning: '', afternoon: '', order: ''})));
+  }, []);
+
+  const populateForm = React.useCallback((report: { stockData: StockItem[] }) => {
+     // Create a map of the new stock data for quick lookup
+    const newStockMap = new Map(report.stockData.map(item => [item.id, item]));
+    // Create a new array, preserving the order of initialStockData
+    const updatedStockData = initialStockData.map(initialItem => {
+        const newStockItem = newStockMap.get(initialItem.id);
+        return newStockItem ? { ...initialItem, ...newStockItem } : initialItem;
+    });
+    setStockData(updatedStockData);
+  }, []);
+
+  React.useEffect(() => {
+    if (!date || !currentUser) return;
+
+    const fetchReport = async () => {
+      setIsFetchingReport(true);
+      try {
+        const report = await getStockReport(date, shift, currentUser.uid);
+        if (report) {
+          populateForm(report);
+        } else {
+          resetForm();
+        }
+      } catch (error) {
+         toast({
+          title: 'Gagal Memuat Stok',
+          description: 'Terjadi kesalahan saat mengambil data dari database.',
+          variant: 'destructive',
+        });
+        resetForm();
+      } finally {
+        setIsFetchingReport(false);
+      }
+    };
+
+    fetchReport();
+  }, [date, shift, currentUser, resetForm, populateForm, toast]);
+
+
+  const handleStockChange = React.useCallback((id: number, field: 'morning' | 'afternoon' | 'order', value: string) => {
     setStockData(prevStockData =>
       prevStockData.map(item =>
         item.id === id ? { ...item, [field]: value } : item
@@ -89,8 +130,45 @@ export default function StokProdukPage() {
 
 
   const handleClear = () => {
-    setStockData(initialStockData.map(item => ({...item, morning: '', afternoon: '', order: ''})));
+    resetForm();
   }
+
+  const handleSaveStock = async () => {
+    if (!date || !currentUser) {
+       toast({
+        title: 'Data Tidak Lengkap',
+        description: 'Pastikan tanggal telah dipilih dan Anda sudah login.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+        const reportData = {
+          date,
+          shift,
+          stockData,
+          createdBy: currentUser.displayName || 'Pengguna',
+          userId: currentUser.uid,
+        };
+
+        await addOrUpdateStockReport(reportData);
+        
+        toast({
+          title: 'Stok Disimpan!',
+          description: 'Laporan stok produk telah berhasil disimpan di database.',
+        });
+    } catch(error) {
+        toast({
+          title: 'Gagal Menyimpan',
+          description: 'Terjadi kesalahan saat menyimpan laporan ke database.',
+          variant: 'destructive',
+        });
+    } finally {
+        setIsSaving(false);
+    }
+  };
 
   const getTableHeaders = () => {
     if (shift === 'pagi') {
@@ -101,7 +179,7 @@ export default function StokProdukPage() {
 
   const { header1, header2 } = getTableHeaders();
 
-  const handleKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, field: StockField) => {
+  const handleKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, field: 'morning' | 'afternoon' | 'order') => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const nextRowIndex = rowIndex + 1;
@@ -113,17 +191,57 @@ export default function StokProdukPage() {
   }, [stockData.length]);
 
 
+  if (isLoadingUser) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 p-4 pt-6 md:p-8 space-y-4">
+    <div className="flex flex-col flex-1 p-4 pt-6 md:p-8 space-y-4 relative">
+       {isFetchingReport && (
+            <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg z-10">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="ml-2">Memuat data stok...</span>
+            </div>
+        )}
       <div className="flex-shrink-0">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 pb-4">
-            <div className="space-y-2 md:col-span-2">
+             <div className="space-y-2">
+                <Label>Pilih Tanggal</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={'outline'}
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !date && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? format(date, 'dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      initialFocus
+                      locale={id}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            <div className="space-y-2">
                 <Label>Pilih Shift</Label>
                 <Tabs
-                defaultValue="pagi"
-                className="w-full"
-                onValueChange={setShift}
-                value={shift}
+                  defaultValue="pagi"
+                  className="w-full"
+                  onValueChange={(value) => setShift(value as 'pagi' | 'sore')}
+                  value={shift}
                 >
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="pagi">Pagi</TabsTrigger>
@@ -196,8 +314,8 @@ export default function StokProdukPage() {
           <Trash2 className="mr-2 h-4 w-4" />
           Hapus
         </Button>
-        <Button className="w-full md:w-auto">
-          <Save className="mr-2 h-4 w-4" />
+        <Button className="w-full md:w-auto" onClick={handleSaveStock} disabled={isSaving}>
+          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Simpan Stok
         </Button>
       </div>

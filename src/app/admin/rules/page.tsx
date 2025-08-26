@@ -21,16 +21,13 @@ service cloud.firestore {
 
     // Rules for user profiles
     match /users/{userId} {
+      // Allow users to read their own profile, and Admin to read any profile.
+      allow read: if isAdmin() || request.auth.uid == userId;
       // Allow Admin to create new users from the panel.
       // Allow users to create their own profile during sign-up (covered by register logic).
       allow create: if isAdmin() || request.auth.uid == userId;
-
-      // Allow users to read their own profile, and Admin to read any profile.
-      allow read: if isAdmin() || request.auth.uid == userId;
-
       // Allow users to update their own profile.
       allow update: if request.auth.uid == userId;
-
       // Only Admin can delete or list all users.
       allow delete, list: if isAdmin();
     }
@@ -39,11 +36,16 @@ service cloud.firestore {
     match /dailyReports/{reportId} {
       // Allow authenticated users to create a report if the userId in the report data matches their own uid.
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      
       // Allow users to read/update their own reports, and Admin to read/update any report.
       allow read, update: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
-      
       // Only Admin can delete or list all reports.
+      allow delete, list: if isAdmin();
+    }
+
+    // Rules for stock reports
+    match /stockReports/{reportId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, update: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       allow delete, list: if isAdmin();
     }
 
@@ -112,4 +114,3 @@ export default function FirestoreRulesPage() {
     </div>
   );
 }
-
