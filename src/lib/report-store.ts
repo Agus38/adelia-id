@@ -20,7 +20,9 @@ export interface DailyReport {
   };
 }
 
-let reports: DailyReport[] = [
+const LOCAL_STORAGE_KEY = 'daily-reports';
+
+const initialReports: DailyReport[] = [
     {
         id: 'RPT-001',
         date: new Date('2024-07-23'),
@@ -67,12 +69,38 @@ let reports: DailyReport[] = [
     },
 ];
 
+let reports: DailyReport[] = [];
+
+// Load initial data from localStorage if available
+if (typeof window !== 'undefined') {
+    try {
+        const storedReports = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedReports) {
+            reports = JSON.parse(storedReports, (key, value) => {
+                 if (key === 'date') return new Date(value);
+                 return value;
+            });
+        } else {
+            reports = initialReports;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(reports));
+        }
+    } catch (error) {
+        console.error("Failed to access localStorage for reports:", error);
+        reports = initialReports;
+    }
+} else {
+    reports = initialReports;
+}
+
+
 type Listener = (data: DailyReport[]) => void;
 let listener: Listener | null = null;
 
 export const listeners = {
   subscribe: (newListener: Listener): (() => void) => {
     listener = newListener;
+    // Immediately notify with current data
+    listeners.notify();
     return () => {
       listener = null;
     };
@@ -84,10 +112,20 @@ export const listeners = {
   },
 };
 
+const saveReportsToLocalStorage = () => {
+    if (typeof window !== 'undefined') {
+        try {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(reports));
+        } catch (error) {
+            console.error("Failed to save reports to localStorage:", error);
+        }
+    }
+}
+
 const generateId = (): string => {
     const lastIdNumber = reports.reduce((maxId, report) => {
         const currentId = parseInt(report.id.split('-')[1], 10);
-        return Math.max(maxId, currentId);
+        return isNaN(currentId) ? maxId : Math.max(maxId, currentId);
     }, 0);
     const newId = (lastIdNumber + 1).toString().padStart(3, '0');
     return `RPT-${newId}`;
@@ -131,11 +169,13 @@ export const addOrUpdateReport = (reportData: Omit<DailyReport, 'id'>) => {
         };
         reports.push(newReport);
     }
-
+    
+    saveReportsToLocalStorage();
     listeners.notify();
 };
 
 export const deleteReport = (reportId: string) => {
   reports = reports.filter(r => r.id !== reportId);
+  saveReportsToLocalStorage();
   listeners.notify();
 }
