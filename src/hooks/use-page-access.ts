@@ -7,6 +7,7 @@ import { useMenuConfig } from '@/lib/menu-store';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/app/main-layout';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export function usePageAccess(pageId: string) {
   const router = useRouter();
