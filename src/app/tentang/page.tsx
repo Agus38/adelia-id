@@ -4,10 +4,35 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Info, CheckCircle, Loader2 } from 'lucide-react';
-import { useAboutInfoConfig } from '@/lib/menu-store';
+import { useAboutInfoConfig, useBrandingConfig } from '@/lib/menu-store';
+import { Skeleton } from '@/components/ui/skeleton';
+import Image from 'next/image';
+import { Logo } from '@/components/icons';
 
 export default function AboutPage() {
-    const { aboutInfo, isLoading } = useAboutInfoConfig();
+    const { aboutInfo, isLoading: isLoadingAbout } = useAboutInfoConfig();
+    const { brandingConfig, isLoading: isLoadingBranding } = useBrandingConfig();
+
+    const isLoading = isLoadingAbout || isLoadingBranding;
+
+    const renderLogo = () => {
+        if (isLoading) {
+          return <Skeleton className="h-10 w-10 rounded-full" />;
+        }
+    
+        const LogoComponent = brandingConfig.icon || Logo;
+    
+        return (
+          <>
+            {brandingConfig.logoType === 'icon' ? (
+              <LogoComponent className="h-10 w-10 text-primary" />
+            ) : (
+              brandingConfig.imageUrl && <Image src={brandingConfig.imageUrl} alt={`${brandingConfig.appName} Logo`} width={40} height={40} className="h-10 w-10 object-contain" />
+            )}
+          </>
+        );
+      };
+
 
     if (isLoading) {
         return (
@@ -22,7 +47,7 @@ export default function AboutPage() {
             <Card className="w-full max-w-3xl">
                 <CardHeader className="text-center">
                     <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                        <Info className="h-10 w-10 text-primary" />
+                        {renderLogo()}
                     </div>
                     <CardTitle className="text-3xl font-bold">{aboutInfo.appName}</CardTitle>
                     <CardDescription className="text-lg text-muted-foreground">
