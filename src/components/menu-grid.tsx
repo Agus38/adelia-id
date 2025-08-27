@@ -89,7 +89,7 @@ export function MenuGrid() {
                     </Badge>
                   )}
                    {item.comingSoon && !item.isUnderMaintenance && (
-                     <Badge variant="secondary" className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5">
+                     <Badge variant="destructive" className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5">
                        {item.badgeText || 'Segera'}
                     </Badge>
                    )}
