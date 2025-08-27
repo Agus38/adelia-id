@@ -68,7 +68,7 @@ export default function DailyReportPage() {
   const [isDirty, setIsDirty] = React.useState(false);
 
   const { toast } = useToast();
-  useUnsavedChangesWarning(isDirty);
+  const { UnsavedChangesDialog } = useUnsavedChangesWarning(isDirty);
 
   // Financial State
   const [modalAwal, setModalAwal] = React.useState(0);
@@ -428,6 +428,7 @@ ${pemasukanText}
 
   return (
     <div className="flex">
+      <UnsavedChangesDialog />
       <AppSidebar />
       <div className="flex-1 space-y-4 pt-6 p-4 md:p-6">
         <Card className="mx-1.5 md:mx-2 relative">

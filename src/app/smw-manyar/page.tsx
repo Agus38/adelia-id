@@ -4,11 +4,15 @@
 import { SmwManyarReportForm } from "@/components/smw-manyar/report-form";
 import { usePageAccess } from "@/hooks/use-page-access";
 import { FileText, Loader2 } from 'lucide-react';
+import { useUnsavedChangesWarning } from "@/hooks/use-unsaved-changes-warning";
 
 export const dynamic = 'force-dynamic';
 
 export default function SmwManyarPage() {
   const { hasAccess, isLoading } = usePageAccess('smw-manyar');
+  const [isDirty, setIsDirty] = React.useState(false); // Example state
+  const { UnsavedChangesDialog } = useUnsavedChangesWarning(isDirty);
+
   
   if (isLoading) {
     return (
@@ -24,6 +28,7 @@ export default function SmwManyarPage() {
 
   return (
     <div className="flex flex-1 flex-col p-4 pt-6 md:p-8 space-y-4">
+      <UnsavedChangesDialog />
       <div className="flex-shrink-0">
         <div className="flex items-center space-x-2">
           <FileText className="h-8 w-8" />
@@ -34,7 +39,7 @@ export default function SmwManyarPage() {
         </p>
       </div>
       <div className="flex-1 pt-4">
-        <SmwManyarReportForm />
+        <SmwManyarReportForm setIsDirty={setIsDirty} />
       </div>
     </div>
   );

@@ -72,7 +72,7 @@ export default function StokProdukPage() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDirty, setIsDirty] = React.useState(false);
   const { toast } = useToast();
-  useUnsavedChangesWarning(isDirty);
+  const { UnsavedChangesDialog } = useUnsavedChangesWarning(isDirty);
 
   React.useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -214,6 +214,7 @@ export default function StokProdukPage() {
 
   return (
     <div className="flex flex-col flex-1 p-4 pt-6 md:p-8 space-y-4 relative">
+       <UnsavedChangesDialog />
        {isFetchingReport && (
             <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg z-10">
                 <Loader2 className="h-6 w-6 animate-spin" />

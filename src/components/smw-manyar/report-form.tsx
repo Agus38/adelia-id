@@ -18,7 +18,6 @@ import { auth } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { getSmwReport, addOrUpdateSmwReport, type SmwReportData } from '@/lib/smw-manyar-store';
-import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning';
 
 const sisaIkanItems = [
   { id: 'daging', label: 'DAGING' },
@@ -60,16 +59,18 @@ type FormData = {
   [key: string]: string;
 };
 
-export function SmwManyarReportForm() {
+interface SmwManyarReportFormProps {
+    setIsDirty: (isDirty: boolean) => void;
+}
+
+export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
   const [formData, setFormData] = React.useState<FormData>({});
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = React.useState(true);
   const [isFetchingReport, setIsFetchingReport] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
-  const [isDirty, setIsDirty] = React.useState(false);
   const { toast } = useToast();
-  useUnsavedChangesWarning(isDirty);
 
   React.useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -82,12 +83,12 @@ export function SmwManyarReportForm() {
   const resetForm = React.useCallback(() => {
     setFormData({});
     setIsDirty(false);
-  }, []);
+  }, [setIsDirty]);
 
   const populateForm = React.useCallback((report: { formData: FormData }) => {
      setFormData(report.formData);
      setIsDirty(false);
-  }, []);
+  }, [setIsDirty]);
   
   React.useEffect(() => {
     if (!date || !currentUser) return;
@@ -226,120 +227,120 @@ ${onlineSalesText}\`\`\`
   }
 
   return (
-    <Card className="relative">
-         {isFetchingReport && (
-            <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg z-10">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="ml-2">Memuat data laporan...</span>
-            </div>
-        )}
-      <CardHeader>
-        <CardTitle>Formulir Laporan</CardTitle>
-         <div className="space-y-2 pt-2">
-            <Label>Pilih Tanggal Laporan</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={'outline'}
-                  className={cn(
-                    'w-full max-w-sm justify-start text-left font-normal',
-                    !date && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, 'eeee, dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
-                  locale={id}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-      </CardHeader>
-      <CardContent className="space-y-8">
-        <Tabs defaultValue="sisa-ikan">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="sisa-ikan">Sisa Ikan</TabsTrigger>
-            <TabsTrigger value="terjual">Terjual</TabsTrigger>
-          </TabsList>
-          <TabsContent value="sisa-ikan" className="pt-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {sisaIkanItems.map(item => (
-                <div key={`sisa-${item.id}`} className="space-y-1.5">
-                  <Label htmlFor={`sisa-${item.id}`}>{item.label}</Label>
-                  <Input id={`sisa-${item.id}`} type="text" value={formData[`sisa-${item.id}`] || ''} onChange={handleInputChange} maxLength={7} />
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-          <TabsContent value="terjual" className="pt-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {terjualItems.map(item => (
-                <div key={`terjual-${item.id}`} className="space-y-1.5">
-                  <Label htmlFor={`terjual-${item.id}`}>{item.label}</Label>
-                  <Input id={`terjual-${item.id}`} type="number" value={formData[`terjual-${item.id}`] || ''} onChange={handleInputChange} maxLength={7} />
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
-        
-        <Separator />
-        
-        {/* Total Online Sales */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-lg">Total Online Sales</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {onlineSalesItems.map(item => (
-              <div key={`online-${item.id}`} className="space-y-1.5">
-                <Label htmlFor={`online-${item.id}`}>{item.label}</Label>
-                <Input 
-                  id={`online-${item.id}`}
-                  type="text" 
-                  inputMode="numeric"
-                  placeholder="Rp 0" 
-                  value={formatDisplayValue(formData[`online-${item.id}`])} 
-                  onChange={handleNumericInputChange} />
+      <Card className="relative">
+           {isFetchingReport && (
+              <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg z-10">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="ml-2">Memuat data laporan...</span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Summary */}
-        <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Ringkasan</h3>
-            <div className="space-y-2 rounded-lg border bg-muted/50 p-4">
-                 <div className="flex justify-between items-center">
-                    <Label className="text-base font-semibold">Total Porsi</Label>
-                    <div className="text-base font-bold text-right">{totalPorsi}</div>
-                </div>
-                 <div className="flex justify-between items-center">
-                    <Label className="text-base font-semibold">Gross Total</Label>
-                    <div className="text-base font-bold text-right">{formatCurrencyForDisplay(String(grossTotal)) || 'Rp 0'}</div>
-                </div>
+          )}
+        <CardHeader>
+          <CardTitle>Formulir Laporan</CardTitle>
+           <div className="space-y-2 pt-2">
+              <Label>Pilih Tanggal Laporan</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={'outline'}
+                    className={cn(
+                      'w-full max-w-sm justify-start text-left font-normal',
+                      !date && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, 'eeee, dd MMMM yyyy', { locale: id }) : <span>Pilih tanggal</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                    locale={id}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-        </div>
+        </CardHeader>
+        <CardContent className="space-y-8">
+          <Tabs defaultValue="sisa-ikan">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="sisa-ikan">Sisa Ikan</TabsTrigger>
+              <TabsTrigger value="terjual">Terjual</TabsTrigger>
+            </TabsList>
+            <TabsContent value="sisa-ikan" className="pt-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {sisaIkanItems.map(item => (
+                  <div key={`sisa-${item.id}`} className="space-y-1.5">
+                    <Label htmlFor={`sisa-${item.id}`}>{item.label}</Label>
+                    <Input id={`sisa-${item.id}`} type="text" value={formData[`sisa-${item.id}`] || ''} onChange={handleInputChange} maxLength={7} />
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="terjual" className="pt-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {terjualItems.map(item => (
+                  <div key={`terjual-${item.id}`} className="space-y-1.5">
+                    <Label htmlFor={`terjual-${item.id}`}>{item.label}</Label>
+                    <Input id={`terjual-${item.id}`} type="number" value={formData[`terjual-${item.id}`] || ''} onChange={handleInputChange} maxLength={7} />
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <Separator />
+          
+          {/* Total Online Sales */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg">Total Online Sales</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {onlineSalesItems.map(item => (
+                <div key={`online-${item.id}`} className="space-y-1.5">
+                  <Label htmlFor={`online-${item.id}`}>{item.label}</Label>
+                  <Input 
+                    id={`online-${item.id}`}
+                    type="text" 
+                    inputMode="numeric"
+                    placeholder="Rp 0" 
+                    value={formatDisplayValue(formData[`online-${item.id}`])} 
+                    onChange={handleNumericInputChange} />
+                </div>
+              ))}
+            </div>
+          </div>
 
-      </CardContent>
-      <CardFooter className="flex flex-col-reverse sm:flex-row justify-between gap-4 border-t pt-6">
-        <Button onClick={handleSaveReport} disabled={isSaving} className="w-full sm:w-auto">
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <Save className="mr-2 h-4 w-4" />
-            Simpan Laporan
-        </Button>
-        <Button onClick={handleSendWhatsApp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
-          <Send className="mr-2 h-4 w-4" />
-          Kirim Laporan
-        </Button>
-      </CardFooter>
-    </Card>
+          <Separator />
+
+          {/* Summary */}
+          <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Ringkasan</h3>
+              <div className="space-y-2 rounded-lg border bg-muted/50 p-4">
+                   <div className="flex justify-between items-center">
+                      <Label className="text-base font-semibold">Total Porsi</Label>
+                      <div className="text-base font-bold text-right">{totalPorsi}</div>
+                  </div>
+                   <div className="flex justify-between items-center">
+                      <Label className="text-base font-semibold">Gross Total</Label>
+                      <div className="text-base font-bold text-right">{formatCurrencyForDisplay(String(grossTotal)) || 'Rp 0'}</div>
+                  </div>
+              </div>
+          </div>
+
+        </CardContent>
+        <CardFooter className="flex flex-col-reverse sm:flex-row justify-between gap-4 border-t pt-6">
+          <Button onClick={handleSaveReport} disabled={isSaving} className="w-full sm:w-auto">
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Save className="mr-2 h-4 w-4" />
+              Simpan Laporan
+          </Button>
+          <Button onClick={handleSendWhatsApp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
+            <Send className="mr-2 h-4 w-4" />
+            Kirim Laporan
+          </Button>
+        </CardFooter>
+      </Card>
   );
 }
