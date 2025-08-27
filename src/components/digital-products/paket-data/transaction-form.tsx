@@ -19,9 +19,20 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { toast } from "@/hooks/use-toast";
 
 type Operator = 'Telkomsel' | 'Indosat' | 'XL' | 'AXIS' | 'Tri' | 'Smartfren' | null;
-type Product = { id: string; name: string; price: number; };
+
+interface FirestoreProduct {
+  buyer_sku_code: string;
+  product_name: string;
+  price: number;
+  status: 'Tersedia' | 'Gangguan';
+  category: string;
+  brand: string;
+}
 
 const operatorPrefixes: Record<NonNullable<Operator>, string[]> = {
   Telkomsel: ['0811', '0812', '0813', '0821', '0822', '0852', '0853', '0823', '0851'],
@@ -41,41 +52,51 @@ const operatorLogos: Record<NonNullable<Operator>, string> = {
     Smartfren: 'https://placehold.co/100x40.png?text=Smartfren',
 }
 
-const mockProducts: Record<string, Product[]> = {
-    Telkomsel: [
-        { id: 'td1', name: '1GB, 7 Hari', price: 15000 },
-        { id: 'td2', name: '3GB, 30 Hari', price: 35000 },
-        { id: 'td5', name: '5GB, 30 Hari', price: 50000 },
-    ],
-    Indosat: [
-        { id: 'id1', name: '2GB, 7 Hari', price: 18000 },
-        { id: 'id3', name: '4GB, 30 Hari', price: 40000 },
-    ],
-     XL: [
-        { id: 'xld2', name: '2GB, 5 Hari', price: 20000 },
-        { id: 'xld10', name: '10GB, 30 Hari', price: 80000 },
-    ],
-};
-
 const formatCurrency = (value: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 
 export function PaketDataTransactionForm() {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [operator, setOperator] = useState<Operator>(null);
-    const [products, setProducts] = useState<Product[]>([]);
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-    const [isFetching, setIsFetching] = useState(false);
+    const [allDataProducts, setAllDataProducts] = useState<FirestoreProduct[]>([]);
+    const [displayedProducts, setDisplayedProducts] = useState<FirestoreProduct[]>([]);
+    const [selectedProduct, setSelectedProduct] = useState<FirestoreProduct | null>(null);
+    const [isFetchingOperator, setIsFetchingOperator] = useState(false);
+    const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+
+    useEffect(() => {
+        const fetchDataProducts = async () => {
+            setIsLoadingProducts(true);
+            try {
+                const q = query(collection(db, "products"), where("category", "==", "Data"));
+                const querySnapshot = await getDocs(q);
+                const products: FirestoreProduct[] = [];
+                querySnapshot.forEach((doc) => {
+                    products.push({ buyer_sku_code: doc.id, ...doc.data() } as FirestoreProduct);
+                });
+                setAllDataProducts(products);
+            } catch (error) {
+                toast({
+                    title: "Gagal Memuat Produk",
+                    description: "Tidak dapat mengambil data paket data dari database.",
+                    variant: "destructive"
+                });
+            } finally {
+                setIsLoadingProducts(false);
+            }
+        };
+        fetchDataProducts();
+    }, []);
 
     useEffect(() => {
         const detectOperator = () => {
             if (phoneNumber.length < 4) {
                 setOperator(null);
-                setProducts([]);
+                setDisplayedProducts([]);
                 setSelectedProduct(null);
                 return;
             }
             
-            setIsFetching(true);
+            setIsFetchingOperator(true);
             const prefix = phoneNumber.substring(0, 4);
             let foundOperator: Operator = null;
             for (const op in operatorPrefixes) {
@@ -88,18 +109,20 @@ export function PaketDataTransactionForm() {
             setTimeout(() => {
                 setOperator(foundOperator);
                 setSelectedProduct(null);
-                if (foundOperator && mockProducts[foundOperator as keyof typeof mockProducts]) {
-                    setProducts(mockProducts[foundOperator as keyof typeof mockProducts]);
+                if (foundOperator) {
+                    const filtered = allDataProducts.filter(p => p.brand.toUpperCase() === foundOperator?.toUpperCase() && p.status === 'Tersedia');
+                    filtered.sort((a,b) => a.price - b.price);
+                    setDisplayedProducts(filtered);
                 } else {
-                    setProducts([]);
+                    setDisplayedProducts([]);
                 }
-                 setIsFetching(false);
+                 setIsFetchingOperator(false);
             }, 500);
         };
 
         const timeoutId = setTimeout(detectOperator, 300);
         return () => clearTimeout(timeoutId);
-    }, [phoneNumber]);
+    }, [phoneNumber, allDataProducts]);
 
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,52 +151,54 @@ export function PaketDataTransactionForm() {
                             className="pr-28"
                         />
                          <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-2 text-sm text-muted-foreground h-8 px-2 rounded-md bg-muted">
-                            {isFetching && <Loader2 className="h-4 w-4 animate-spin" />}
-                             {operator && !isFetching && (
+                            {isFetchingOperator && <Loader2 className="h-4 w-4 animate-spin" />}
+                             {operator && !isFetchingOperator && (
                                 <>
                                     <Image src={operatorLogos[operator]} alt={operator} width={20} height={20} className="h-5 w-auto" data-ai-hint={`${operator} logo`}/>
                                     <span>{operator}</span>
                                 </>
                              )}
-                             {!operator && !isFetching && phoneNumber.length > 3 && (
+                             {!operator && !isFetchingOperator && phoneNumber.length > 3 && (
                                 <span className="text-destructive">Tidak Dikenal</span>
                              )}
                         </div>
                     </div>
                 </div>
-
-                {operator && products.length > 0 && (
+                
+                {isLoadingProducts ? (
+                    <div className="flex justify-center items-center h-24">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                ) : operator && displayedProducts.length > 0 ? (
                     <div className="space-y-3 animate-in fade-in duration-300">
                         <Label>Pilih Paket</Label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {products.map(product => (
+                            {displayedProducts.map(product => (
                                 <button
-                                    key={product.id}
+                                    key={product.buyer_sku_code}
                                     onClick={() => setSelectedProduct(product)}
                                     className={`p-3 border rounded-lg text-left transition-colors ${
-                                        selectedProduct?.id === product.id 
+                                        selectedProduct?.buyer_sku_code === product.buyer_sku_code 
                                             ? 'border-primary ring-2 ring-primary bg-primary/10'
                                             : 'hover:bg-muted/50'
                                     }`}
                                 >
-                                    <p className="font-semibold text-sm">{product.name.split(',')[0]}</p>
-                                    <p className="text-xs text-muted-foreground">{product.name.split(',')[1]}</p>
+                                    <p className="font-semibold text-sm">{product.product_name.replace(product.brand, '').trim()}</p>
                                     <p className="text-xs font-bold text-primary mt-1">{formatCurrency(product.price)}</p>
                                 </button>
                             ))}
                         </div>
                     </div>
-                )}
-                 {operator && products.length === 0 && !isFetching && (
+                ) : operator && displayedProducts.length === 0 && !isFetchingOperator ? (
                     <div className="text-center text-muted-foreground p-4 bg-muted rounded-lg">
                         Produk paket data untuk {operator} belum tersedia.
                     </div>
-                )}
+                ) : null}
             </CardContent>
             <CardFooter>
                  <Sheet>
                     <SheetTrigger asChild>
-                         <Button className="w-full" disabled={!phoneNumber || !selectedProduct || isFetching}>
+                         <Button className="w-full" disabled={!phoneNumber || !selectedProduct || isFetchingOperator}>
                             Beli Sekarang
                         </Button>
                     </SheetTrigger>
@@ -197,7 +222,7 @@ export function PaketDataTransactionForm() {
                                 </div>
                                  <div className="flex justify-between">
                                     <span className="text-muted-foreground">Produk</span>
-                                    <span className="font-medium">{selectedProduct?.name}</span>
+                                    <span className="font-medium">{selectedProduct?.product_name}</span>
                                 </div>
                              </div>
                             <Separator />

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bolt, Loader2, Wallet } from "lucide-react";
 import {
   Sheet,
@@ -19,17 +19,15 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-type Product = { id: string; name: string; price: number; };
-
-const mockProducts: Product[] = [
-    { id: 'pln20', name: 'Token Listrik 20.000', price: 20000 },
-    { id: 'pln50', name: 'Token Listrik 50.000', price: 50000 },
-    { id: 'pln100', name: 'Token Listrik 100.000', price: 100000 },
-    { id: 'pln200', name: 'Token Listrik 200.000', price: 200000 },
-    { id: 'pln500', name: 'Token Listrik 500.000', price: 500000 },
-    { id: 'pln1000', name: 'Token Listrik 1.000.000', price: 1000000 },
-];
+interface FirestoreProduct {
+  buyer_sku_code: string;
+  product_name: string;
+  price: number;
+  status: 'Tersedia' | 'Gangguan';
+}
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 
@@ -37,9 +35,36 @@ export function TokenListrikTransactionForm() {
     const [customerId, setCustomerId] = useState('');
     const [customerName, setCustomerName] = useState<string | null>(null);
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [products, setProducts] = useState<FirestoreProduct[]>([]);
+    const [selectedProduct, setSelectedProduct] = useState<FirestoreProduct | null>(null);
     const [isChecking, setIsChecking] = useState(false);
+    const [isLoadingProducts, setIsLoadingProducts] = useState(true);
     const { toast } = useToast();
+
+    useEffect(() => {
+        const fetchPlnProducts = async () => {
+            setIsLoadingProducts(true);
+            try {
+                const q = query(collection(db, "products"), where("category", "==", "PLN"));
+                const querySnapshot = await getDocs(q);
+                const fetchedProducts: FirestoreProduct[] = [];
+                querySnapshot.forEach((doc) => {
+                    fetchedProducts.push({ buyer_sku_code: doc.id, ...doc.data() } as FirestoreProduct);
+                });
+                fetchedProducts.sort((a,b) => a.price - b.price);
+                setProducts(fetchedProducts);
+            } catch (error) {
+                toast({
+                    title: "Gagal Memuat Produk",
+                    description: "Tidak dapat mengambil data produk token listrik dari database.",
+                    variant: "destructive"
+                });
+            } finally {
+                setIsLoadingProducts(false);
+            }
+        };
+        fetchPlnProducts();
+    }, []);
 
     const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/[^0-9]/g, '');
@@ -69,8 +94,9 @@ export function TokenListrikTransactionForm() {
         }
         setIsChecking(true);
         // Simulate API call to check customer name
+        // In a real app, you would call Digiflazz 'cek-saldo' API endpoint here.
         setTimeout(() => {
-            setCustomerName("JANE DOE");
+            setCustomerName("JANE DOE"); // Mocked name
             setIsChecking(false);
             toast({
                 title: "Berhasil",
@@ -120,21 +146,25 @@ export function TokenListrikTransactionForm() {
                     <p className="text-xs text-muted-foreground">Untuk pengiriman notifikasi token.</p>
                 </div>
 
-                {customerId && (
+                {isLoadingProducts ? (
+                    <div className="flex justify-center items-center h-24">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                ) : products.length > 0 && (
                     <div className="space-y-3 animate-in fade-in duration-300">
                         <Label>Pilih Nominal Token</Label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {mockProducts.map(product => (
+                            {products.map(product => (
                                 <button
-                                    key={product.id}
+                                    key={product.buyer_sku_code}
                                     onClick={() => setSelectedProduct(product)}
                                     className={`p-3 border rounded-lg text-left transition-colors ${
-                                        selectedProduct?.id === product.id 
+                                        selectedProduct?.buyer_sku_code === product.buyer_sku_code 
                                             ? 'border-primary ring-2 ring-primary bg-primary/10'
                                             : 'hover:bg-muted/50'
                                     }`}
                                 >
-                                    <p className="font-semibold text-sm">{product.name.replace('Token Listrik ', '')}</p>
+                                    <p className="font-semibold text-sm">{product.product_name.replace('PLN', '').replace('TOKEN', '').trim()}</p>
                                     <p className="text-xs text-primary">{formatCurrency(product.price)}</p>
                                 </button>
                             ))}
@@ -171,7 +201,7 @@ export function TokenListrikTransactionForm() {
                                 )}
                                  <div className="flex justify-between">
                                     <span className="text-muted-foreground">Produk</span>
-                                    <span className="font-medium">{selectedProduct?.name}</span>
+                                    <span className="font-medium">{selectedProduct?.product_name}</span>
                                 </div>
                              </div>
                             <Separator />
