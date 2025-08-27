@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import md5 from 'md5';
 import { doc, setDoc, writeBatch, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
