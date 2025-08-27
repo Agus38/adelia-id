@@ -55,7 +55,7 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
   }, [isDirty]);
 
 
-  // For Next.js Link navigation and browser back/forward buttons
+  // For Next.js Link navigation
   useEffect(() => {
     const handleLinkClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -78,20 +78,23 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
     return () => document.removeEventListener('click', handleLinkClick);
   }, [isDirty, isMobile, toast]); // Add dependencies
 
+  // For browser back/forward buttons
   useEffect(() => {
-    router.beforePopState(({ as }) => {
-      if (isDirty) {
-        setNextPath(as);
-        triggerWarning();
-        return false; // Prevent navigation
-      }
-      return true; // Allow navigation
-    });
+    const handlePopState = (event: PopStateEvent) => {
+        if(isDirty) {
+            // Prevent the default back navigation
+            history.pushState(null, '', window.location.href);
+            setNextPath('__BACK__'); // Special value for router.back()
+            triggerWarning();
+        }
+    };
+
+    window.addEventListener('popstate', handlePopState);
 
     return () => {
-      router.beforePopState(() => true); // Cleanup
+        window.removeEventListener('popstate', handlePopState);
     };
-  }, [router, isDirty, isMobile, toast]); // Add dependencies
+  }, [isDirty]); // Add dependencies
 
   const handleConfirmNavigation = () => {
     setIsNavigationConfirmed(true);
