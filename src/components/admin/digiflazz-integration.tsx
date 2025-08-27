@@ -14,30 +14,68 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, RefreshCw, Copy, AlertTriangle } from 'lucide-react';
+import { Loader2, RefreshCw, Copy, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { syncDigiflazzProducts } from '@/ai/flows/sync-digiflazz-products';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { formatDistanceToNow } from 'date-fns';
+import { id } from 'date-fns/locale';
+
+interface SyncStatus {
+    lastSync: Date | null;
+    productCount: number;
+}
 
 export function DigiflazzIntegration() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({ lastSync: null, productCount: 0 });
 
   useEffect(() => {
     // This runs on the client, so window is available.
     setWebhookUrl(`${window.location.origin}/api/webhooks/digiflazz`);
+
+    const syncStatusDocRef = doc(db, 'app-settings', 'digiflazzSyncStatus');
+    const unsubscribe = onSnapshot(syncStatusDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            setSyncStatus({
+                lastSync: data.lastSync?.toDate(),
+                productCount: data.productCount || 0,
+            });
+        }
+    });
+
+    return () => unsubscribe();
   }, []);
   
-  const handleSyncProducts = () => {
+  const handleSyncProducts = async () => {
     setIsSyncing(true);
-    // NOTE: Mock implementation. In a real app, this would trigger a server-side flow.
-    console.log('Syncing products from Digiflazz...');
-    setTimeout(() => {
-        setIsSyncing(false);
-        toast({
-            title: 'Sinkronisasi Selesai!',
-            description: 'Daftar produk dari Digiflazz telah diperbarui. (Simulasi)',
+    try {
+        const result = await syncDigiflazzProducts();
+        if (result.success) {
+            toast({
+                title: 'Sinkronisasi Selesai!',
+                description: `${result.productCount} produk berhasil disinkronkan dari Digiflazz.`,
+            });
+        } else {
+            toast({
+                title: 'Sinkronisasi Gagal',
+                description: result.error || 'Terjadi kesalahan yang tidak diketahui.',
+                variant: 'destructive',
+            });
+        }
+    } catch (error: any) {
+         toast({
+            title: 'Error Sinkronisasi',
+            description: error.message || 'Gagal terhubung dengan server.',
+            variant: 'destructive',
         });
-    }, 2000);
+    } finally {
+        setIsSyncing(false);
+    }
   }
 
   const handleCopyWebhookUrl = () => {
@@ -63,7 +101,7 @@ export function DigiflazzIntegration() {
                         <AlertTriangle className="h-4 w-4" />
                         <AlertTitle>Penting: Pengaturan Sisi Server</AlertTitle>
                         <AlertDescription>
-                            Untuk keamanan, kredensial API Digiflazz (Username, API Key, dan Webhook Secret) harus diatur dalam file `.env` di lingkungan server Anda. Jangan menyimpannya di sini.
+                            Untuk keamanan, kredensial API Digiflazz (Username, Production Key, dan Webhook Secret) harus diatur dalam file `.env` di lingkungan server Anda. Jangan menyimpannya di sini.
                         </AlertDescription>
                     </Alert>
                 </CardContent>
@@ -78,10 +116,19 @@ export function DigiflazzIntegration() {
                 <CardContent>
                     <div className="space-y-2 p-4 border rounded-lg bg-muted/50">
                         <p className="text-sm font-medium">Status Sinkronisasi</p>
-                        <p className="text-sm text-muted-foreground">
-                        Terakhir sinkronisasi: - <br/>
-                        Total produk: 0 (Pulsa), 0 (Paket Data), 0 (Token Listrik), 0 (Game)
-                        </p>
+                        <div className="text-sm text-muted-foreground">
+                            {syncStatus.lastSync ? (
+                                <p className="flex items-center gap-2">
+                                    <CheckCircle className="h-4 w-4 text-green-500"/>
+                                    <span>
+                                        Terakhir sinkronisasi: {formatDistanceToNow(syncStatus.lastSync, { addSuffix: true, locale: id })}
+                                    </span>
+                                </p>
+                            ) : (
+                                <p>Belum pernah disinkronkan.</p>
+                            )}
+                            <p>Total produk tersimpan: {syncStatus.productCount}</p>
+                        </div>
                     </div>
                     <Separator className="my-6" />
                     <p className="text-sm text-muted-foreground">
