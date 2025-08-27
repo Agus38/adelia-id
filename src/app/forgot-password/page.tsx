@@ -2,7 +2,6 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +10,7 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { LockKeyhole, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import Image from 'next/image';
 
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -39,35 +39,45 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-14rem)] items-center justify-center bg-muted/40 px-4 py-12 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <form onSubmit={handleSubmit}>
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <LockKeyhole className="h-8 w-8 text-primary" />
+     <div className="w-full lg:grid lg:min-h-[calc(100vh-8rem)] lg:grid-cols-2">
+       <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto grid w-[350px] gap-6">
+          <div className="grid gap-2 text-center">
+            <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <LockKeyhole className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle className="text-3xl font-bold tracking-tight">Lupa Kata Sandi?</CardTitle>
-            <CardDescription>
-              Tidak masalah. Masukkan email Anda di bawah dan kami akan mengirimkan tautan untuk mengatur ulang kata sandi Anda.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
+            <h1 className="text-3xl font-bold">Lupa Kata Sandi?</h1>
+            <p className="text-balance text-muted-foreground">
+              Masukkan email Anda dan kami akan mengirimkan tautan untuk mengatur ulang kata sandi Anda.
+            </p>
+          </div>
+          <form onSubmit={handleSubmit} className="grid gap-4">
+            <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" placeholder="email@contoh.com" required disabled={isLoading} value={email} onChange={e => setEmail(e.target.value)} />
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Kirim Tautan Atur Ulang
             </Button>
-            <Link href="/login" className="text-sm text-primary hover:underline">
+          </form>
+           <div className="mt-4 text-center text-sm">
+             <Link href="/login" className="underline">
               Kembali ke Halaman Masuk
             </Link>
-          </CardFooter>
-        </form>
-      </Card>
+          </div>
+        </div>
+      </div>
+      <div className="hidden bg-muted lg:block">
+         <Image
+          src="https://images.unsplash.com/photo-1588590396420-55b01a8511a1?q=80&w=1887&auto=format&fit=crop"
+          alt="Image"
+          width="1887"
+          height="1258"
+          data-ai-hint="security lock"
+          className="h-full w-full object-cover dark:brightness-[0.3]"
+        />
+      </div>
     </div>
   );
 }

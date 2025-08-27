@@ -2,7 +2,6 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +13,7 @@ import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -81,18 +81,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-14rem)] items-center justify-center bg-muted/40 px-4 py-12 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <form onSubmit={handleSubmit}>
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <LogIn className="h-8 w-8 text-primary" />
+    <div className="w-full lg:grid lg:min-h-[calc(100vh-8rem)] lg:grid-cols-2">
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto grid w-[350px] gap-6">
+          <div className="grid gap-2 text-center">
+             <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <LogIn className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle className="text-3xl font-bold tracking-tight">Masuk ke Akun Anda</CardTitle>
-            <CardDescription>Masukkan email dan kata sandi Anda untuk melanjutkan.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             {error && (
+            <h1 className="text-3xl font-bold">Masuk</h1>
+            <p className="text-balance text-muted-foreground">
+              Masukkan email Anda di bawah untuk masuk ke akun Anda
+            </p>
+          </div>
+            {error && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Login Gagal</AlertTitle>
@@ -101,13 +102,19 @@ export default function LoginPage() {
                 </AlertDescription>
               </Alert>
             )}
-            <div className="space-y-2">
+           <form onSubmit={handleSubmit} className="grid gap-4">
+            <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" placeholder="email@contoh.com" required disabled={isLoading} value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Kata Sandi</Label>
-              <div className="relative">
+            <div className="grid gap-2">
+              <div className="flex items-center">
+                <Label htmlFor="password">Kata Sandi</Label>
+                 <Link href="/forgot-password" className="ml-auto inline-block text-sm underline">
+                  Lupa kata sandi?
+                </Link>
+              </div>
+                <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -130,29 +137,32 @@ export default function LoginPage() {
                   ) : (
                     <Eye className="h-4 w-4" />
                   )}
-                  <span className="sr-only">
-                    {showPassword ? 'Sembunyikan' : 'Tampilkan'} kata sandi
-                  </span>
                 </Button>
               </div>
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Masuk
             </Button>
-            <div className="flex w-full items-center justify-between text-sm">
-              <Link href="/forgot-password" className="text-primary hover:underline">
-                Lupa kata sandi?
-              </Link>
-              <Link href="/register" className="text-muted-foreground hover:text-primary">
-                Belum punya akun? Daftar
-              </Link>
-            </div>
-          </CardFooter>
-        </form>
-      </Card>
+          </form>
+          <div className="mt-4 text-center text-sm">
+            Belum punya akun?{" "}
+            <Link href="/register" className="underline">
+              Daftar
+            </Link>
+          </div>
+        </div>
+      </div>
+      <div className="hidden bg-muted lg:block">
+        <Image
+          src="https://images.unsplash.com/photo-1599050751855-c4208a38dda8?q=80&w=1887&auto=format&fit=crop"
+          alt="Image"
+          width="1887"
+          height="2830"
+          data-ai-hint="business teamwork"
+          className="h-full w-full object-cover dark:brightness-[0.3]"
+        />
+      </div>
     </div>
   );
 }
