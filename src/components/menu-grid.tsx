@@ -42,10 +42,7 @@ export function MenuGrid() {
   }, []);
 
   const filteredMenuItems = menuItems.filter(item => {
-    // Hide if coming soon
-    if (item.comingSoon) return false;
-
-    // Admin sees everything that's not coming soon
+    // Admin sees everything.
     if (user?.role === 'Admin') {
       return true;
     }
@@ -66,11 +63,14 @@ export function MenuGrid() {
     <div className="grid grid-cols-3 gap-4 md:grid-cols-4 md:gap-6">
       {filteredMenuItems.map((item) => {
         const isClickDisabled = item.comingSoon;
-        let href = item.isUnderMaintenance ? '/maintenance' : item.href;
+        let href = item.href;
 
-        // Check for auth requirement
-        if (item.requiresAuth && !user) {
+        if (item.isUnderMaintenance) {
+          href = '/maintenance';
+        } else if (item.requiresAuth && !user) {
           href = '/login';
+        } else if (isClickDisabled) {
+          href = '#'; // Prevent navigation for coming soon items
         }
         
         return (
@@ -88,6 +88,11 @@ export function MenuGrid() {
                       {item.badgeText || 'Maintenance'}
                     </Badge>
                   )}
+                   {item.comingSoon && !item.isUnderMaintenance && (
+                     <Badge variant="secondary" className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5">
+                       {item.badgeText || 'Segera'}
+                    </Badge>
+                   )}
                 </CardContent>
               </Card>
             </Link>
