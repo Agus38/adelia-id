@@ -9,11 +9,14 @@ import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { useSessionManager } from '@/hooks/use-session-manager';
+import { signOut } from 'firebase/auth';
+import { toast } from '@/hooks/use-toast';
 
 export type UserProfile = User & {
   fullName?: string;
   role?: string;
   avatarUrl?: string;
+  status?: 'Aktif' | 'Diblokir';
 };
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
@@ -30,13 +33,31 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           const userData = userDoc.data();
+
+          // CRITICAL: Check if the user is blocked.
+          if (userData.status === 'Diblokir') {
+            toast({
+              title: "Akses Ditolak",
+              description: "Akun Anda telah diblokir. Silakan hubungi administrator.",
+              variant: "destructive",
+              duration: 5000,
+            });
+            await signOut(auth);
+            setUser(null);
+            setLoading(false);
+            return;
+          }
+
           setUser({
             ...authUser,
             fullName: userData.fullName || authUser.displayName,
             role: userData.role,
             avatarUrl: userData.avatarUrl || authUser.photoURL,
+            status: userData.status || 'Aktif',
           });
         } else {
+          // User exists in Auth but not in Firestore.
+          // This could be a new registration flow or an anomaly.
           setUser(authUser);
         }
       } else {
