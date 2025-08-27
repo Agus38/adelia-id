@@ -19,13 +19,14 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
   const [nextPath, setNextPath] = useState<string | null>(null);
-  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
+    // For closing tab/reloading page
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (isDirty) {
         event.preventDefault();
         event.returnValue = "Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin ingin keluar?";
+        return event.returnValue;
       }
     };
 
@@ -37,58 +38,59 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
   }, [isDirty]);
 
   useEffect(() => {
-    // This is a workaround for Next.js Link/router.push
-    const originalPush = router.push;
-    (router as any).push = (href: string, options?: any) => {
-      if (isDirty && !isNavigating) {
-        setNextPath(href);
-        setShowDialog(true);
-      } else {
-        originalPush(href, options);
+    // For Next.js Link navigation
+    const handleLinkClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('a');
+      
+      if (link && link.href && isDirty) {
+        const targetUrl = new URL(link.href);
+        const currentUrl = new URL(window.location.href);
+        
+        // Only intercept internal navigation
+        if (targetUrl.origin === currentUrl.origin && targetUrl.pathname !== currentUrl.pathname) {
+          e.preventDefault();
+          setNextPath(link.href);
+          setShowDialog(true);
+        }
       }
     };
     
-    // This handles browser back/forward navigation
-    router.beforePopState(({ as }) => {
-      if (isDirty && !isNavigating) {
-        setShowDialog(true);
-        setNextPath(as); // Store the path for back navigation
-        return false; // Prevent navigation
-      }
-      return true; // Allow navigation
-    });
+    document.addEventListener('click', handleLinkClick);
 
-    return () => {
-      (router as any).push = originalPush;
-      router.beforePopState(() => true); // Deregister the handler
+    // For browser back/forward buttons
+    const handlePopState = (event: PopStateEvent) => {
+        if (isDirty) {
+            // This is a tricky part. We prevent the default back navigation
+            // by pushing the current state back to history.
+            window.history.pushState(null, '', window.location.href);
+            setShowDialog(true);
+            // We don't have a reliable nextPath for popstate, so we use router.back()
+            setNextPath('__BACK__'); 
+        }
     };
-  }, [router, isDirty, isNavigating]);
-
+    
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      document.removeEventListener('click', handleLinkClick);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isDirty]);
 
   const handleConfirmNavigation = () => {
-    setIsNavigating(true);
     if (nextPath) {
-      // Check if it's a back/forward navigation
-      if (window.location.pathname !== nextPath) {
-        router.push(nextPath);
+      // Temporarily remove the 'beforeunload' listener to allow navigation
+      window.removeEventListener('beforeunload', () => {});
+      
+      if (nextPath === '__BACK__') {
+          router.back();
       } else {
-        // This is a popstate event (back button)
-        // We need to bypass the `beforePopState` guard temporarily
-        // A simple router.back() might be blocked again.
-        // The state `isNavigating` handles this. We re-trigger the back action.
-        window.history.back();
+          router.push(nextPath);
       }
     }
     setShowDialog(false);
   };
-  
-  // Reset the navigating flag once navigation is complete
-  useEffect(() => {
-      if (isNavigating) {
-          setIsNavigating(false);
-      }
-  }, [nextPath, isNavigating]);
-
 
   const handleCancelNavigation = () => {
     setShowDialog(false);
