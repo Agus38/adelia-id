@@ -357,7 +357,7 @@ export function UserManagement() {
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
-               {user.status === 'Aktif' ? (
+               {(user.status === 'Aktif' || !user.status) ? (
                   <DropdownMenuItem onClick={() => handleBlock(user)}>
                     <Ban className="mr-2 h-4 w-4" />
                     Blokir
