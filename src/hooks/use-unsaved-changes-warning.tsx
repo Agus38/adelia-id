@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -14,14 +13,36 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from './use-mobile';
+import { useToast } from './use-toast';
+import { AlertTriangle } from 'lucide-react';
 
 export function useUnsavedChangesWarning(isDirty: boolean) {
   const router = useRouter();
+  const isMobile = useIsMobile();
+  const { toast, dismiss } = useToast();
+
   const [showDialog, setShowDialog] = useState(false);
   const [nextPath, setNextPath] = useState<string | null>(null);
+  const [isNavigationConfirmed, setIsNavigationConfirmed] = useState(false);
 
   useEffect(() => {
-    // For closing tab/reloading page
+    if (isNavigationConfirmed) {
+      if (nextPath) {
+        if (nextPath === '__BACK__') {
+          router.back();
+        } else {
+          router.push(nextPath);
+        }
+        setIsNavigationConfirmed(false); // Reset after navigation
+        setNextPath(null);
+      }
+    }
+  }, [isNavigationConfirmed, nextPath, router]);
+
+
+  // For closing tab/reloading page - this will always use the browser's default prompt
+  useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (isDirty) {
         event.preventDefault();
@@ -29,16 +50,13 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
         return event.returnValue;
       }
     };
-
     window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
+
+  // For Next.js Link navigation and browser back/forward buttons
   useEffect(() => {
-    // For Next.js Link navigation
     const handleLinkClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const link = target.closest('a');
@@ -47,74 +65,99 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
         const targetUrl = new URL(link.href);
         const currentUrl = new URL(window.location.href);
         
-        // Only intercept internal navigation
         if (targetUrl.origin === currentUrl.origin && targetUrl.pathname !== currentUrl.pathname) {
           e.preventDefault();
           setNextPath(link.href);
-          setShowDialog(true);
+          triggerWarning();
         }
       }
     };
     
     document.addEventListener('click', handleLinkClick);
 
-    // For browser back/forward buttons
-    const handlePopState = (event: PopStateEvent) => {
-        if (isDirty) {
-            // This is a tricky part. We prevent the default back navigation
-            // by pushing the current state back to history.
-            window.history.pushState(null, '', window.location.href);
-            setShowDialog(true);
-            // We don't have a reliable nextPath for popstate, so we use router.back()
-            setNextPath('__BACK__'); 
-        }
-    };
-    
-    window.addEventListener('popstate', handlePopState);
-    
+    return () => document.removeEventListener('click', handleLinkClick);
+  }, [isDirty, isMobile, toast]); // Add dependencies
+
+  useEffect(() => {
+    router.beforePopState(({ as }) => {
+      if (isDirty) {
+        setNextPath(as);
+        triggerWarning();
+        return false; // Prevent navigation
+      }
+      return true; // Allow navigation
+    });
+
     return () => {
-      document.removeEventListener('click', handleLinkClick);
-      window.removeEventListener('popstate', handlePopState);
+      router.beforePopState(() => true); // Cleanup
     };
-  }, [isDirty]);
+  }, [router, isDirty, isMobile, toast]); // Add dependencies
 
   const handleConfirmNavigation = () => {
-    if (nextPath) {
-      // Temporarily remove the 'beforeunload' listener to allow navigation
-      window.removeEventListener('beforeunload', () => {});
-      
-      if (nextPath === '__BACK__') {
-          router.back();
-      } else {
-          router.push(nextPath);
-      }
-    }
+    setIsNavigationConfirmed(true);
     setShowDialog(false);
+  };
+  
+  const handleMobileConfirm = () => {
+    setIsNavigationConfirmed(true);
+    dismiss();
   };
 
   const handleCancelNavigation = () => {
     setShowDialog(false);
     setNextPath(null);
+    dismiss();
   };
 
-  const UnsavedChangesDialog = useCallback(() => (
-    <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-            <AlertDialogTitle>Perubahan Belum Disimpan</AlertDialogTitle>
-            <AlertDialogDescription>
-                Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan Anda akan hilang.
-            </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelNavigation}>Batal</AlertDialogCancel>
-            <AlertDialogAction asChild>
-                <Button variant="destructive" onClick={handleConfirmNavigation}>Tinggalkan Halaman</Button>
-            </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
-  ), [showDialog]);
+  const triggerWarning = () => {
+      if (isMobile) {
+          toast({
+              title: (
+                <div className="flex items-center gap-2 font-semibold">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  Perubahan Belum Disimpan
+                </div>
+              ),
+              description: "Apakah Anda yakin ingin meninggalkan halaman? Perubahan Anda akan hilang.",
+              duration: Infinity, // Keep it open until user interaction
+              action: (
+                <div className="flex w-full gap-2 mt-2">
+                    <Button variant="outline" size="sm" onClick={handleCancelNavigation} className="w-full">
+                        Batal
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={handleMobileConfirm} className="w-full">
+                        Tinggalkan
+                    </Button>
+                </div>
+              ),
+          });
+      } else {
+          setShowDialog(true);
+      }
+  };
+
+
+  const UnsavedChangesDialog = useCallback(() => {
+    if (isMobile) return null; // Don't render AlertDialog on mobile
+    return (
+        <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Perubahan Belum Disimpan</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin ingin meninggalkan halaman ini? Perubahan Anda akan hilang.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleCancelNavigation}>Batal</AlertDialogCancel>
+                <AlertDialogAction asChild>
+                    <Button variant="destructive" onClick={handleConfirmNavigation}>Tinggalkan Halaman</Button>
+                </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+  }, [showDialog, isMobile]);
 
   return { UnsavedChangesDialog };
 }
