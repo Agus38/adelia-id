@@ -14,12 +14,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, RefreshCw, Copy } from 'lucide-react';
+import { Loader2, RefreshCw, Copy, AlertTriangle } from 'lucide-react';
 import { Separator } from '../ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 export function DigiflazzIntegration() {
-  const [username, setUsername] = useState('');
-  const [apiKey, setApiKey] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
 
@@ -28,15 +27,6 @@ export function DigiflazzIntegration() {
     setWebhookUrl(`${window.location.origin}/api/webhooks/digiflazz`);
   }, []);
   
-  const handleSaveChanges = () => {
-    // NOTE: Mock implementation. In a real app, you would save this to a secure config.
-    console.log('Saving Digiflazz credentials:', { username });
-    toast({
-      title: 'Perubahan Disimpan!',
-      description: 'Kredensial API Digiflazz telah berhasil disimpan.',
-    });
-  };
-
   const handleSyncProducts = () => {
     setIsSyncing(true);
     // NOTE: Mock implementation. In a real app, this would trigger a server-side flow.
@@ -65,33 +55,18 @@ export function DigiflazzIntegration() {
                 <CardHeader>
                     <CardTitle>Pengaturan API</CardTitle>
                     <CardDescription>
-                    Masukkan kredensial API Anda untuk terhubung ke layanan Digiflazz.
+                    Konfigurasi kredensial API Anda untuk terhubung ke layanan Digiflazz.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="username">Username</Label>
-                        <Input
-                        id="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Username Digiflazz Anda"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="apiKey">Production API Key</Label>
-                        <Input
-                        id="apiKey"
-                        type="password"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="••••••••••••••••••••"
-                        />
-                    </div>
+                <CardContent>
+                    <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Penting: Pengaturan Sisi Server</AlertTitle>
+                        <AlertDescription>
+                            Untuk keamanan, kredensial API Digiflazz (Username, API Key, dan Webhook Secret) harus diatur dalam file `.env` di lingkungan server Anda. Jangan menyimpannya di sini.
+                        </AlertDescription>
+                    </Alert>
                 </CardContent>
-                <CardFooter>
-                    <Button onClick={handleSaveChanges}>Simpan Kredensial</Button>
-                </CardFooter>
             </Card>
             <Card className="lg:col-span-2">
                 <CardHeader>
@@ -145,7 +120,7 @@ export function DigiflazzIntegration() {
                 </div>
                  <div>
                     <Label>Kunci Rahasia Webhook (Signature)</Label>
-                    <Input value="Rahasia Anda dari dashboard Digiflazz" readOnly disabled className="mt-2" />
+                    <Input value="Atur nilai ini di file .env Anda (variabel DIGIFLAZZ_WEBHOOK_SECRET)" readOnly disabled className="mt-2" />
                      <p className="text-xs text-muted-foreground mt-2">
                         Masukkan kunci rahasia ini di file environment Anda untuk memverifikasi permintaan webhook.
                     </p>
