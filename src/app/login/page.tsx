@@ -33,6 +33,19 @@ export default function LoginPage() {
       // Check user role from Firestore
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
+      
+      // We also check for 'Diblokir' status here as a first line of defense
+      if (userDoc.exists() && userDoc.data().status === 'Diblokir') {
+          await auth.signOut(); // Sign out the user immediately
+          toast({
+            title: 'Akun Diblokir',
+            description: 'Akun Anda telah diblokir. Silakan hubungi administrator.',
+            variant: 'destructive',
+            duration: 5000,
+          });
+          setIsLoading(false);
+          return;
+      }
 
       toast({
         title: 'Login Berhasil!',
@@ -45,9 +58,33 @@ export default function LoginPage() {
         router.push('/');
       }
     } catch (error: any) {
+      let title = 'Login Gagal';
+      let description = 'Terjadi kesalahan. Silakan coba lagi.';
+
+      switch (error.code) {
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          description = 'Email atau kata sandi yang Anda masukkan salah.';
+          break;
+        case 'auth/user-disabled':
+          title = 'Akun Diblokir';
+          description = 'Akun ini telah diblokir. Silakan hubungi administrator.';
+          break;
+        case 'auth/too-many-requests':
+          title = 'Terlalu Banyak Percobaan';
+          description = 'Akses ke akun ini telah dinonaktifkan sementara karena terlalu banyak percobaan login yang gagal. Silakan coba lagi nanti.';
+          break;
+        case 'auth/invalid-email':
+          description = 'Format email yang Anda masukkan tidak valid.';
+          break;
+        default:
+          description = 'Terjadi kesalahan yang tidak diketahui. Silakan coba lagi.';
+      }
+      
       toast({
-        title: 'Login Gagal',
-        description: 'Email atau kata sandi salah.',
+        title: title,
+        description: description,
         variant: 'destructive',
       });
     } finally {
