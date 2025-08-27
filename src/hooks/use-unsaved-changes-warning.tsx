@@ -3,7 +3,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePathname } from 'next/navigation';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,12 +17,10 @@ import { Button } from '@/components/ui/button';
 
 export function useUnsavedChangesWarning(isDirty: boolean) {
   const router = useRouter();
-  const pathname = usePathname();
   const [showDialog, setShowDialog] = useState(false);
   const [nextPath, setNextPath] = useState<string | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
 
-  // For browser-level events (close tab, refresh)
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (isDirty) {
@@ -39,13 +36,9 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
     };
   }, [isDirty]);
 
-  // For in-app navigation (Next.js Link, router.push, back/forward)
   useEffect(() => {
-    // This part is a bit tricky. We are essentially monkey-patching the router.
-    // It's not ideal, but it's a common pattern for this use case until Next.js provides a native API.
+    // This is a workaround for Next.js Link/router.push
     const originalPush = router.push;
-
-    // Type assertion to make TypeScript happy
     (router as any).push = (href: string, options?: any) => {
       if (isDirty && !isNavigating) {
         setNextPath(href);
@@ -54,43 +47,54 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
         originalPush(href, options);
       }
     };
-
-    const handlePopState = (event: PopStateEvent) => {
+    
+    // This handles browser back/forward navigation
+    router.beforePopState(({ as }) => {
       if (isDirty && !isNavigating) {
-        // Prevent the default back/forward navigation
-        history.pushState(null, '', pathname);
-        setNextPath(window.location.pathname); // Or derive from event if needed
         setShowDialog(true);
+        setNextPath(as); // Store the path for back navigation
+        return false; // Prevent navigation
       }
-    };
-
-    window.addEventListener('popstate', handlePopState);
+      return true; // Allow navigation
+    });
 
     return () => {
       (router as any).push = originalPush;
-      window.removeEventListener('popstate', handlePopState);
+      router.beforePopState(() => true); // Deregister the handler
     };
-  }, [isDirty, router, pathname, isNavigating]);
+  }, [router, isDirty, isNavigating]);
+
 
   const handleConfirmNavigation = () => {
-    setIsNavigating(true); 
-    setShowDialog(false);
+    setIsNavigating(true);
     if (nextPath) {
-      router.push(nextPath);
+      // Check if it's a back/forward navigation
+      if (window.location.pathname !== nextPath) {
+        router.push(nextPath);
+      } else {
+        // This is a popstate event (back button)
+        // We need to bypass the `beforePopState` guard temporarily
+        // A simple router.back() might be blocked again.
+        // The state `isNavigating` handles this. We re-trigger the back action.
+        window.history.back();
+      }
     }
+    setShowDialog(false);
   };
   
-   useEffect(() => {
-    if (isNavigating) {
-      setIsNavigating(false);
-    }
-  }, [pathname]);
+  // Reset the navigating flag once navigation is complete
+  useEffect(() => {
+      if (isNavigating) {
+          setIsNavigating(false);
+      }
+  }, [nextPath, isNavigating]);
+
 
   const handleCancelNavigation = () => {
     setShowDialog(false);
     setNextPath(null);
   };
-  
+
   const UnsavedChangesDialog = useCallback(() => (
     <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
         <AlertDialogContent>
@@ -110,6 +114,5 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
     </AlertDialog>
   ), [showDialog]);
 
-
-  return { showUnsavedChangesDialog: showDialog, UnsavedChangesDialog };
+  return { UnsavedChangesDialog };
 }
