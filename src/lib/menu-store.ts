@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -475,7 +476,7 @@ export const useBrandingConfig = () => {
 export const saveBrandingConfig = async (config: BrandingConfig) => {
     const configToStore: BrandingConfigDTO = {
         appName: config.appName,
-        logoType: config.logoType,
+        logoType: config.imageUrl ? 'image' : config.logoType,
         iconName: config.iconName,
         imageUrl: config.imageUrl,
     };

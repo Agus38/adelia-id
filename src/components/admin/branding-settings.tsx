@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,11 +19,14 @@ import { allIcons, type MenuItem } from '@/lib/menu-items-v2';
 import type { LucideIcon } from 'lucide-react';
 import { Logo } from '../icons';
 import { ScrollArea } from '../ui/scroll-area';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, UploadCloud } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import Image from 'next/image';
 import { useBrandingConfig, saveBrandingConfig, type BrandingConfig } from '@/lib/menu-store';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
 
 const iconList = Object.entries(allIcons).map(([name, component]) => ({ name, component })).sort((a,b) => a.name.localeCompare(b.name));
 
@@ -32,9 +35,11 @@ export function BrandingSettings() {
   const { brandingConfig, isLoading } = useBrandingConfig();
   const [localConfig, setLocalConfig] = useState<BrandingConfig | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   const [isIconPickerOpen, setIconPickerOpen] = useState(false);
   const [iconSearchTerm, setIconSearchTerm] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (brandingConfig) {
@@ -48,6 +53,41 @@ export function BrandingSettings() {
     setLocalConfig({ ...localConfig, icon: icon.component, iconName: icon.name });
     setIconPickerOpen(false);
   }
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      toast({
+        title: "Ukuran File Terlalu Besar",
+        description: "Ukuran file logo tidak boleh melebihi 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    const storageRef = ref(storage, `branding/logo/${file.name}_${Date.now()}`);
+
+    try {
+      await uploadBytes(storageRef, file);
+      const logoUrl = await getDownloadURL(storageRef);
+      setLocalConfig(prev => prev ? { ...prev, imageUrl: logoUrl } : null);
+      toast({
+        title: "Unggah Berhasil",
+        description: "Logo berhasil diunggah. Jangan lupa simpan perubahan.",
+      });
+    } catch (error) {
+      toast({
+        title: "Unggah Gagal",
+        description: "Terjadi kesalahan saat mengunggah logo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSaveChanges = async () => {
     if (!localConfig) return;
@@ -90,6 +130,8 @@ export function BrandingSettings() {
   const filteredIcons = iconList.filter(icon => 
     icon.name.toLowerCase().includes(iconSearchTerm.toLowerCase())
   );
+  
+  const isSaveDisabled = isSaving || isUploading;
 
   return (
     <>
@@ -144,13 +186,27 @@ export function BrandingSettings() {
             </div>
           ) : (
             <div className="space-y-2">
-                <Label htmlFor="imageUrl">URL Logo Gambar</Label>
-                <Input
-                    id="imageUrl"
-                    value={localConfig.imageUrl}
-                    onChange={(e) => setLocalConfig({...localConfig, imageUrl: e.target.value})}
-                    placeholder="https://example.com/logo.png"
-                />
+                <Label htmlFor="imageUrl">URL atau Unggah Logo</Label>
+                 <div className="flex gap-2">
+                    <Input
+                        id="imageUrl"
+                        value={localConfig.imageUrl}
+                        onChange={(e) => setLocalConfig({...localConfig, imageUrl: e.target.value})}
+                        placeholder="https://example.com/logo.png"
+                    />
+                    <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                       {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+                       <span className="sr-only">Unggah Logo</span>
+                    </Button>
+                     <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                        accept="image/png, image/jpeg, image/svg+xml, image/webp"
+                        disabled={isUploading}
+                    />
+                </div>
             </div>
           )}
           
@@ -169,7 +225,7 @@ export function BrandingSettings() {
           </div>
         </CardContent>
         <CardFooter>
-          <Button onClick={handleSaveChanges} disabled={isSaving}>
+          <Button onClick={handleSaveChanges} disabled={isSaveDisabled}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Simpan Perubahan
           </Button>
