@@ -10,42 +10,56 @@ export default function TermsAndConditionsPage() {
         <h2 className="text-3xl font-bold tracking-tight">Syarat &amp; Ketentuan</h2>
       </div>
        <p className="text-muted-foreground">
-        Harap baca syarat dan ketentuan kami dengan saksama sebelum menggunakan aplikasi.
+        Terakhir diperbarui: 25 Juli 2024. Harap baca dengan saksama sebelum menggunakan aplikasi.
       </p>
       <Card className="pt-6">
         <CardContent className="space-y-6 text-sm">
           <section className="space-y-2">
             <h3 className="text-lg font-semibold">1. Penerimaan Persyaratan</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Dengan mengakses atau menggunakan aplikasi Adelia-ID ("Layanan"), Anda setuju untuk terikat oleh Syarat dan Ketentuan ini. Jika Anda tidak setuju dengan bagian mana pun dari persyaratan ini, Anda tidak diizinkan untuk mengakses Layanan.
+              Dengan mendaftar, mengakses, atau menggunakan aplikasi Adelia-ID ("Layanan"), Anda setuju untuk terikat oleh Syarat dan Ketentuan ini. Jika Anda tidak setuju dengan bagian mana pun dari persyaratan ini, Anda tidak diizinkan untuk mengakses Layanan.
             </p>
           </section>
 
           <section className="space-y-2">
-            <h3 className="text-lg font-semibold">2. Penggunaan Lisensi</h3>
+            <h3 className="text-lg font-semibold">2. Deskripsi Layanan</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Izin diberikan untuk mengunduh sementara satu salinan materi di aplikasi Adelia-ID untuk tampilan pribadi dan non-komersial saja. Ini adalah pemberian lisensi, bukan pengalihan hak, dan di bawah lisensi ini Anda tidak boleh: mengubah atau menyalin materi; menggunakan materi untuk tujuan komersial apa pun, atau untuk tampilan publik apa pun (komersial atau non-komersial); mencoba mendekompilasi atau merekayasa balik perangkat lunak apa pun yang terdapat di aplikasi Adelia-ID.
+              Adelia-ID adalah platform solusi bisnis yang menyediakan berbagai alat untuk membantu operasional, termasuk (namun tidak terbatas pada) pembuatan laporan keuangan harian, manajemen stok, penjualan produk digital, dan fitur utilitas lainnya.
             </p>
           </section>
 
            <section className="space-y-2">
             <h3 className="text-lg font-semibold">3. Akun Pengguna</h3>
             <p className="text-muted-foreground leading-relaxed">
-             Saat Anda membuat akun dengan kami, Anda harus memberikan informasi yang akurat, lengkap, dan terkini setiap saat. Kegagalan untuk melakukannya merupakan pelanggaran terhadap Persyaratan, yang dapat mengakibatkan penghentian segera akun Anda di Layanan kami. Anda bertanggung jawab untuk menjaga kerahasiaan kata sandi Anda.
-            </p>
-          </section>
-
-          <section className="space-y-2">
-            <h3 className="text-lg font-semibold">4. Batasan Tanggung Jawab</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              Dalam keadaan apa pun Adelia-ID maupun direktur, karyawan, mitra, agen, pemasok, atau afiliasinya, tidak akan bertanggung jawab atas kerusakan tidak langsung, insidental, khusus, konsekuensial, atau hukuman, termasuk namun tidak terbatas pada, hilangnya keuntungan, data, penggunaan, niat baik, atau kerugian tidak berwujud lainnya.
+             Saat Anda membuat akun dengan kami, Anda harus memberikan informasi yang akurat dan lengkap. Anda bertanggung jawab penuh untuk menjaga kerahasiaan kata sandi dan semua aktivitas yang terjadi di bawah akun Anda. Kegagalan untuk mematuhi hal ini merupakan pelanggaran terhadap Persyaratan, yang dapat mengakibatkan penangguhan atau penghentian akun Anda oleh administrator.
             </p>
           </section>
 
            <section className="space-y-2">
-            <h3 className="text-lg font-semibold">5. Perubahan pada Persyaratan</h3>
+            <h3 className="text-lg font-semibold">4. Konten dan Data Pengguna</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Kami berhak, atas kebijakan kami sendiri, untuk mengubah atau mengganti Persyaratan ini kapan saja. Jika revisi bersifat material, kami akan memberikan pemberitahuan setidaknya 30 hari sebelum persyaratan baru berlaku. Apa yang merupakan perubahan material akan ditentukan atas kebijakan kami sendiri.
+              Anda bertanggung jawab penuh atas semua data, laporan, dan informasi ("Konten") yang Anda masukkan ke dalam Layanan. Anda menjamin bahwa Konten yang Anda berikan tidak melanggar hukum, tidak melanggar hak pihak ketiga, dan akurat. Kami tidak bertanggung jawab atas kehilangan atau kerusakan data yang disebabkan oleh kelalaian pengguna.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="text-lg font-semibold">5. Penggunaan yang Diizinkan</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Anda setuju untuk tidak menggunakan Layanan untuk tujuan apa pun yang melanggar hukum atau dilarang oleh Persyaratan ini. Anda tidak boleh mencoba mendapatkan akses tidak sah ke sistem atau jaringan kami, atau mencoba mendekompilasi dan merekayasa balik perangkat lunak kami.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="text-lg font-semibold">6. Batasan Tanggung Jawab</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Dalam keadaan apa pun, Adelia-ID maupun pemilik dan pengembangnya tidak akan bertanggung jawab atas kerusakan tidak langsung, insidental, atau konsekuensial yang timbul dari penggunaan atau ketidakmampuan Anda untuk menggunakan Layanan.
+            </p>
+          </section>
+
+           <section className="space-y-2">
+            <h3 className="text-lg font-semibold">7. Perubahan pada Persyaratan</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Kami berhak, atas kebijakan kami sendiri, untuk mengubah atau mengganti Persyaratan ini kapan saja. Jika revisi bersifat material, kami akan berusaha memberikan pemberitahuan sebelum persyaratan baru berlaku.
             </p>
           </section>
         </CardContent>
