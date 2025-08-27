@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users, Loader2 } from 'lucide-react';
+import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users, Loader2, Info } from 'lucide-react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -98,6 +98,12 @@ export function UserNav({ user, loading }: UserNavProps) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
          <DropdownMenuGroup>
+           <Link href="/tentang">
+            <DropdownMenuItem>
+              <Info className="mr-2 h-4 w-4" />
+              <span>Tentang Aplikasi</span>
+            </DropdownMenuItem>
+          </Link>
           <Link href="/tim">
             <DropdownMenuItem>
               <Users className="mr-2 h-4 w-4" />

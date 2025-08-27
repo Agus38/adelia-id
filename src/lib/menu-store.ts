@@ -71,6 +71,13 @@ interface SessionConfigDTO {
     durationMinutes: number;
 }
 
+interface AboutInfoDTO {
+  appName: string;
+  version: string;
+  description: string;
+  features: string[];
+}
+
 
 // --- Type Definitions ---
 export interface BannerSlide {
@@ -109,6 +116,13 @@ export interface SessionConfig {
     durationMinutes: number;
 }
 
+export interface AboutInfo {
+  appName: string;
+  version: string;
+  description: string;
+  features: string[];
+}
+
 
 // --- Firestore Document References ---
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
@@ -118,6 +132,7 @@ const bannerConfigDocRef = doc(db, 'app-settings', 'banner-slides');
 const brandingConfigDocRef = doc(db, 'app-settings', 'branding');
 const developerInfoDocRef = doc(db, 'app-settings', 'developer-info');
 const sessionConfigDocRef = doc(db, 'app-settings', 'sessionConfig');
+const aboutInfoDocRef = doc(db, 'app-settings', 'aboutInfo');
 
 
 // --- Default Data ---
@@ -171,6 +186,19 @@ const defaultDeveloperInfo: DeveloperInfo = {
 
 const defaultSessionConfig: SessionConfig = {
   durationMinutes: 120, // Default to 2 hours
+};
+
+const defaultAboutInfo: AboutInfo = {
+  appName: 'Adelia-ID',
+  version: '1.0.0',
+  description: 'Solusi bisnis inovatif untuk meningkatkan efisiensi dan produktivitas.',
+  features: [
+    'Manajemen Laporan Harian',
+    'Penjualan Produk Digital',
+    'Manajemen Stok',
+    'Asisten AI Cerdas',
+    'Utilitas Bermanfaat'
+  ]
 };
 
 
@@ -552,4 +580,48 @@ export const saveSessionConfig = async (config: SessionConfig) => {
         durationMinutes: config.durationMinutes,
     };
     await setDoc(sessionConfigDocRef, configToStore);
+};
+
+// --- About Info Store ---
+interface AboutInfoState {
+  aboutInfo: AboutInfo;
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const useAboutInfoStore = create<AboutInfoState>((set) => ({
+  aboutInfo: defaultAboutInfo,
+  isLoading: true,
+  error: null,
+  initializeListener: () => {
+    const unsubscribe = onSnapshot(
+      aboutInfoDocRef,
+      (docSnap) => {
+        if (docSnap.exists() && docSnap.data()) {
+          set({ aboutInfo: docSnap.data() as AboutInfo, isLoading: false, error: null });
+        } else {
+          set({ aboutInfo: defaultAboutInfo, isLoading: false, error: null });
+        }
+      },
+      (error) => {
+        console.error("Error fetching about info: ", error);
+        set({ aboutInfo: defaultAboutInfo, isLoading: false, error });
+      }
+    );
+    return unsubscribe;
+  },
+}));
+
+export const useAboutInfoConfig = () => {
+  const { aboutInfo, isLoading, initializeListener } = useAboutInfoStore();
+  React.useEffect(() => {
+    const unsubscribe = initializeListener();
+    return () => unsubscribe();
+  }, [initializeListener]);
+  return { aboutInfo, isLoading };
+};
+
+export const saveAboutInfoConfig = async (info: AboutInfo) => {
+  await setDoc(aboutInfoDocRef, info);
 };

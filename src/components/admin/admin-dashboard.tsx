@@ -19,6 +19,7 @@ import {
   ImageIcon,
   Lock,
   PanelLeft,
+  Info,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -80,6 +81,12 @@ const managementLinks = [
     href: "/admin/banner",
     icon: ImageIcon,
     description: "Kelola banner dan slide di halaman utama.",
+  },
+  {
+    title: "Pengaturan 'Tentang'",
+    href: "/admin/tentang",
+    icon: Info,
+    description: "Kelola konten halaman Tentang Aplikasi.",
   },
   {
     title: "Pengaturan Sistem",
