@@ -59,6 +59,14 @@ service cloud.firestore {
       allow delete, list: if isAdmin();
     }
 
+    // Rules for digital products synced from Digiflazz
+    match /products/{productId} {
+      // Anyone can read the product list.
+      allow read: if true;
+      // Only Admin users can write (create, update, delete, list) to the product collection.
+      allow list, create, update, delete: if isAdmin();
+    }
+
     // Rules for general app settings
     match /app-settings/{setting} {
       // Anyone can read app settings (e.g., menu configuration).
