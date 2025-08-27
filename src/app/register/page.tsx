@@ -13,6 +13,7 @@ import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,6 +23,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -31,6 +33,14 @@ export default function RegisterPage() {
       toast({
         title: 'Error',
         description: 'Kata sandi dan konfirmasi kata sandi tidak cocok.',
+        variant: 'destructive',
+      });
+      return;
+    }
+     if (!termsAccepted) {
+      toast({
+        title: 'Persetujuan Diperlukan',
+        description: 'Anda harus menyetujui Syarat & Ketentuan untuk melanjutkan.',
         variant: 'destructive',
       });
       return;
@@ -74,6 +84,8 @@ export default function RegisterPage() {
       router.push('/login');
     }
   };
+
+  const isSubmitDisabled = isLoading || !name || !email || !password || !confirmPassword || !termsAccepted;
 
   return (
      <div className="w-full lg:grid lg:min-h-[calc(100vh-8rem)] lg:grid-cols-2">
@@ -153,7 +165,24 @@ export default function RegisterPage() {
                 </Button>
               </div>
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked as boolean)} disabled={isLoading} />
+              <Label
+                htmlFor="terms"
+                className="text-sm font-normal text-muted-foreground"
+              >
+                Saya setuju dengan{" "}
+                <Link
+                  href="/terms-and-conditions"
+                  className="underline underline-offset-4 hover:text-primary"
+                  target="_blank"
+                >
+                  Syarat & Ketentuan
+                </Link>
+                .
+              </Label>
+            </div>
+            <Button type="submit" className="w-full" disabled={isSubmitDisabled}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Buat Akun
             </Button>
