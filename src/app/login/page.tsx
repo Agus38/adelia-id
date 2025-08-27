@@ -6,43 +6,39 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Loader2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check user role from Firestore
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
       
-      // We also check for 'Diblokir' status here as a first line of defense
       if (userDoc.exists() && userDoc.data().status === 'Diblokir') {
-          await auth.signOut(); // Sign out the user immediately
-          toast({
-            title: 'Akun Diblokir',
-            description: 'Akun Anda telah diblokir. Silakan hubungi administrator.',
-            variant: 'destructive',
-            duration: 5000,
-          });
+          await auth.signOut();
+          setError('Akun Anda telah diblokir. Silakan hubungi administrator.');
           setIsLoading(false);
           return;
       }
@@ -58,7 +54,6 @@ export default function LoginPage() {
         router.push('/');
       }
     } catch (error: any) {
-      let title = 'Login Gagal';
       let description = 'Terjadi kesalahan. Silakan coba lagi.';
 
       switch (error.code) {
@@ -68,11 +63,9 @@ export default function LoginPage() {
           description = 'Email atau kata sandi yang Anda masukkan salah.';
           break;
         case 'auth/user-disabled':
-          title = 'Akun Diblokir';
           description = 'Akun ini telah diblokir. Silakan hubungi administrator.';
           break;
         case 'auth/too-many-requests':
-          title = 'Terlalu Banyak Percobaan';
           description = 'Akses ke akun ini telah dinonaktifkan sementara karena terlalu banyak percobaan login yang gagal. Silakan coba lagi nanti.';
           break;
         case 'auth/invalid-email':
@@ -81,12 +74,7 @@ export default function LoginPage() {
         default:
           description = 'Terjadi kesalahan yang tidak diketahui. Silakan coba lagi.';
       }
-      
-      toast({
-        title: title,
-        description: description,
-        variant: 'destructive',
-      });
+      setError(description);
     } finally {
         setIsLoading(false);
     }
@@ -104,6 +92,15 @@ export default function LoginPage() {
             <CardDescription>Masukkan email dan kata sandi Anda untuk melanjutkan.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+             {error && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Login Gagal</AlertTitle>
+                <AlertDescription>
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" placeholder="email@contoh.com" required disabled={isLoading} value={email} onChange={(e) => setEmail(e.target.value)} />
