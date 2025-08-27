@@ -18,6 +18,7 @@ import { auth } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { getSmwReport, addOrUpdateSmwReport, type SmwReportData } from '@/lib/smw-manyar-store';
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning';
 
 const sisaIkanItems = [
   { id: 'daging', label: 'DAGING' },
@@ -66,7 +67,9 @@ export function SmwManyarReportForm() {
   const [isLoadingUser, setIsLoadingUser] = React.useState(true);
   const [isFetchingReport, setIsFetchingReport] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isDirty, setIsDirty] = React.useState(false);
   const { toast } = useToast();
+  useUnsavedChangesWarning(isDirty);
 
   React.useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -78,10 +81,12 @@ export function SmwManyarReportForm() {
 
   const resetForm = React.useCallback(() => {
     setFormData({});
+    setIsDirty(false);
   }, []);
 
   const populateForm = React.useCallback((report: { formData: FormData }) => {
      setFormData(report.formData);
+     setIsDirty(false);
   }, []);
   
   React.useEffect(() => {
@@ -113,11 +118,13 @@ export function SmwManyarReportForm() {
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsDirty(true);
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
   const handleNumericInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsDirty(true);
     const { id, value } = e.target;
     const rawValue = value.replace(/\./g, '');
       if (/^\d*$/.test(rawValue) && rawValue.length <= 9) {
@@ -161,6 +168,7 @@ export function SmwManyarReportForm() {
         };
         await addOrUpdateSmwReport(reportData);
         toast({ title: 'Laporan Disimpan', description: 'Data laporan SMW Manyar telah berhasil disimpan.' });
+        setIsDirty(false);
     } catch (error) {
         toast({ title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan laporan.', variant: 'destructive' });
     } finally {

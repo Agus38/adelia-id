@@ -25,6 +25,7 @@ import type { User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { getStockReport, addOrUpdateStockReport, type StockItem, initialStockData } from '@/lib/stock-store';
 import { usePageAccess } from '@/hooks/use-page-access';
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning';
 
 
 // Memoize the input component to prevent unnecessary re-renders causing focus loss.
@@ -69,7 +70,9 @@ export default function StokProdukPage() {
   const [isLoadingUser, setIsLoadingUser] = React.useState(true);
   const [isFetchingReport, setIsFetchingReport] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isDirty, setIsDirty] = React.useState(false);
   const { toast } = useToast();
+  useUnsavedChangesWarning(isDirty);
 
   React.useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -81,6 +84,7 @@ export default function StokProdukPage() {
 
   const resetForm = React.useCallback(() => {
     setStockData(initialStockData.map(item => ({...item, morning: '', afternoon: '', order: ''})));
+    setIsDirty(false);
   }, []);
 
   const populateForm = React.useCallback((report: { stockData: StockItem[] }) => {
@@ -92,6 +96,7 @@ export default function StokProdukPage() {
         return newStockItem ? { ...initialItem, ...newStockItem } : initialItem;
     });
     setStockData(updatedStockData);
+    setIsDirty(false);
   }, []);
 
   React.useEffect(() => {
@@ -123,6 +128,7 @@ export default function StokProdukPage() {
 
 
   const handleStockChange = React.useCallback((id: number, field: 'morning' | 'afternoon' | 'order', value: string) => {
+    setIsDirty(true);
     setStockData(prevStockData =>
       prevStockData.map(item =>
         item.id === id ? { ...item, [field]: value } : item
@@ -161,6 +167,7 @@ export default function StokProdukPage() {
           title: 'Stok Disimpan!',
           description: 'Laporan stok produk telah berhasil disimpan di database.',
         });
+        setIsDirty(false);
     } catch(error) {
         toast({
           title: 'Gagal Menyimpan',

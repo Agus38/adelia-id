@@ -43,6 +43,7 @@ import { AppSidebar } from '@/components/layout/sidebar';
 import { auth } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
 import { usePageAccess } from '@/hooks/use-page-access';
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning';
 
 
 type ExtraField = {
@@ -64,8 +65,10 @@ export default function DailyReportPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFetchingReport, setIsFetchingReport] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isDirty, setIsDirty] = React.useState(false);
 
   const { toast } = useToast();
+  useUnsavedChangesWarning(isDirty);
 
   // Financial State
   const [modalAwal, setModalAwal] = React.useState(0);
@@ -120,6 +123,7 @@ export default function DailyReportPage() {
     setLembur(0);
     setExtraPemasukan([]);
     setExtraPengeluaran([]);
+    setIsDirty(false);
   }, []);
 
   const populateForm = React.useCallback((report: any) => {
@@ -145,6 +149,7 @@ export default function DailyReportPage() {
 
     setExtraPemasukan(report.details.pemasukan.filter((p: any) => !['GoFood', 'GrabFood', 'ShopeeFood', 'Qris Mandiri', 'Qris Bri', 'Debit Mandiri', 'Debit Bri'].includes(p.name)).map((p: any) => ({...p, id: Math.random()})));
     setExtraPengeluaran(report.details.pengeluaran.filter((p: any) => !['Transport', 'GoSend', 'Iuran Bulanan', 'Bonus', 'Lembur'].includes(p.name)).map((p: any) => ({...p, id: Math.random()})));
+    setIsDirty(false);
   }, []);
 
   React.useEffect(() => {
@@ -263,6 +268,7 @@ export default function DailyReportPage() {
           title: 'Laporan Disimpan!',
           description: 'Laporan keuangan harian telah berhasil disimpan di database.',
         });
+        setIsDirty(false);
     } catch(error) {
         toast({
           title: 'Gagal Menyimpan',
@@ -275,6 +281,7 @@ export default function DailyReportPage() {
   };
   
   const handleAddExtraField = (type: 'pemasukan' | 'pengeluaran') => {
+    setIsDirty(true);
     const newField = { id: Date.now(), name: '', value: 0 };
     if (type === 'pemasukan') {
       setExtraPemasukan([...extraPemasukan, newField]);
@@ -291,7 +298,7 @@ export default function DailyReportPage() {
   const handleRemoveExtraField = () => {
     if (!itemToDelete) return;
     const { type, id } = itemToDelete;
-
+    setIsDirty(true);
     if (type === 'pemasukan') {
       setExtraPemasukan(extraPemasukan.filter(field => field.id !== id));
     } else {
@@ -307,6 +314,7 @@ export default function DailyReportPage() {
   };
 
   const handleNumericInputChange = (setter: React.Dispatch<React.SetStateAction<number>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      setIsDirty(true);
       const rawValue = e.target.value.replace(/\./g, '');
       if (/^\d*$/.test(rawValue) && rawValue.length <= 9) {
           const numValue = Number(rawValue);
@@ -320,6 +328,7 @@ export default function DailyReportPage() {
     field: 'name' | 'value',
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
+    setIsDirty(true);
     const setter = type === 'pemasukan' ? setExtraPemasukan : setExtraPengeluaran;
     const list = type === 'pemasukan' ? extraPemasukan : extraPengeluaran;
     
@@ -608,8 +617,3 @@ ${pemasukanText}
     </div>
   );
 }
-
-
-    
-
-    
