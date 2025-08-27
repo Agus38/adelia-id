@@ -96,8 +96,8 @@ export default function LoginPage() {
             {error && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Login Gagal</AlertTitle>
-                <AlertDescription>
+                <AlertTitle className="text-sm sm:text-base">Login Gagal</AlertTitle>
+                <AlertDescription className="text-xs sm:text-sm">
                   {error}
                 </AlertDescription>
               </Alert>
