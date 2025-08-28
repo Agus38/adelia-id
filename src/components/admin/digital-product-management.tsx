@@ -57,8 +57,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { collection, doc, getDocs, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { MoreHorizontal, Loader2, Trash2, Edit, Ban, CheckCircle, ChevronDown } from 'lucide-react';
+import { MoreHorizontal, Loader2, Trash2, Edit, Ban, CheckCircle, ChevronDown, TrendingUp, Percent, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 type ProductStatus = 'Tersedia' | 'Gangguan';
 
@@ -89,11 +90,17 @@ export function DigitalProductManagement() {
   const [rowSelection, setRowSelection] = React.useState({});
 
   const [isEditModalOpen, setEditModalOpen] = React.useState(false);
+  const [isMarkupModalOpen, setMarkupModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setDeleteAlertOpen] = React.useState(false);
   const [isUpdateStatusAlertOpen, setUpdateStatusAlertOpen] = React.useState(false);
+  
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
   const [newSellingPrice, setNewSellingPrice] = React.useState('');
   const [newBulkStatus, setNewBulkStatus] = React.useState<ProductStatus | null>(null);
+
+  const [markupType, setMarkupType] = React.useState<'percentage' | 'nominal'>('percentage');
+  const [markupValue, setMarkupValue] = React.useState('');
+
 
   const fetchProducts = React.useCallback(async () => {
     setIsLoading(true);
@@ -154,6 +161,42 @@ export function DigitalProductManagement() {
         toast({ title: "Gagal Menyimpan", description: "Gagal menyimpan harga jual.", variant: "destructive" });
     }
   };
+
+  const handleBulkMarkup = async () => {
+    const selectedProducts = table.getFilteredSelectedRowModel().rows.map(row => row.original);
+    if(selectedProducts.length === 0 || !markupValue) return;
+    
+    const value = parseFloat(markupValue);
+    if(isNaN(value) || value <= 0) {
+        toast({ title: "Nilai Tidak Valid", description: "Harap masukkan nilai markup yang valid.", variant: "destructive" });
+        return;
+    }
+
+    try {
+        const batch = writeBatch(db);
+        selectedProducts.forEach(product => {
+            const productDocRef = doc(db, 'products', product.id);
+            let newPrice = 0;
+            if (markupType === 'percentage') {
+                newPrice = product.price + (product.price * (value / 100));
+            } else {
+                newPrice = product.price + value;
+            }
+            batch.update(productDocRef, { selling_price: Math.round(newPrice) });
+        });
+        await batch.commit();
+        toast({
+            title: `Harga ${selectedProducts.length} Produk Diperbarui`,
+            description: `Harga jual produk yang dipilih telah berhasil diperbarui.`
+        });
+        fetchProducts(); // Refresh data
+        setRowSelection({}); // Clear selection
+        setMarkupModalOpen(false);
+        setMarkupValue('');
+    } catch (error) {
+        toast({ title: "Gagal Memperbarui Harga", description: "Terjadi kesalahan saat memperbarui harga jual.", variant: "destructive" });
+    }
+  }
 
   const handleDeleteSelected = () => {
     if (Object.keys(rowSelection).length === 0) return;
@@ -246,6 +289,14 @@ export function DigitalProductManagement() {
     { accessorKey: 'price', header: 'Harga Modal', cell: ({ row }) => formatCurrency(row.original.price) },
     { accessorKey: 'selling_price', header: 'Harga Jual', cell: ({ row }) => formatCurrency(row.original.selling_price) },
     {
+      id: 'profit',
+      header: 'Laba',
+      cell: ({ row }) => {
+        const profit = (row.original.selling_price || 0) - row.original.price;
+        return <span className={profit > 0 ? 'text-green-600' : 'text-muted-foreground'}>{formatCurrency(profit)}</span>;
+      }
+    },
+    {
       accessorKey: 'status',
       header: 'Status',
       cell: ({ row }) => (
@@ -333,6 +384,10 @@ export function DigitalProductManagement() {
              <div className="flex items-center gap-2">
                 {Object.keys(rowSelection).length > 0 && (
                     <>
+                       <Button variant="outline" size="sm" onClick={() => setMarkupModalOpen(true)}>
+                           <TrendingUp className="mr-2 h-4 w-4" />
+                           Update Harga ({Object.keys(rowSelection).length})
+                       </Button>
                        <Button variant="outline" size="sm" onClick={() => handleUpdateStatusSelected('Tersedia')}>
                            <CheckCircle className="mr-2 h-4 w-4" />
                            Aktifkan ({Object.keys(rowSelection).length})
@@ -487,6 +542,37 @@ export function DigitalProductManagement() {
             <DialogFooter>
                 <Button variant="outline" onClick={() => setEditModalOpen(false)}>Batal</Button>
                 <Button onClick={handleSavePrice}>Simpan Harga</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+       <Dialog open={isMarkupModalOpen} onOpenChange={setMarkupModalOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Update Harga Jual Massal</DialogTitle>
+                <DialogDescription>
+                    Terapkan markup harga pada {Object.keys(rowSelection).length} produk yang dipilih.
+                </DialogDescription>
+            </DialogHeader>
+            <Tabs value={markupType} onValueChange={(value) => setMarkupType(value as any)} className="pt-4">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="percentage"><Percent className="mr-2 h-4 w-4"/>Persentase</TabsTrigger>
+                    <TabsTrigger value="nominal"><DollarSign className="mr-2 h-4 w-4"/>Nominal</TabsTrigger>
+                </TabsList>
+                <TabsContent value="percentage" className="space-y-4 pt-4">
+                    <Label htmlFor="percentage-value">Nilai Persentase</Label>
+                    <Input id="percentage-value" type="number" placeholder="Contoh: 5 untuk 5%" value={markupValue} onChange={e => setMarkupValue(e.target.value)} />
+                    <p className="text-xs text-muted-foreground">Harga Jual = Harga Modal + (Harga Modal * Persentase / 100)</p>
+                </TabsContent>
+                <TabsContent value="nominal" className="space-y-4 pt-4">
+                    <Label htmlFor="nominal-value">Nilai Nominal</Label>
+                    <Input id="nominal-value" type="number" placeholder="Contoh: 1000 untuk Rp1.000" value={markupValue} onChange={e => setMarkupValue(e.target.value)} />
+                     <p className="text-xs text-muted-foreground">Harga Jual = Harga Modal + Nilai Nominal</p>
+                </TabsContent>
+            </Tabs>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setMarkupModalOpen(false)}>Batal</Button>
+                <Button onClick={handleBulkMarkup}>Terapkan pada {Object.keys(rowSelection).length} Produk</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
