@@ -62,12 +62,11 @@ export function PaketDataTransactionForm() {
     const [selectedProduct, setSelectedProduct] = useState<FirestoreProduct | null>(null);
     const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
-    // 1. Fetch all data products on component mount
     useEffect(() => {
         const fetchDataProducts = async () => {
             setIsLoadingProducts(true);
             try {
-                const q = query(collection(db, "products"), where("category", "==", "Data"));
+                const q = query(collection(db, "products"), where("category", "==", "data"));
                 const querySnapshot = await getDocs(q);
                 const products: FirestoreProduct[] = [];
                 querySnapshot.forEach((doc) => {
@@ -87,7 +86,6 @@ export function PaketDataTransactionForm() {
         fetchDataProducts();
     }, []);
 
-    // 2. Detect operator and filter products whenever phone number changes
     useEffect(() => {
         if (phoneNumber.length < 4) {
             setDetectedOperator(null);

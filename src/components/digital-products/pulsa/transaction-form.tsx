@@ -63,12 +63,11 @@ export function PulsaTransactionForm() {
     const [selectedProduct, setSelectedProduct] = useState<FirestoreProduct | null>(null);
     const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
-    // 1. Fetch all pulsa products on component mount
     useEffect(() => {
         const fetchPulsaProducts = async () => {
             setIsLoadingProducts(true);
             try {
-                const q = query(collection(db, "products"), where("category", "==", "Pulsa"));
+                const q = query(collection(db, "products"), where("category", "==", "pulsa"));
                 const querySnapshot = await getDocs(q);
                 const products: FirestoreProduct[] = [];
                 querySnapshot.forEach((doc) => {
@@ -88,7 +87,6 @@ export function PulsaTransactionForm() {
         fetchPulsaProducts();
     }, []);
 
-    // 2. Detect operator and filter products whenever phone number changes
     useEffect(() => {
         if (phoneNumber.length < 4) {
             setDetectedOperator(null);
@@ -107,7 +105,7 @@ export function PulsaTransactionForm() {
         }
         
         setDetectedOperator(foundOperator);
-        setSelectedProduct(null); // Reset selection when operator changes
+        setSelectedProduct(null); 
 
         if (foundOperator && allPulsaProducts.length > 0) {
             const filtered = allPulsaProducts.filter(

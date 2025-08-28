@@ -49,7 +49,7 @@ export function GameTransactionForm() {
         const fetchGameProducts = async () => {
             setIsLoadingProducts(true);
             try {
-                const q = query(collection(db, "products"), where("category", "==", "Games"));
+                const q = query(collection(db, "products"), where("category", "==", "games"));
                 const querySnapshot = await getDocs(q);
                 const products: FirestoreProduct[] = [];
                 const brands = new Set<string>();

@@ -45,7 +45,7 @@ export function TokenListrikTransactionForm() {
         const fetchPlnProducts = async () => {
             setIsLoadingProducts(true);
             try {
-                const q = query(collection(db, "products"), where("category", "==", "PLN"));
+                const q = query(collection(db, "products"), where("category", "==", "pln"));
                 const querySnapshot = await getDocs(q);
                 const fetchedProducts: FirestoreProduct[] = [];
                 querySnapshot.forEach((doc) => {
