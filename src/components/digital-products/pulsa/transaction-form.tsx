@@ -89,6 +89,8 @@ export function PulsaTransactionForm() {
     }, []);
 
     useEffect(() => {
+        if (isLoadingProducts) return;
+
         const detectOperator = () => {
             if (phoneNumber.length < 4) {
                 setOperator(null);
@@ -122,7 +124,7 @@ export function PulsaTransactionForm() {
 
         const timeoutId = setTimeout(detectOperator, 300);
         return () => clearTimeout(timeoutId);
-    }, [phoneNumber, allPulsaProducts]);
+    }, [phoneNumber, allPulsaProducts, isLoadingProducts]);
 
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {

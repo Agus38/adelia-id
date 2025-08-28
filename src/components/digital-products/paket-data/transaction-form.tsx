@@ -88,6 +88,8 @@ export function PaketDataTransactionForm() {
     }, []);
 
     useEffect(() => {
+        if (isLoadingProducts) return;
+
         const detectOperator = () => {
             if (phoneNumber.length < 4) {
                 setOperator(null);
@@ -122,7 +124,7 @@ export function PaketDataTransactionForm() {
 
         const timeoutId = setTimeout(detectOperator, 300);
         return () => clearTimeout(timeoutId);
-    }, [phoneNumber, allDataProducts]);
+    }, [phoneNumber, allDataProducts, isLoadingProducts]);
 
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
