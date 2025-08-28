@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import Link from "next/link";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 type Operator = 'Telkomsel' | 'Indosat' | 'XL' | 'AXIS' | 'Tri' | 'Smartfren' | null;
 
@@ -94,6 +96,8 @@ export function PaketDataTransactionForm() {
             return;
         }
 
+        if (isLoadingProducts) return;
+
         const prefix = phoneNumber.substring(0, 4);
         let foundOperator: Operator = null;
         for (const op in operatorPrefixes) {
@@ -107,13 +111,13 @@ export function PaketDataTransactionForm() {
         setSelectedProduct(null);
 
         if (foundOperator && allDataProducts.length > 0) {
-            const filtered = allDataProducts.filter(p => p.brand.toUpperCase() === foundOperator!.toUpperCase() && p.status === 'Tersedia');
+            const filtered = allDataProducts.filter(p => p.brand.toUpperCase() === foundOperator!.toUpperCase());
             filtered.sort((a,b) => a.price - b.price);
             setDisplayedProducts(filtered);
         } else {
             setDisplayedProducts([]);
         }
-    }, [phoneNumber, allDataProducts]);
+    }, [phoneNumber, allDataProducts, isLoadingProducts]);
 
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,12 +171,16 @@ export function PaketDataTransactionForm() {
                                 <button
                                     key={product.buyer_sku_code}
                                     onClick={() => setSelectedProduct(product)}
-                                    className={`p-3 border rounded-lg text-left transition-colors ${
+                                    disabled={product.status === 'Gangguan'}
+                                    className={`relative p-3 border rounded-lg text-left transition-colors ${
                                         selectedProduct?.buyer_sku_code === product.buyer_sku_code 
                                             ? 'border-primary ring-2 ring-primary bg-primary/10'
                                             : 'hover:bg-muted/50'
-                                    }`}
+                                    } ${product.status === 'Gangguan' ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
+                                     {product.status === 'Gangguan' && (
+                                        <Badge variant="destructive" className="absolute -top-2 -right-2">Gangguan</Badge>
+                                    )}
                                     <p className="font-semibold text-sm">{product.product_name.replace(product.brand, '').trim()}</p>
                                     <p className="text-xs font-bold text-primary mt-1">{formatCurrency(product.price)}</p>
                                 </button>
