@@ -90,8 +90,10 @@ export function DigitalProductManagement() {
 
   const [isEditModalOpen, setEditModalOpen] = React.useState(false);
   const [isDeleteAlertOpen, setDeleteAlertOpen] = React.useState(false);
+  const [isUpdateStatusAlertOpen, setUpdateStatusAlertOpen] = React.useState(false);
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
   const [newSellingPrice, setNewSellingPrice] = React.useState('');
+  const [newBulkStatus, setNewBulkStatus] = React.useState<ProductStatus | null>(null);
 
   const fetchProducts = React.useCallback(async () => {
     setIsLoading(true);
@@ -157,6 +159,12 @@ export function DigitalProductManagement() {
     if (Object.keys(rowSelection).length === 0) return;
     setDeleteAlertOpen(true);
   };
+  
+  const handleUpdateStatusSelected = (status: ProductStatus) => {
+    if (Object.keys(rowSelection).length === 0) return;
+    setNewBulkStatus(status);
+    setUpdateStatusAlertOpen(true);
+  };
 
   const confirmDelete = async () => {
     const selectedProductIds = table.getFilteredSelectedRowModel().rows.map(row => row.original.id);
@@ -183,6 +191,33 @@ export function DigitalProductManagement() {
     }
   };
   
+  const confirmUpdateStatus = async () => {
+    if (!newBulkStatus) return;
+    const selectedProductIds = table.getFilteredSelectedRowModel().rows.map(row => row.original.id);
+    if(selectedProductIds.length === 0) return;
+
+    try {
+      const batch = writeBatch(db);
+      selectedProductIds.forEach(id => {
+        const productDocRef = doc(db, 'products', id);
+        batch.update(productDocRef, { status: newBulkStatus });
+      });
+      await batch.commit();
+
+      toast({
+          title: `Status ${selectedProductIds.length} Produk Diperbarui`,
+          description: `Status produk yang dipilih telah berhasil diubah menjadi ${newBulkStatus}.`
+      });
+      fetchProducts(); // Refresh data
+      setRowSelection({}); // Clear selection
+    } catch (error) {
+       toast({ title: "Gagal Memperbarui Status", description: "Terjadi kesalahan saat memperbarui status produk.", variant: "destructive" });
+    } finally {
+        setUpdateStatusAlertOpen(false);
+        setNewBulkStatus(null);
+    }
+  };
+
   const columns: ColumnDef<Product>[] = [
     {
       id: 'select',
@@ -297,10 +332,20 @@ export function DigitalProductManagement() {
             />
              <div className="flex items-center gap-2">
                 {Object.keys(rowSelection).length > 0 && (
-                    <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Hapus ({Object.keys(rowSelection).length})
-                    </Button>
+                    <>
+                       <Button variant="outline" size="sm" onClick={() => handleUpdateStatusSelected('Tersedia')}>
+                           <CheckCircle className="mr-2 h-4 w-4" />
+                           Aktifkan ({Object.keys(rowSelection).length})
+                       </Button>
+                       <Button variant="secondary" size="sm" onClick={() => handleUpdateStatusSelected('Gangguan')}>
+                           <Ban className="mr-2 h-4 w-4" />
+                           Nonaktifkan ({Object.keys(rowSelection).length})
+                       </Button>
+                       <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
+                           <Trash2 className="mr-2 h-4 w-4" />
+                           Hapus ({Object.keys(rowSelection).length})
+                       </Button>
+                    </>
                 )}
                  <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -457,6 +502,21 @@ export function DigitalProductManagement() {
             <AlertDialogFooter>
                 <AlertDialogCancel>Batal</AlertDialogCancel>
                 <AlertDialogAction onClick={confirmDelete}>Ya, Hapus</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+      
+       <AlertDialog open={isUpdateStatusAlertOpen} onOpenChange={setUpdateStatusAlertOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Konfirmasi Perubahan Status</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Anda akan mengubah status {Object.keys(rowSelection).length} produk menjadi "{newBulkStatus}". Lanjutkan?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setNewBulkStatus(null)}>Batal</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmUpdateStatus}>Ya, Lanjutkan</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
       </AlertDialog>
