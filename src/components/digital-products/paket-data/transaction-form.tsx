@@ -60,7 +60,6 @@ export function PaketDataTransactionForm() {
     const [allDataProducts, setAllDataProducts] = useState<FirestoreProduct[]>([]);
     const [displayedProducts, setDisplayedProducts] = useState<FirestoreProduct[]>([]);
     const [selectedProduct, setSelectedProduct] = useState<FirestoreProduct | null>(null);
-    const [isFetchingOperator, setIsFetchingOperator] = useState(false);
     const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
     useEffect(() => {
@@ -90,40 +89,32 @@ export function PaketDataTransactionForm() {
     useEffect(() => {
         if (isLoadingProducts) return;
 
-        const detectOperator = () => {
-            if (phoneNumber.length < 4) {
-                setOperator(null);
-                setDisplayedProducts([]);
-                setSelectedProduct(null);
-                return;
-            }
-            
-            setIsFetchingOperator(true);
-            const prefix = phoneNumber.substring(0, 4);
-            let foundOperator: Operator = null;
-            for (const op in operatorPrefixes) {
-                if (operatorPrefixes[op as NonNullable<Operator>].includes(prefix)) {
-                    foundOperator = op as NonNullable<Operator>;
-                    break;
-                }
-            }
-            
-            setTimeout(() => {
-                setOperator(foundOperator);
-                setSelectedProduct(null);
-                if (foundOperator) {
-                    const filtered = allDataProducts.filter(p => p.brand.toUpperCase() === foundOperator?.toUpperCase() && p.status === 'Tersedia');
-                    filtered.sort((a,b) => a.price - b.price);
-                    setDisplayedProducts(filtered);
-                } else {
-                    setDisplayedProducts([]);
-                }
-                 setIsFetchingOperator(false);
-            }, 500);
-        };
+        if (phoneNumber.length < 4) {
+            setOperator(null);
+            setDisplayedProducts([]);
+            setSelectedProduct(null);
+            return;
+        }
 
-        const timeoutId = setTimeout(detectOperator, 300);
-        return () => clearTimeout(timeoutId);
+        const prefix = phoneNumber.substring(0, 4);
+        let foundOperator: Operator = null;
+        for (const op in operatorPrefixes) {
+            if (operatorPrefixes[op as NonNullable<Operator>].includes(prefix)) {
+                foundOperator = op as NonNullable<Operator>;
+                break;
+            }
+        }
+        
+        setOperator(foundOperator);
+        setSelectedProduct(null);
+
+        if (foundOperator) {
+            const filtered = allDataProducts.filter(p => p.brand.toUpperCase() === foundOperator?.toUpperCase() && p.status === 'Tersedia');
+            filtered.sort((a,b) => a.price - b.price);
+            setDisplayedProducts(filtered);
+        } else {
+            setDisplayedProducts([]);
+        }
     }, [phoneNumber, allDataProducts, isLoadingProducts]);
 
 
@@ -153,21 +144,20 @@ export function PaketDataTransactionForm() {
                             className="pr-28"
                         />
                          <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-2 text-sm text-muted-foreground h-8 px-2 rounded-md bg-muted">
-                            {isFetchingOperator && <Loader2 className="h-4 w-4 animate-spin" />}
-                             {operator && !isFetchingOperator && (
+                             {operator && (
                                 <>
                                     <Image src={operatorLogos[operator]} alt={operator} width={20} height={20} className="h-5 w-auto" data-ai-hint={`${operator} logo`}/>
                                     <span>{operator}</span>
                                 </>
                              )}
-                             {!operator && !isFetchingOperator && phoneNumber.length > 3 && (
+                             {!operator && phoneNumber.length > 3 && (
                                 <span className="text-destructive">Tidak Dikenal</span>
                              )}
                         </div>
                     </div>
                 </div>
                 
-                {isLoadingProducts ? (
+                {isLoadingProducts && phoneNumber.length >=4 ? (
                     <div className="flex justify-center items-center h-24">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
@@ -191,7 +181,7 @@ export function PaketDataTransactionForm() {
                             ))}
                         </div>
                     </div>
-                ) : operator && displayedProducts.length === 0 && !isFetchingOperator ? (
+                ) : operator && displayedProducts.length === 0 ? (
                     <div className="text-center text-muted-foreground p-4 bg-muted rounded-lg">
                         Produk paket data untuk {operator} belum tersedia.
                     </div>
@@ -200,7 +190,7 @@ export function PaketDataTransactionForm() {
             <CardFooter>
                  <Sheet>
                     <SheetTrigger asChild>
-                         <Button className="w-full" disabled={!phoneNumber || !selectedProduct || isFetchingOperator}>
+                         <Button className="w-full" disabled={!phoneNumber || !selectedProduct}>
                             Beli Sekarang
                         </Button>
                     </SheetTrigger>
