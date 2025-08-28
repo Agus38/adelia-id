@@ -3,6 +3,18 @@
 
 import * as React from 'react';
 import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnFiltersState,
+  type SortingState,
+  type VisibilityState,
+} from '@tanstack/react-table';
+import {
   Table,
   TableBody,
   TableCell,
@@ -10,214 +22,445 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '../ui/alert-dialog';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MoreHorizontal, Loader2 } from 'lucide-react';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
+import { collection, doc, getDocs, updateDoc, writeBatch } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { MoreHorizontal, Loader2, Trash2, Edit, Ban, CheckCircle, ChevronDown } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+
+type ProductStatus = 'Tersedia' | 'Gangguan';
 
 type Product = {
+  id: string; // Firestore document ID
   buyer_sku_code: string;
   product_name: string;
   price: number;
-  status: 'Tersedia' | 'Gangguan';
+  selling_price?: number;
+  status: ProductStatus;
   category: string;
   brand: string;
   seller_name: string;
 };
 
-interface GroupedProducts {
-  pulsa: Record<string, Product[]>;
-  paketData: Record<string, Product[]>;
-  tokenListrik: Product[];
-  game: Record<string, Product[]>;
+const formatCurrency = (value?: number) => {
+    if (typeof value !== 'number') return '-';
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 }
 
-const formatCurrency = (value: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
-
-const ProductTable = ({ products, isLoading }: { products: Product[], isLoading: boolean }) => (
-  <div className="rounded-md border">
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Kode Produk</TableHead>
-          <TableHead>Nama Produk</TableHead>
-          <TableHead>Harga Modal</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Aktif</TableHead>
-          <TableHead className="text-right">Aksi</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {isLoading ? (
-            <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                </TableCell>
-            </TableRow>
-        ) : products.length > 0 ? products.map((product) => (
-          <TableRow key={product.buyer_sku_code}>
-            <TableCell className="font-mono">{product.buyer_sku_code}</TableCell>
-            <TableCell className="font-medium">{product.product_name}</TableCell>
-            <TableCell>{formatCurrency(product.price)}</TableCell>
-            <TableCell>
-              <Badge variant={product.status === 'Tersedia' ? 'default' : 'destructive'}>
-                {product.status}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <Switch defaultChecked={true} aria-label={`Aktifkan ${product.product_name}`} />
-            </TableCell>
-             <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Buka menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Edit Harga Jual</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-            </TableCell>
-          </TableRow>
-        )) : (
-            <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                    Tidak ada produk untuk sub-kategori ini.
-                </TableCell>
-            </TableRow>
-        )}
-      </TableBody>
-    </Table>
-  </div>
-);
-
-const SubCategoryTabs = ({ categoryData, isLoading }: { categoryData: Record<string, Product[]>, isLoading: boolean }) => {
-    const subCategories = Object.keys(categoryData);
-    
-    if (isLoading && !subCategories.length) {
-       return <ProductTable products={[]} isLoading={true} />;
-    }
-
-    if (!subCategories.length) {
-        return (
-             <div className="text-center text-muted-foreground p-10 bg-muted/50 rounded-lg">
-                Tidak ada data produk yang ditemukan untuk kategori ini.
-            </div>
-        )
-    }
-
-    return (
-        <Tabs defaultValue={subCategories[0]} className="w-full">
-            <TabsList>
-                {subCategories.map(subCategory => (
-                     <TabsTrigger key={subCategory} value={subCategory}>{subCategory}</TabsTrigger>
-                ))}
-            </TabsList>
-            {subCategories.map(subCategory => (
-                <TabsContent key={subCategory} value={subCategory} className="pt-4">
-                    <ProductTable products={categoryData[subCategory]} isLoading={false} />
-                </TabsContent>
-            ))}
-        </Tabs>
-    )
-};
-
-
 export function DigitalProductManagement() {
-  const [products, setProducts] = React.useState<GroupedProducts>({ pulsa: {}, paketData: {}, tokenListrik: [], game: {} });
+  const [products, setProducts] = React.useState<Product[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
+
+  const [isEditModalOpen, setEditModalOpen] = React.useState(false);
+  const [isDeleteAlertOpen, setDeleteAlertOpen] = React.useState(false);
+  const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
+  const [newSellingPrice, setNewSellingPrice] = React.useState('');
+
+  const fetchProducts = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const querySnapshot = await getDocs(collection(db, 'products'));
+      const fetchedProducts: Product[] = [];
+      querySnapshot.forEach((doc) => {
+        fetchedProducts.push({ id: doc.id, ...doc.data() } as Product);
+      });
+      setProducts(fetchedProducts);
+    } catch (error) {
+      toast({
+        title: 'Gagal Memuat Produk',
+        description: 'Tidak dapat mengambil data produk dari database.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   React.useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoading(true);
-      try {
-        const querySnapshot = await getDocs(collection(db, "products"));
-        const fetchedProducts: Product[] = [];
-        querySnapshot.forEach((doc) => {
-          fetchedProducts.push({ buyer_sku_code: doc.id, ...doc.data() } as Product);
-        });
-
-        // Group products by category and brand
-        const grouped: GroupedProducts = { pulsa: {}, paketData: {}, tokenListrik: [], game: {} };
-        fetchedProducts.forEach(p => {
-            const category = p.category.toLowerCase();
-            const brand = p.brand;
-            if (category === 'pulsa') {
-                if (!grouped.pulsa[brand]) grouped.pulsa[brand] = [];
-                grouped.pulsa[brand].push(p);
-            } else if (category === 'data') {
-                 if (!grouped.paketData[brand]) grouped.paketData[brand] = [];
-                 grouped.paketData[brand].push(p);
-            } else if (category === 'pln') {
-                 grouped.tokenListrik.push(p);
-            } else if (category === 'games') {
-                 if (!grouped.game[brand]) grouped.game[brand] = [];
-                 grouped.game[brand].push(p);
-            }
-        });
-        
-        // Sort brands within categories
-        Object.keys(grouped.pulsa).forEach(brand => grouped.pulsa[brand].sort((a,b) => a.price - b.price));
-        Object.keys(grouped.paketData).forEach(brand => grouped.paketData[brand].sort((a,b) => a.price - b.price));
-        Object.keys(grouped.game).forEach(brand => grouped.game[brand].sort((a,b) => a.price - b.price));
-        grouped.tokenListrik.sort((a,b) => a.price - b.price);
-
-
-        setProducts(grouped);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-        toast({
-            title: "Gagal Memuat Produk",
-            description: "Tidak dapat mengambil data produk dari database.",
-            variant: "destructive"
-        })
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchProducts();
-  }, [toast]);
+  }, [fetchProducts]);
 
+  const handleEditPrice = (product: Product) => {
+    setSelectedProduct(product);
+    setNewSellingPrice(product.selling_price?.toString() || '');
+    setEditModalOpen(true);
+  };
+  
+  const handleUpdateStatus = async (product: Product, newStatus: ProductStatus) => {
+     try {
+        const productDocRef = doc(db, 'products', product.id);
+        await updateDoc(productDocRef, { status: newStatus });
+        toast({
+            title: "Status Diperbarui",
+            description: `Status untuk ${product.product_name} telah diubah menjadi ${newStatus}.`
+        });
+        fetchProducts(); // Refresh data
+     } catch (error) {
+         toast({ title: "Gagal Memperbarui", description: "Gagal memperbarui status produk.", variant: "destructive"});
+     }
+  }
+
+  const handleSavePrice = async () => {
+    if (!selectedProduct) return;
+    try {
+        const productDocRef = doc(db, 'products', selectedProduct.id);
+        await updateDoc(productDocRef, { selling_price: Number(newSellingPrice) });
+        toast({
+            title: "Harga Jual Diperbarui",
+            description: `Harga jual untuk ${selectedProduct.product_name} telah berhasil disimpan.`
+        });
+        fetchProducts(); // Refresh data
+        setEditModalOpen(false);
+    } catch(error) {
+        toast({ title: "Gagal Menyimpan", description: "Gagal menyimpan harga jual.", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (Object.keys(rowSelection).length === 0) return;
+    setDeleteAlertOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    const selectedProductIds = table.getFilteredSelectedRowModel().rows.map(row => row.original.id);
+    if(selectedProductIds.length === 0) return;
+
+    try {
+        const batch = writeBatch(db);
+        selectedProductIds.forEach(id => {
+            const productDocRef = doc(db, 'products', id);
+            batch.delete(productDocRef);
+        });
+        await batch.commit();
+
+        toast({
+            title: `${selectedProductIds.length} Produk Dihapus`,
+            description: "Produk yang dipilih telah berhasil dihapus dari database."
+        });
+        fetchProducts(); // Refresh data
+        setRowSelection({}); // Clear selection
+    } catch(error) {
+         toast({ title: "Gagal Menghapus", description: "Terjadi kesalahan saat menghapus produk.", variant: "destructive" });
+    } finally {
+        setDeleteAlertOpen(false);
+    }
+  };
+  
+  const columns: ColumnDef<Product>[] = [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Pilih semua"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Pilih baris"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    { accessorKey: 'product_name', header: 'Nama Produk' },
+    { accessorKey: 'brand', header: 'Brand' },
+    { accessorKey: 'price', header: 'Harga Modal', cell: ({ row }) => formatCurrency(row.original.price) },
+    { accessorKey: 'selling_price', header: 'Harga Jual', cell: ({ row }) => formatCurrency(row.original.selling_price) },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => (
+        <Badge variant={row.original.status === 'Tersedia' ? 'default' : 'destructive'}>
+          {row.original.status}
+        </Badge>
+      ),
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id));
+      },
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const product = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Buka menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleEditPrice(product)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit Harga Jual
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {product.status === 'Tersedia' ? (
+                 <DropdownMenuItem onClick={() => handleUpdateStatus(product, 'Gangguan')}>
+                    <Ban className="mr-2 h-4 w-4" />
+                    Nonaktifkan
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => handleUpdateStatus(product, 'Tersedia')}>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Aktifkan
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
+  const table = useReactTable({
+    data: products,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+    },
+  });
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Daftar Produk Digital</CardTitle>
         <CardDescription>
-          Lihat produk yang disinkronkan dari Digiflazz dan kelola ketersediaannya.
+          Kelola semua produk digital yang disinkronkan dari Digiflazz.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="pulsa" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-            <TabsTrigger value="pulsa">Pulsa</TabsTrigger>
-            <TabsTrigger value="paketData">Paket Data</TabsTrigger>
-            <TabsTrigger value="tokenListrik">Token Listrik</TabsTrigger>
-            <TabsTrigger value="game">Game</TabsTrigger>
-          </TabsList>
-          <TabsContent value="pulsa" className="pt-6">
-            <SubCategoryTabs categoryData={products.pulsa} isLoading={isLoading} />
-          </TabsContent>
-          <TabsContent value="paketData" className="pt-6">
-            <SubCategoryTabs categoryData={products.paketData} isLoading={isLoading} />
-          </TabsContent>
-          <TabsContent value="tokenListrik" className="pt-6">
-            <ProductTable products={products.tokenListrik} isLoading={isLoading} />
-          </TabsContent>
-          <TabsContent value="game" className="pt-6">
-             <SubCategoryTabs categoryData={products.game} isLoading={isLoading} />
-          </TabsContent>
-        </Tabs>
+        <div className="flex items-center justify-between pb-4">
+            <Input
+              placeholder="Cari produk..."
+              value={(table.getColumn('product_name')?.getFilterValue() as string) ?? ''}
+              onChange={(event) =>
+                table.getColumn('product_name')?.setFilterValue(event.target.value)
+              }
+              className="max-w-sm"
+            />
+             <div className="flex items-center gap-2">
+                {Object.keys(rowSelection).length > 0 && (
+                    <Button variant="destructive" size="sm" onClick={handleDeleteSelected}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Hapus ({Object.keys(rowSelection).length})
+                    </Button>
+                )}
+                 <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      Status <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                     <DropdownMenuLabel>Filter status</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {['Tersedia', 'Gangguan'].map(status => {
+                         const statusFilter: string[] = table.getColumn('status')?.getFilterValue() as any || [];
+                         return (
+                            <DropdownMenuCheckboxItem
+                                key={status}
+                                checked={statusFilter.includes(status)}
+                                onCheckedChange={(checked) => {
+                                    const currentFilter = statusFilter || [];
+                                    const newFilter = checked
+                                    ? [...currentFilter, status]
+                                    : currentFilter.filter(s => s !== status);
+                                    table.getColumn('status')?.setFilterValue(newFilter.length ? newFilter : undefined);
+                                }}
+                            >
+                               {status}
+                            </DropdownMenuCheckboxItem>
+                         )
+                      })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+             </div>
+        </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && 'selected'}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    Tidak ada hasil.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-between space-x-2 py-4">
+            <div className="text-sm text-muted-foreground">
+              {table.getFilteredSelectedRowModel().rows.length} dari{' '}
+              {table.getFilteredRowModel().rows.length} baris dipilih.
+            </div>
+            <div className="flex items-center space-x-2">
+               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                Sebelumnya
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                Selanjutnya
+              </Button>
+            </div>
+        </div>
       </CardContent>
+
+      <Dialog open={isEditModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Edit Harga Jual</DialogTitle>
+                <DialogDescription>
+                    Atur harga jual untuk produk: <span className="font-semibold">{selectedProduct?.product_name}</span>.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label>Harga Modal (dari Digiflazz)</Label>
+                    <Input value={formatCurrency(selectedProduct?.price)} disabled />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="selling_price">Harga Jual</Label>
+                    <Input 
+                        id="selling_price" 
+                        type="number"
+                        value={newSellingPrice}
+                        onChange={(e) => setNewSellingPrice(e.target.value)}
+                        placeholder="Masukkan harga jual"
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setEditModalOpen(false)}>Batal</Button>
+                <Button onClick={handleSavePrice}>Simpan Harga</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Anda yakin ingin menghapus produk?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Tindakan ini tidak dapat dibatalkan. {Object.keys(rowSelection).length} produk yang dipilih akan dihapus secara permanen.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete}>Ya, Hapus</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+
     </Card>
   );
 }
