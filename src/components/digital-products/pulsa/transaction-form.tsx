@@ -57,12 +57,13 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('id-ID', { style
 
 export function PulsaTransactionForm() {
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [operator, setOperator] = useState<Operator>(null);
+    const [detectedOperator, setDetectedOperator] = useState<Operator>(null);
     const [allPulsaProducts, setAllPulsaProducts] = useState<FirestoreProduct[]>([]);
     const [displayedProducts, setDisplayedProducts] = useState<FirestoreProduct[]>([]);
     const [selectedProduct, setSelectedProduct] = useState<FirestoreProduct | null>(null);
     const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
+    // 1. Fetch all pulsa products on component mount
     useEffect(() => {
         const fetchPulsaProducts = async () => {
             setIsLoadingProducts(true);
@@ -87,11 +88,10 @@ export function PulsaTransactionForm() {
         fetchPulsaProducts();
     }, []);
 
+    // 2. Detect operator and filter products whenever phone number changes
     useEffect(() => {
-        if (isLoadingProducts) return;
-
         if (phoneNumber.length < 4) {
-            setOperator(null);
+            setDetectedOperator(null);
             setDisplayedProducts([]);
             setSelectedProduct(null);
             return;
@@ -106,18 +106,20 @@ export function PulsaTransactionForm() {
             }
         }
         
-        setOperator(foundOperator);
-        setSelectedProduct(null);
+        setDetectedOperator(foundOperator);
+        setSelectedProduct(null); // Reset selection when operator changes
 
-        if (foundOperator) {
-            const filtered = allPulsaProducts.filter(p => p.brand.toUpperCase() === foundOperator?.toUpperCase() && p.status === 'Tersedia');
+        if (foundOperator && allPulsaProducts.length > 0) {
+            const filtered = allPulsaProducts.filter(
+              (p) => p.brand.toUpperCase() === foundOperator!.toUpperCase() && p.status === 'Tersedia'
+            );
             filtered.sort((a,b) => a.price - b.price);
             setDisplayedProducts(filtered);
         } else {
             setDisplayedProducts([]);
         }
 
-    }, [phoneNumber, allPulsaProducts, isLoadingProducts]);
+    }, [phoneNumber, allPulsaProducts]);
 
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,13 +148,13 @@ export function PulsaTransactionForm() {
                             className="pr-28"
                         />
                          <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-2 text-sm text-muted-foreground h-8 px-2 rounded-md bg-muted">
-                             {operator && (
+                             {detectedOperator && (
                                 <>
-                                    <Image src={operatorLogos[operator]} alt={operator} width={20} height={20} className="h-5 w-auto" data-ai-hint={`${operator} logo`}/>
-                                    <span>{operator}</span>
+                                    <Image src={operatorLogos[detectedOperator]} alt={detectedOperator} width={20} height={20} className="h-5 w-auto" data-ai-hint={`${detectedOperator} logo`}/>
+                                    <span>{detectedOperator}</span>
                                 </>
                              )}
-                             {!operator && phoneNumber.length > 3 && (
+                             {!detectedOperator && phoneNumber.length > 3 && (
                                 <span className="text-destructive">Tidak Dikenal</span>
                              )}
                         </div>
@@ -163,7 +165,7 @@ export function PulsaTransactionForm() {
                     <div className="flex justify-center items-center h-24">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
-                ) : operator && displayedProducts.length > 0 ? (
+                ) : detectedOperator && displayedProducts.length > 0 ? (
                     <div className="space-y-3 animate-in fade-in duration-300">
                         <Label>Pilih Nominal</Label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -183,9 +185,9 @@ export function PulsaTransactionForm() {
                             ))}
                         </div>
                     </div>
-                ) : operator && displayedProducts.length === 0 ? (
+                ) : detectedOperator && !isLoadingProducts && displayedProducts.length === 0 ? (
                     <div className="text-center text-muted-foreground p-4 bg-muted rounded-lg">
-                        Produk untuk operator {operator} belum tersedia.
+                        Produk untuk operator {detectedOperator} belum tersedia.
                     </div>
                 ) : null}
             </CardContent>
@@ -212,7 +214,7 @@ export function PulsaTransactionForm() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Operator</span>
-                                    <span className="font-medium">{operator}</span>
+                                    <span className="font-medium">{detectedOperator}</span>
                                 </div>
                                  <div className="flex justify-between">
                                     <span className="text-muted-foreground">Produk</span>

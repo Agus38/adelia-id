@@ -56,12 +56,13 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('id-ID', { style
 
 export function PaketDataTransactionForm() {
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [operator, setOperator] = useState<Operator>(null);
+    const [detectedOperator, setDetectedOperator] = useState<Operator>(null);
     const [allDataProducts, setAllDataProducts] = useState<FirestoreProduct[]>([]);
     const [displayedProducts, setDisplayedProducts] = useState<FirestoreProduct[]>([]);
     const [selectedProduct, setSelectedProduct] = useState<FirestoreProduct | null>(null);
     const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
+    // 1. Fetch all data products on component mount
     useEffect(() => {
         const fetchDataProducts = async () => {
             setIsLoadingProducts(true);
@@ -86,11 +87,10 @@ export function PaketDataTransactionForm() {
         fetchDataProducts();
     }, []);
 
+    // 2. Detect operator and filter products whenever phone number changes
     useEffect(() => {
-        if (isLoadingProducts) return;
-
         if (phoneNumber.length < 4) {
-            setOperator(null);
+            setDetectedOperator(null);
             setDisplayedProducts([]);
             setSelectedProduct(null);
             return;
@@ -105,17 +105,17 @@ export function PaketDataTransactionForm() {
             }
         }
         
-        setOperator(foundOperator);
+        setDetectedOperator(foundOperator);
         setSelectedProduct(null);
 
-        if (foundOperator) {
-            const filtered = allDataProducts.filter(p => p.brand.toUpperCase() === foundOperator?.toUpperCase() && p.status === 'Tersedia');
+        if (foundOperator && allDataProducts.length > 0) {
+            const filtered = allDataProducts.filter(p => p.brand.toUpperCase() === foundOperator!.toUpperCase() && p.status === 'Tersedia');
             filtered.sort((a,b) => a.price - b.price);
             setDisplayedProducts(filtered);
         } else {
             setDisplayedProducts([]);
         }
-    }, [phoneNumber, allDataProducts, isLoadingProducts]);
+    }, [phoneNumber, allDataProducts]);
 
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,13 +144,13 @@ export function PaketDataTransactionForm() {
                             className="pr-28"
                         />
                          <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-2 text-sm text-muted-foreground h-8 px-2 rounded-md bg-muted">
-                             {operator && (
+                             {detectedOperator && (
                                 <>
-                                    <Image src={operatorLogos[operator]} alt={operator} width={20} height={20} className="h-5 w-auto" data-ai-hint={`${operator} logo`}/>
-                                    <span>{operator}</span>
+                                    <Image src={operatorLogos[detectedOperator]} alt={detectedOperator} width={20} height={20} className="h-5 w-auto" data-ai-hint={`${detectedOperator} logo`}/>
+                                    <span>{detectedOperator}</span>
                                 </>
                              )}
-                             {!operator && phoneNumber.length > 3 && (
+                             {!detectedOperator && phoneNumber.length > 3 && (
                                 <span className="text-destructive">Tidak Dikenal</span>
                              )}
                         </div>
@@ -161,7 +161,7 @@ export function PaketDataTransactionForm() {
                     <div className="flex justify-center items-center h-24">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
-                ) : operator && displayedProducts.length > 0 ? (
+                ) : detectedOperator && displayedProducts.length > 0 ? (
                     <div className="space-y-3 animate-in fade-in duration-300">
                         <Label>Pilih Paket</Label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -181,9 +181,9 @@ export function PaketDataTransactionForm() {
                             ))}
                         </div>
                     </div>
-                ) : operator && displayedProducts.length === 0 ? (
+                ) : detectedOperator && !isLoadingProducts && displayedProducts.length === 0 ? (
                     <div className="text-center text-muted-foreground p-4 bg-muted rounded-lg">
-                        Produk paket data untuk {operator} belum tersedia.
+                        Produk paket data untuk {detectedOperator} belum tersedia.
                     </div>
                 ) : null}
             </CardContent>
@@ -210,7 +210,7 @@ export function PaketDataTransactionForm() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">Operator</span>
-                                    <span className="font-medium">{operator}</span>
+                                    <span className="font-medium">{detectedOperator}</span>
                                 </div>
                                  <div className="flex justify-between">
                                     <span className="text-muted-foreground">Produk</span>
