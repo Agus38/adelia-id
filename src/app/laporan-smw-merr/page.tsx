@@ -386,11 +386,11 @@ export default function DailyReportPage() {
 ╔══════════════════════════╗
 ║ *Tanggal       : ${reportDate}*
 ║ *Shift            : ${reportShift}*
-║ *Omset         : Rp ${formatCurrencyForWA(omsetBersih)}*
+║ *Omset         : Rp ${formatCurrencyForWA(omsetKotor)}*
 ╠══════════════════════════╣
 ${pemasukanText}
 ╠══════════════════════════╣
-║ *Jumlah        : Rp ${formatCurrencyForWA(totalPemasukanOnline)}*
+║ *Jumlah        : Rp ${formatCurrencyForWA(totalPengeluaran)}*
 ╠══════════════════════════╣
 ║                   ᶜᵒᵖʸʳⁱᵍʰᵗ ©ag64462
 ╚══════════════════════════╝
@@ -427,10 +427,9 @@ ${pemasukanText}
 
 
   return (
-    <div className="flex">
+    <>
       <UnsavedChangesDialog />
-      <AppSidebar />
-      <div className="flex-1 space-y-4 pt-6 p-4 md:p-6">
+      <div className="space-y-4 pt-6 p-4 md:p-6">
         <Card className="mx-1.5 md:mx-2 relative">
           {isFetchingReport && (
             <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg z-10">
@@ -615,6 +614,6 @@ ${pemasukanText}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-    </div>
+    </>
   );
 }
