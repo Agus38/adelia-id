@@ -28,6 +28,17 @@ export async function syncDigiflazzProducts(): Promise<SyncDigiflazzOutput> {
   return syncDigiflazzFlow();
 }
 
+const normalizeBrandName = (brand: string): string => {
+  const upperCaseBrand = brand.toUpperCase();
+  if (upperCaseBrand.includes('TELKOMSEL')) return 'Telkomsel';
+  if (upperCaseBrand.includes('INDOSAT')) return 'Indosat';
+  if (upperCaseBrand.includes('XL')) return 'XL';
+  if (upperCaseBrand.includes('AXIS')) return 'AXIS';
+  if (upperCaseBrand.includes('TRI')) return 'Tri';
+  if (upperCaseBrand.includes('SMARTFREN')) return 'Smartfren';
+  return brand; // Return original if no match
+}
+
 // Define the Genkit flow
 const syncDigiflazzFlow = ai.defineFlow(
   {
@@ -80,10 +91,14 @@ const syncDigiflazzFlow = ai.defineFlow(
       products.forEach((product: any) => {
         // We use buyer_sku_code as the document ID for easy lookup
         const productDocRef = doc(productsCollection, product.buyer_sku_code);
-        batch.set(productDocRef, {
+        
+        const normalizedProduct = {
           ...product,
+          brand: normalizeBrandName(product.brand), // Normalize the brand name
           syncedAt: new Date(),
-        });
+        };
+
+        batch.set(productDocRef, normalizedProduct);
         productCount++;
       });
       

@@ -45,15 +45,6 @@ const operatorPrefixes: Record<string, Operator> = {
   '0881': 'Smartfren', '0882': 'Smartfren', '0883': 'Smartfren', '0884': 'Smartfren', '0885': 'Smartfren', '0886': 'Smartfren', '0887': 'Smartfren', '0888': 'Smartfren', '0889': 'Smartfren',
 };
 
-const operatorBrandMap: Record<NonNullable<Operator>, string> = {
-  Telkomsel: 'TELKOMSEL',
-  Indosat: 'INDOSAT OOREDOO',
-  XL: 'XL',
-  AXIS: 'AXIS',
-  Tri: 'TRI',
-  Smartfren: 'SMARTFREN',
-};
-
 const operatorLogos: Record<NonNullable<Operator>, string> = {
     Telkomsel: 'https://placehold.co/100x40.png?text=Telkomsel',
     Indosat: 'https://placehold.co/100x40.png?text=Indosat',
@@ -110,8 +101,7 @@ export function PaketDataTransactionForm() {
         setDetectedOperator(operator);
 
         if (operator) {
-            const brandToFilter = operatorBrandMap[operator];
-            const filtered = allDataProducts.filter(p => p.brand.toUpperCase() === brandToFilter.toUpperCase());
+            const filtered = allDataProducts.filter(p => p.brand === operator);
             filtered.sort((a,b) => a.price - b.price);
             setDisplayedProducts(filtered);
         } else {
