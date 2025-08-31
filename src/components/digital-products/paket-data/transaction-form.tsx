@@ -89,7 +89,11 @@ export function PaketDataTransactionForm() {
     }, []);
 
     useEffect(() => {
-        if (phoneNumber.length < 4 || isLoadingProducts) {
+        if (isLoadingProducts) {
+            return;
+        }
+
+        if (phoneNumber.length < 4) {
             setDetectedOperator(null);
             setDisplayedProducts([]);
             setSelectedProduct(null);
@@ -101,7 +105,7 @@ export function PaketDataTransactionForm() {
         setDetectedOperator(operator);
 
         if (operator) {
-            const filtered = allDataProducts.filter(p => p.brand === operator);
+            const filtered = allDataProducts.filter(p => p.brand.toLowerCase() === operator.toLowerCase());
             filtered.sort((a,b) => a.price - b.price);
             setDisplayedProducts(filtered);
         } else {

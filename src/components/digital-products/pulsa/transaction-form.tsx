@@ -90,7 +90,11 @@ export function PulsaTransactionForm() {
     }, []);
 
     useEffect(() => {
-        if (phoneNumber.length < 4 || isLoadingProducts) {
+        if (isLoadingProducts) {
+            return; // Wait until products are loaded
+        }
+
+        if (phoneNumber.length < 4) {
             setDetectedOperator(null);
             setDisplayedProducts([]);
             setSelectedProduct(null);
@@ -102,7 +106,7 @@ export function PulsaTransactionForm() {
         setDetectedOperator(operator);
 
         if (operator) {
-            const filtered = allPulsaProducts.filter(p => p.brand === operator);
+            const filtered = allPulsaProducts.filter(p => p.brand.toLowerCase() === operator.toLowerCase());
             filtered.sort((a,b) => a.price - b.price);
             setDisplayedProducts(filtered);
         } else {
