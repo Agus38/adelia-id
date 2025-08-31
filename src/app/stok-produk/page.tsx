@@ -213,7 +213,7 @@ export default function StokProdukPage() {
   }
 
   return (
-    <div className="flex flex-col flex-1 p-4 pt-6 md:p-8 space-y-4 relative">
+    <div className="flex-col p-4 pt-6 md:p-8 space-y-4 relative">
        <UnsavedChangesDialog />
        {isFetchingReport && (
             <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg z-10">
