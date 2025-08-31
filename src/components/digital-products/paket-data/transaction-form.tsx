@@ -36,13 +36,22 @@ interface FirestoreProduct {
   brand: string;
 }
 
-const operatorPrefixes: Record<NonNullable<Operator>, string[]> = {
-  Telkomsel: ['0811', '0812', '0813', '0821', '0822', '0852', '0853', '0823', '0851'],
-  Indosat: ['0814', '0815', '0816', '0855', '0856', '0857', '0858'],
-  XL: ['0817', '0818', '0819', '0859', '0877', '0878'],
-  AXIS: ['0838', '0831', '0832', '0833'],
-  Tri: ['0895', '0896', '0897', '0898', '0899'],
-  Smartfren: ['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888', '0889'],
+const operatorPrefixes: Record<string, Operator> = {
+  '0811': 'Telkomsel', '0812': 'Telkomsel', '0813': 'Telkomsel', '0821': 'Telkomsel', '0822': 'Telkomsel', '0852': 'Telkomsel', '0853': 'Telkomsel', '0823': 'Telkomsel', '0851': 'Telkomsel',
+  '0814': 'Indosat', '0815': 'Indosat', '0816': 'Indosat', '0855': 'Indosat', '0856': 'Indosat', '0857': 'Indosat', '0858': 'Indosat',
+  '0817': 'XL', '0818': 'XL', '0819': 'XL', '0859': 'XL', '0877': 'XL', '0878': 'XL',
+  '0838': 'AXIS', '0831': 'AXIS', '0832': 'AXIS', '0833': 'AXIS',
+  '0895': 'Tri', '0896': 'Tri', '0897': 'Tri', '0898': 'Tri', '0899': 'Tri',
+  '0881': 'Smartfren', '0882': 'Smartfren', '0883': 'Smartfren', '0884': 'Smartfren', '0885': 'Smartfren', '0886': 'Smartfren', '0887': 'Smartfren', '0888': 'Smartfren', '0889': 'Smartfren',
+};
+
+const operatorBrandMap: Record<NonNullable<Operator>, string> = {
+  Telkomsel: 'TELKOMSEL',
+  Indosat: 'INDOSAT OOREDOO',
+  XL: 'XL',
+  AXIS: 'AXIS',
+  Tri: 'TRI',
+  Smartfren: 'SMARTFREN',
 };
 
 const operatorLogos: Record<NonNullable<Operator>, string> = {
@@ -89,34 +98,27 @@ export function PaketDataTransactionForm() {
     }, []);
 
     useEffect(() => {
-        if (phoneNumber.length < 4) {
+        if (phoneNumber.length < 4 || isLoadingProducts) {
             setDetectedOperator(null);
             setDisplayedProducts([]);
             setSelectedProduct(null);
             return;
         }
 
-        if (isLoadingProducts) return;
-
         const prefix = phoneNumber.substring(0, 4);
-        let foundOperator: Operator = null;
-        for (const op in operatorPrefixes) {
-            if (operatorPrefixes[op as NonNullable<Operator>].includes(prefix)) {
-                foundOperator = op as NonNullable<Operator>;
-                break;
-            }
-        }
-        
-        setDetectedOperator(foundOperator);
-        setSelectedProduct(null);
+        const operator = operatorPrefixes[prefix] || null;
+        setDetectedOperator(operator);
 
-        if (foundOperator && allDataProducts.length > 0) {
-            const filtered = allDataProducts.filter(p => p.brand.toUpperCase() === foundOperator!.toUpperCase());
+        if (operator) {
+            const brandToFilter = operatorBrandMap[operator];
+            const filtered = allDataProducts.filter(p => p.brand.toUpperCase() === brandToFilter.toUpperCase());
             filtered.sort((a,b) => a.price - b.price);
             setDisplayedProducts(filtered);
         } else {
-            setDisplayedProducts([]);
+             setDisplayedProducts([]);
         }
+
+        setSelectedProduct(null);
     }, [phoneNumber, allDataProducts, isLoadingProducts]);
 
 
