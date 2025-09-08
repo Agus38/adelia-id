@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import { SmwManyarReportForm } from "@/components/smw-manyar/report-form";
 import { usePageAccess } from "@/hooks/use-page-access";
 import { FileText, Loader2 } from 'lucide-react';
