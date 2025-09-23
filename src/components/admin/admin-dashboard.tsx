@@ -1,4 +1,7 @@
 
+'use client';
+
+import * as React from 'react';
 import {
   Card,
   CardContent,
@@ -10,16 +13,13 @@ import {
   Users,
   LayoutGrid,
   Settings2,
-  BarChart,
   FileText,
-  Activity,
   DollarSign,
   Users2,
-  CreditCard,
-  ImageIcon,
   Lock,
   PanelLeft,
   Info,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -32,6 +32,8 @@ import {
 } from "../ui/table";
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { db } from '@/lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 const managementLinks = [
   {
@@ -79,7 +81,7 @@ const managementLinks = [
   {
     title: "Manajemen Banner",
     href: "/admin/banner",
-    icon: ImageIcon,
+    icon: Info, // Changed to a more generic icon
     description: "Kelola banner dan slide di halaman utama.",
   },
   {
@@ -124,6 +126,26 @@ const recentActivities = [
 ];
 
 export function AdminDashboard() {
+  const [userCount, setUserCount] = React.useState<number | null>(null);
+  const [loadingStats, setLoadingStats] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const usersCollection = collection(db, 'users');
+        const usersSnapshot = await getDocs(usersCollection);
+        setUserCount(usersSnapshot.size);
+      } catch (error) {
+        console.error("Failed to fetch user count:", error);
+        setUserCount(0); // Set to 0 on error
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* Stat Cards */}
@@ -160,12 +182,20 @@ export function AdminDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pengguna Aktif</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Pengguna</CardTitle>
             <Users2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+8</div>
-            <p className="text-xs text-muted-foreground">+2 baru bulan ini</p>
+             {loadingStats ? (
+                <div className="flex items-center justify-center h-12">
+                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+            ) : (
+                <>
+                  <div className="text-2xl font-bold">{userCount}</div>
+                  <p className="text-xs text-muted-foreground">Total pengguna terdaftar</p>
+                </>
+            )}
           </CardContent>
         </Card>
       </div>
