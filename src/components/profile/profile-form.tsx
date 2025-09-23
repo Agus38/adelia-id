@@ -97,9 +97,6 @@ export function ProfileForm() {
       reader.readAsDataURL(file);
       reader.onload = async () => {
         const dataUrl = reader.result as string;
-
-        // Update Firebase Auth profile
-        await updateProfile(auth.currentUser!, { photoURL: dataUrl });
         
         // Update Firestore document
         const userDocRef = doc(db, 'users', auth.currentUser!.uid);
