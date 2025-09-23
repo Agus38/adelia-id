@@ -1,7 +1,8 @@
+
 'use client';
 
 import { collection, setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, logActivity } from './firebase';
 
 export interface SmwReportData {
   id: string; // Firestore document ID
@@ -44,10 +45,9 @@ export const addOrUpdateSmwReport = async (reportData: Omit<SmwReportData, 'id' 
     const reportDocRef = doc(db, 'smwManyarReports', reportId);
     
     try {
+        const isNewReport = !(await getDoc(reportDocRef)).exists();
+        
         // Construct the data object explicitly to ensure correctness.
-        // This is the most reliable way to handle "add or update" logic.
-        // setDoc without merge will either create the document or completely
-        // overwrite it if it already exists, which is what we want.
         const dataToSave = {
             date: reportData.date,
             formData: reportData.formData,
@@ -57,6 +57,11 @@ export const addOrUpdateSmwReport = async (reportData: Omit<SmwReportData, 'id' 
         };
 
         await setDoc(reportDocRef, dataToSave);
+        
+        // Log the activity
+        const action = isNewReport ? 'membuat laporan' : 'memperbarui laporan';
+        await logActivity(action, 'SMW Manyar');
+
     } catch (error) {
         console.error("Error saving SMW report to Firestore:", error);
         throw error;

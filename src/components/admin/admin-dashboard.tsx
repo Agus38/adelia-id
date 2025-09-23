@@ -33,7 +33,18 @@ import {
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { db } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { formatDistanceToNow } from 'date-fns';
+import { id } from 'date-fns/locale';
+
+interface ActivityLog {
+  id: string;
+  userName: string;
+  userAvatar: string;
+  action: string;
+  target: string;
+  timestamp: any;
+}
 
 const managementLinks = [
   {
@@ -98,36 +109,13 @@ const managementLinks = [
   },
 ];
 
-const recentActivities = [
-   {
-    user: { name: "Adelia", avatar: "https://placehold.co/100x100.png" },
-    action: "mengirimkan laporan",
-    target: "Laporan Harian",
-    time: "2 menit yang lalu",
-  },
-  {
-    user: { name: "Budi", avatar: "https://placehold.co/100x100.png" },
-    action: "menambahkan pengguna baru",
-    target: "Citra",
-    time: "5 menit yang lalu",
-  },
-  {
-    user: { name: "Adelia", avatar: "https://placehold.co/100x100.png" },
-    action: "mengirimkan laporan",
-    target: "SMW Manyar",
-    time: "15 menit yang lalu",
-  },
-  {
-    user: { name: "Citra", avatar: "https://placehold.co/100x100.png" },
-    action: "memperbarui item menu",
-    target: "Stok Produk",
-    time: "1 jam yang lalu",
-  },
-];
 
 export function AdminDashboard() {
   const [userCount, setUserCount] = React.useState<number | null>(null);
   const [loadingStats, setLoadingStats] = React.useState(true);
+  const [recentActivities, setRecentActivities] = React.useState<ActivityLog[]>([]);
+  const [loadingActivities, setLoadingActivities] = React.useState(true);
+
 
   React.useEffect(() => {
     const fetchStats = async () => {
@@ -143,7 +131,22 @@ export function AdminDashboard() {
       }
     };
 
+    const unsubscribeActivities = onSnapshot(
+      query(collection(db, 'activityLogs'), orderBy('timestamp', 'desc'), limit(5)),
+      (snapshot) => {
+        const activities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityLog));
+        setRecentActivities(activities);
+        setLoadingActivities(false);
+      },
+      (error) => {
+        console.error("Failed to fetch activities:", error);
+        setLoadingActivities(false);
+      }
+    );
+
     fetchStats();
+
+    return () => unsubscribeActivities();
   }, []);
 
   return (
@@ -235,7 +238,7 @@ export function AdminDashboard() {
           <CardHeader>
             <CardTitle>Aktivitas Terbaru</CardTitle>
             <CardDescription>
-              Log tindakan terbaru yang dilakukan di panel admin.
+              Log tindakan terbaru yang dilakukan di aplikasi.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -248,26 +251,41 @@ export function AdminDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentActivities.map((activity, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={activity.user.avatar} alt={activity.user.name} data-ai-hint="user avatar" />
-                          <AvatarFallback>{activity.user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{activity.user.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {activity.action}{" "}
-                      <Badge variant="secondary">{activity.target}</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {activity.time}
-                    </TableCell>
+                {loadingActivities ? (
+                   <TableRow>
+                      <TableCell colSpan={3} className="h-24 text-center">
+                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                          <p className="text-sm mt-2">Memuat aktivitas...</p>
+                      </TableCell>
                   </TableRow>
-                ))}
+                ) : recentActivities.length === 0 ? (
+                  <TableRow>
+                      <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                          Belum ada aktivitas.
+                      </TableCell>
+                  </TableRow>
+                ) : (
+                  recentActivities.map((activity) => (
+                    <TableRow key={activity.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={activity.userAvatar} alt={activity.userName} data-ai-hint="user avatar" />
+                            <AvatarFallback>{activity.userName.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{activity.userName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {activity.action}{" "}
+                        <Badge variant="secondary">{activity.target}</Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {activity.timestamp ? formatDistanceToNow(activity.timestamp.toDate(), { addSuffix: true, locale: id }) : ''}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

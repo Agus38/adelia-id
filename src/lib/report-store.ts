@@ -2,7 +2,7 @@
 'use client';
 
 import { collection, query, where, getDocs, setDoc, doc, deleteDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, logActivity } from './firebase';
 import type { User } from 'firebase/auth';
 
 // The DailyReport interface now includes userId
@@ -81,10 +81,17 @@ export const addOrUpdateReport = async (reportData: Omit<DailyReport, 'id' | 'cr
     const reportDocRef = doc(db, 'dailyReports', reportId);
     
     try {
+        const isNewReport = !(await getDoc(reportDocRef)).exists();
+        
         await setDoc(reportDocRef, {
             ...reportData,
             createdAt: serverTimestamp(),
         }, { merge: true }); // Use merge: true to update if it exists, or create if not.
+
+        // Log the activity
+        const action = isNewReport ? 'membuat laporan' : 'memperbarui laporan';
+        await logActivity(action, 'Laporan Harian');
+
     } catch (error) {
         console.error("Error saving report to Firestore:", error);
         throw error; // re-throw to be caught by the calling function
@@ -95,6 +102,7 @@ export const deleteReport = async (reportId: string) => {
     try {
         const reportDocRef = doc(db, 'dailyReports', reportId);
         await deleteDoc(reportDocRef);
+        await logActivity('menghapus laporan', 'Laporan Harian');
     } catch(error) {
         console.error("Error deleting report from Firestore:", error);
         throw error;
