@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { useRef, useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -21,7 +20,6 @@ import { toast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Camera, Loader2 } from "lucide-react"
-import type { UserProfile } from "@/app/main-layout"
 import { auth, db, storage } from "@/lib/firebase"
 import { updateProfile } from "firebase/auth"
 import { doc, updateDoc } from "firebase/firestore"
@@ -40,7 +38,6 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>
 
 export function ProfileForm() {
   const { user, loading: loadingUser } = useUserStore();
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -57,9 +54,9 @@ export function ProfileForm() {
   useEffect(() => {
     if (user) {
       form.reset({
-        fullName: user.fullName || "",
+        fullName: user.fullName || user.displayName || "",
         email: user.email || "",
-        photoURL: user.avatarUrl || "",
+        photoURL: user.avatarUrl || user.photoURL || "",
       });
     }
   }, [user, form]);
@@ -84,7 +81,7 @@ export function ProfileForm() {
     if (!file || !auth.currentUser) return;
 
     setIsUploading(true);
-    const storageRef = ref(storage, `avatars/${auth.currentUser.uid}/${file.name}`);
+    const storageRef = ref(storage, `avatars/${auth.currentUser.uid}/${file.name}_${Date.now()}`);
     
     try {
         await uploadBytes(storageRef, file);
@@ -126,7 +123,7 @@ export function ProfileForm() {
             title: "Profil Diperbarui",
             description: "Informasi profil Anda telah berhasil disimpan.",
         });
-        form.reset(data);
+        form.reset(data); // reset to keep form from being dirty
     } catch (error) {
         toast({
             title: "Error",
