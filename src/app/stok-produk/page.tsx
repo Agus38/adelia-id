@@ -351,7 +351,7 @@ export default function StokProdukPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Batal</AlertDialogCancel>
-              <AlertDialogAction onClick={handleClear}>Ya, Bersihkan</AlertDialogAction>
+              <AlertDialogAction onClick={handleClear} className={buttonVariants({ variant: "destructive" })}>Ya, Bersihkan</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
