@@ -48,6 +48,7 @@ import { getSmwReports, deleteSmwReport, type SmwReport } from '@/lib/smw-manyar
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../ui/dropdown-menu';
+import { Separator } from '../ui/separator';
 
 type ReportItem = {
   id: string;
@@ -89,6 +90,14 @@ const initialOnlineSalesItems: ReportItem[] = [
   { id: 'grabFood', label: 'GrabFood' },
   { id: 'cash', label: 'Cash/Dll' },
 ];
+
+const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(value);
+};
 
 
 export function SmwManyarManagement() {
@@ -234,6 +243,41 @@ export function SmwManyarManagement() {
         </div>
     </div>
   );
+  
+  const DetailSection = ({ title, items, data }: { title: string, items: ReportItem[], data: { [key: string]: string }}) => {
+    const total = items.reduce((sum, item) => sum + (Number(data[item.id]) || 0), 0);
+    const hasItems = items.some(item => data[item.id] && Number(data[item.id]) > 0);
+    return (
+        <div className="space-y-2">
+            <h3 className="font-semibold">{title}</h3>
+            <div className="p-4 border rounded-lg">
+                <Table>
+                    <TableBody>
+                        {hasItems ? items.map((item) => {
+                            const value = data[item.id];
+                            if (!value || Number(value) === 0) return null;
+                            return (
+                                <TableRow key={item.id} className="border-none">
+                                    <TableCell className="p-1">{item.label}</TableCell>
+                                    <TableCell className="p-1 text-right font-medium">{title.includes('Sales') ? formatCurrency(Number(value)) : value}</TableCell>
+                                </TableRow>
+                            )
+                        }) : (
+                             <TableRow className="border-none"><TableCell colSpan={2} className="text-center text-muted-foreground p-1">Tidak ada data</TableCell></TableRow>
+                        )}
+                        {title.includes('Sales') && (
+                            <TableRow className="font-bold border-t">
+                                <TableCell className="p-1">Total</TableCell>
+                                <TableCell className="p-1 text-right">{formatCurrency(total)}</TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+        </div>
+    )
+  };
+
 
   return (
     <>
@@ -386,6 +430,41 @@ export function SmwManyarManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <Dialog open={isDetailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="max-w-xl">
+            <DialogHeader>
+                <DialogTitle>Detail Laporan SMW Manyar</DialogTitle>
+                <DialogDescription>
+                    Laporan dibuat oleh <strong>{selectedReport?.createdBy}</strong> pada <strong>{selectedReport ? format(selectedReport.date, 'd MMM yyyy', {locale: id}) : ''}</strong>.
+                </DialogDescription>
+            </DialogHeader>
+            {selectedReport && (
+                <div className="space-y-6 pt-4 max-h-[60vh] overflow-y-auto pr-4 text-sm">
+                    <DetailSection 
+                        title="Sisa Ikan" 
+                        items={sisaIkanItems} 
+                        data={Object.fromEntries(Object.entries(selectedReport.formData).filter(([k]) => k.startsWith('sisa-')).map(([k,v]) => [k.replace('sisa-',''), v]))} 
+                    />
+                     <DetailSection 
+                        title="Item Terjual" 
+                        items={terjualItems} 
+                        data={Object.fromEntries(Object.entries(selectedReport.formData).filter(([k]) => k.startsWith('terjual-')).map(([k,v]) => [k.replace('terjual-',''), v]))} 
+                    />
+                    <DetailSection 
+                        title="Total Online Sales" 
+                        items={onlineSalesItems} 
+                        data={Object.fromEntries(Object.entries(selectedReport.formData).filter(([k]) => k.startsWith('online-')).map(([k,v]) => [k.replace('online-',''), v]))} 
+                    />
+                </div>
+            )}
+             <DialogFooter className="pt-4 border-t">
+                <Button variant="secondary" onClick={() => setDetailOpen(false)}>
+                    Tutup
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
