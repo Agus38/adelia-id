@@ -44,17 +44,18 @@ service cloud.firestore {
     // Rules for stock reports
     match /stockReports/{reportId} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read, update: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      // Admin can read any report. Regular users can only read their own.
+      allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       allow delete, list: if isAdmin();
     }
 
     // Rules for SMW Manyar reports
     match /smwManyarReports/{reportId} {
       // Allow users to create or update their own reports.
-      // This single rule handles both creating a new report and updating an existing one.
       allow write: if request.auth != null && request.resource.data.userId == request.auth.uid;
       
-      // Rules for read, delete, and list remain more restrictive.
+      // Admin can read any report. Regular users can only read their own.
       allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       allow delete, list: if isAdmin();
     }
