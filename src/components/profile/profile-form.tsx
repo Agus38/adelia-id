@@ -80,20 +80,19 @@ export function ProfileForm({ user }: ProfileFormProps) {
     try {
         await uploadBytes(storageRef, file);
         const photoURL = await getDownloadURL(storageRef);
+        
+        // Immediately update the form state to re-render the avatar
+        form.setValue('photoURL', photoURL, { shouldDirty: true });
 
-        // Update profile in both Firebase Auth and Firestore
+        // Then, update profile in both Firebase Auth and Firestore in the background
         await updateProfile(auth.currentUser, { photoURL });
         const userDocRef = doc(db, 'users', auth.currentUser.uid);
         await updateDoc(userDocRef, { avatarUrl: photoURL });
 
-        form.setValue('photoURL', photoURL, { shouldDirty: true });
         toast({
             title: "Avatar Diperbarui",
             description: "Foto profil Anda telah berhasil diubah.",
         });
-        
-        // Refresh server components to get the new avatar URL
-        router.refresh();
 
     } catch (error) {
          toast({
