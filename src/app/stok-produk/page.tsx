@@ -26,6 +26,17 @@ import { useToast } from '@/hooks/use-toast';
 import { getStockReport, addOrUpdateStockReport, type StockItem, initialStockData } from '@/lib/stock-store';
 import { usePageAccess } from '@/hooks/use-page-access';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 
 // Memoize the input component to prevent unnecessary re-renders causing focus loss.
@@ -324,10 +335,26 @@ export default function StokProdukPage() {
       </div>
 
       <div className="flex-shrink-0 flex justify-between gap-4 pt-4">
-        <Button variant="destructive" onClick={handleClear} className="w-full md:w-auto">
-          <Trash2 className="mr-2 h-4 w-4" />
-          Hapus
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" className="w-full md:w-auto">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Bersihkan
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Anda yakin ingin membersihkan form?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tindakan ini akan menghapus semua data yang telah Anda masukkan di formulir ini, tetapi tidak akan menghapus laporan yang sudah tersimpan.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Batal</AlertDialogCancel>
+              <AlertDialogAction onClick={handleClear}>Ya, Bersihkan</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         <Button className="w-full md:w-auto" onClick={handleSaveStock} disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Simpan Stok
