@@ -176,7 +176,7 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const { state, openMobile, setOpenMobile } = useSidebar()
 
     if (collapsible === "none") {
       return (
@@ -193,13 +193,14 @@ const Sidebar = React.forwardRef<
       )
     }
 
-    if (isMobile) {
-      return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+    return (
+      <>
+        {/* Mobile Sidebar */}
+        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-background p-0 text-foreground"
+            className="w-[--sidebar-width] bg-background p-0 text-foreground md:hidden"
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -217,28 +218,27 @@ const Sidebar = React.forwardRef<
               </SheetClose>
           </SheetContent>
         </Sheet>
-      )
-    }
-
-    return (
-      <div
-        ref={ref}
-        className={cn(
-        "group peer hidden md:flex flex-col text-foreground h-full border-r bg-background transition-all duration-300 ease-in-out",
-        state === 'expanded' ? "w-[--sidebar-width]" : "w-[--sidebar-width-icon]",
-        className
-        )}
-        data-state={state}
-        data-collapsible={state === "collapsed" ? collapsible : ""}
-        {...props}
-      >
+        
+        {/* Desktop Sidebar */}
         <div
-            data-sidebar="sidebar"
-            className="flex h-full w-full flex-col"
-          >
-            {children}
-          </div>
-      </div>
+          ref={ref}
+          className={cn(
+          "group peer hidden md:flex flex-col text-foreground h-full border-r bg-background transition-all duration-300 ease-in-out",
+          state === 'expanded' ? "w-[--sidebar-width]" : "w-[--sidebar-width-icon]",
+          className
+          )}
+          data-state={state}
+          data-collapsible={state === "collapsed" ? collapsible : ""}
+          {...props}
+        >
+          <div
+              data-sidebar="sidebar"
+              className="flex h-full w-full flex-col"
+            >
+              {children}
+            </div>
+        </div>
+      </>
     )
   }
 )
@@ -248,7 +248,7 @@ const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar, isMobile } = useSidebar()
+  const { toggleSidebar } = useSidebar()
 
   return (
     <Button
@@ -258,7 +258,6 @@ const SidebarTrigger = React.forwardRef<
       size="icon"
       className={cn(
         "h-9 w-9",
-        isMobile ? 'flex' : 'hidden md:flex',
         className
       )}
       onClick={(event) => {
@@ -750,3 +749,5 @@ export {
   SidebarTrigger,
   useSidebar,
 }
+
+    
