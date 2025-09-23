@@ -15,15 +15,27 @@ interface UserState {
   clearUser: () => void;
 }
 
+// Keep a global reference to the Firestore listener to avoid multiple listeners.
+let firestoreUnsubscribe: (() => void) | null = null;
+
 export const useUserStore = create<UserState>((set) => ({
   user: null,
   loading: true,
   initializeUserListener: () => {
     const authUnsubscribe = onAuthStateChanged(auth, (authUser) => {
+      // If a user logs out, clean up existing Firestore listener.
+      if (!authUser && firestoreUnsubscribe) {
+        firestoreUnsubscribe();
+        firestoreUnsubscribe = null;
+      }
+
       if (authUser) {
+        // If there's already a listener, don't create a new one.
+        if (firestoreUnsubscribe) return; 
+
         const userDocRef = doc(db, 'users', authUser.uid);
         
-        const docUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
+        firestoreUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const userData = docSnap.data();
 
@@ -35,7 +47,7 @@ export const useUserStore = create<UserState>((set) => ({
                 duration: 5000,
               });
               signOut(auth);
-              set({ user: null, loading: false });
+              // State will be cleared by the auth listener below.
               return;
             }
 
@@ -56,17 +68,18 @@ export const useUserStore = create<UserState>((set) => ({
           }
         }, (error) => {
             console.error("Error fetching user document:", error);
-            set({ user: authUser, loading: false }); // Fallback to auth user
+            // Fallback to auth user data if Firestore fails
+            set({ user: authUser, loading: false }); 
         });
-        
-        return () => docUnsubscribe(); // Cleanup Firestore listener
       } else {
-        // No user is signed in
+        // No user is signed in, clear user data.
         set({ user: null, loading: false });
       }
     });
 
-    return () => authUnsubscribe(); // Cleanup auth listener
+    // The returned function is the cleanup function for useEffect.
+    // It will unsubscribe from the auth state listener when the app unmounts.
+    return authUnsubscribe; 
   },
   clearUser: () => set({ user: null, loading: false }),
 }));
