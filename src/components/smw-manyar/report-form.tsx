@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { auth } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { getSmwReport, addOrUpdateSmwReport, type SmwReportData } from '@/lib/smw-manyar-store';
+import { getSmwReport, addOrUpdateSmwReport } from '@/lib/smw-manyar-store';
 
 const sisaIkanItems = [
   { id: 'daging', label: 'DAGING' },
@@ -161,7 +161,7 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
     }
     setIsSaving(true);
     try {
-        const reportData: Omit<SmwReportData, 'id' | 'createdAt'> = {
+        const reportData = {
             date,
             formData,
             createdBy: currentUser.displayName || 'Pengguna',
