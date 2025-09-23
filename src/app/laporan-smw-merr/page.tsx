@@ -39,7 +39,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { addOrUpdateReport, getReport } from '@/lib/report-store';
 import { useToast } from '@/hooks/use-toast';
-import { AppSidebar } from '@/components/layout/sidebar';
 import { auth } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
 import { usePageAccess } from '@/hooks/use-page-access';
@@ -429,7 +428,7 @@ ${pemasukanText}
   return (
     <>
       <UnsavedChangesDialog />
-      <div className="space-y-4 pt-6 p-4 md:p-6">
+      <div className="space-y-4 p-4 md:p-6">
         <Card className="mx-1.5 md:mx-2 relative">
           {isFetchingReport && (
             <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg z-10">

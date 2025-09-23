@@ -11,6 +11,7 @@ import type { User } from 'firebase/auth';
 import { useSessionManager } from '@/hooks/use-session-manager';
 import { signOut } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
+import { AppSidebar } from '@/components/layout/sidebar';
 
 export type UserProfile = User & {
   fullName?: string;
@@ -73,7 +74,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     <>
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
           <Header user={user} loading={loading} />
-          <main className="flex-1">{children}</main>
+           <div className="flex flex-1">
+             <AppSidebar />
+             <main className="flex-1">{children}</main>
+          </div>
           <Footer />
       </div>
       <Toaster />
