@@ -17,6 +17,11 @@ import { useIsMobile } from './use-mobile';
 import { useToast } from './use-toast';
 import { AlertTriangle } from 'lucide-react';
 
+// A global variable to store the navigation state. This is a bit of a workaround
+// to deal with how Next.js router and browser events interact.
+let isNavigationConfirmed = false;
+let confirmedPath = '';
+
 export function useUnsavedChangesWarning(isDirty: boolean) {
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -24,27 +29,11 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
 
   const [showDialog, setShowDialog] = useState(false);
   const [nextPath, setNextPath] = useState<string | null>(null);
-  const [isNavigationConfirmed, setIsNavigationConfirmed] = useState(false);
-
-  useEffect(() => {
-    if (isNavigationConfirmed) {
-      if (nextPath) {
-        if (nextPath === '__BACK__') {
-          router.back();
-        } else {
-          router.push(nextPath);
-        }
-        setIsNavigationConfirmed(false); // Reset after navigation
-        setNextPath(null);
-      }
-    }
-  }, [isNavigationConfirmed, nextPath, router]);
-
 
   // For closing tab/reloading page - this will always use the browser's default prompt
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (isDirty) {
+      if (isDirty && !isNavigationConfirmed) {
         event.preventDefault();
         event.returnValue = "Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin ingin keluar?";
         return event.returnValue;
@@ -54,10 +43,13 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
-
   // For Next.js Link navigation
   useEffect(() => {
     const handleLinkClick = (e: MouseEvent) => {
+      if (isNavigationConfirmed) {
+        return;
+      }
+
       const target = e.target as HTMLElement;
       const link = target.closest('a');
       
@@ -67,25 +59,27 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
         
         if (targetUrl.origin === currentUrl.origin && targetUrl.pathname !== currentUrl.pathname) {
           e.preventDefault();
-          setNextPath(link.href);
+          setNextPath(link.getAttribute('href')); // Use getAttribute to get relative path
           triggerWarning();
         }
       }
     };
     
-    document.addEventListener('click', handleLinkClick);
+    document.addEventListener('click', handleLinkClick, true); // Use capture phase
 
-    return () => document.removeEventListener('click', handleLinkClick);
+    return () => document.removeEventListener('click', handleLinkClick, true);
   }, [isDirty, isMobile, toast]); // Add dependencies
 
   // For browser back/forward buttons
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-        if(isDirty) {
-            // Prevent the default back navigation
+        if(isDirty && !isNavigationConfirmed) {
             history.pushState(null, '', window.location.href);
             setNextPath('__BACK__'); // Special value for router.back()
             triggerWarning();
+        } else {
+            isNavigationConfirmed = false; // Reset on successful navigation
+            confirmedPath = '';
         }
     };
 
@@ -96,14 +90,28 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
     };
   }, [isDirty]); // Add dependencies
 
+  const proceedWithNavigation = useCallback(() => {
+    if (!nextPath) return;
+
+    isNavigationConfirmed = true;
+    confirmedPath = nextPath;
+
+    if (nextPath === '__BACK__') {
+      router.back();
+    } else {
+      router.push(nextPath);
+    }
+  }, [nextPath, router]);
+
+
   const handleConfirmNavigation = () => {
-    setIsNavigationConfirmed(true);
     setShowDialog(false);
+    proceedWithNavigation();
   };
   
   const handleMobileConfirm = () => {
-    setIsNavigationConfirmed(true);
     dismiss();
+    proceedWithNavigation();
   };
 
   const handleCancelNavigation = () => {
@@ -138,7 +146,6 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
           setShowDialog(true);
       }
   };
-
 
   const UnsavedChangesDialog = useCallback(() => {
     if (isMobile) return null; // Don't render AlertDialog on mobile
