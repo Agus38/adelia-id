@@ -119,6 +119,7 @@ export function AdminDashboard() {
 
   React.useEffect(() => {
     const fetchStats = async () => {
+      setLoadingStats(true);
       try {
         const usersCollection = collection(db, 'users');
         const usersSnapshot = await getDocs(usersCollection);

@@ -21,14 +21,17 @@ service cloud.firestore {
 
     // Rules for user profiles
     match /users/{userId} {
-      // Admin can read any profile, users can read their own.
-      allow read: if isAdmin() || request.auth.uid == userId;
+      // Admin can read any profile and list all users.
+      // A regular user can only read their own profile.
+      allow read, list: if isAdmin() || request.auth.uid == userId;
       
-      // Users can create and update their own profile. Admin can write to any profile.
-      allow write: if isAdmin() || request.auth.uid == userId;
+      // Admin can create/update any user profile.
+      // A regular user can only create/update their own profile.
+      // An existing user cannot change their own role.
+      allow write: if isAdmin() || (request.auth.uid == userId && request.resource.data.role == resource.data.role);
 
-      // Only Admin can delete or list all users.
-      allow delete, list: if isAdmin();
+      // Only Admin can delete a user document.
+      allow delete: if isAdmin();
     }
 
     // Rules for daily financial reports
@@ -47,37 +50,43 @@ service cloud.firestore {
       // Admin can read any report. Regular users can only read their own.
       allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       allow update: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      // Only Admin can list/delete reports
       allow delete, list: if isAdmin();
     }
 
     // Rules for SMW Manyar reports
     match /smwManyarReports/{reportId} {
       // Allow users to create or update their own reports.
-      allow write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow create, update: if request.auth != null && request.resource.data.userId == request.auth.uid;
       
       // Admin can read any report. Regular users can only read their own.
       allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      // Only Admin can list/delete reports
       allow delete, list: if isAdmin();
+    }
+
+    // Rules for activity logs
+    match /activityLogs/{logId} {
+      // Allow any authenticated user to create a log entry.
+      allow create: if request.auth != null;
+      // Only Admin can read, update, or delete logs.
+      allow read, update, delete, list: if isAdmin();
     }
 
     // Rules for digital products synced from Digiflazz
     match /products/{productId} {
       // Anyone can read the product list.
       allow read: if true;
-      // IMPORTANT: THIS IS INSECURE FOR PRODUCTION.
-      // This allows any server-side process (like our Genkit flow) to write.
-      // For production, this should be moved to a secure Cloud Function.
-      allow write: if true;
+      // ONLY Admin can write/update/delete products. This is secure.
+      allow write: if isAdmin();
     }
 
     // Rules for general app settings
     match /app-settings/{setting} {
       // Anyone can read app settings (e.g., menu configuration).
       allow read: if true;
-      // IMPORTANT: THIS IS INSECURE FOR PRODUCTION.
-      // This allows any server-side process (like our Genkit flow) to write.
-      // For production, this should be moved to a secure Cloud Function.
-      allow write: if true;
+      // ONLY Admin can write/update app settings. This is secure.
+      allow write: if isAdmin();
     }
   }
 }
