@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -29,10 +30,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '../ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Eye, MoreHorizontal } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { getSmwReports, deleteSmwReport, type SmwReport } from '@/lib/smw-manyar-report-store';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../ui/dropdown-menu';
 
 type ReportItem = {
   id: string;
@@ -75,16 +90,42 @@ const initialOnlineSalesItems: ReportItem[] = [
   { id: 'cash', label: 'Cash/Dll' },
 ];
 
+
 export function SmwManyarManagement() {
   const [sisaIkanItems, setSisaIkanItems] = useState<ReportItem[]>(initialSisaIkanItems);
   const [terjualItems, setTerjualItems] = useState<ReportItem[]>(initialTerjualItems);
   const [onlineSalesItems, setOnlineSalesItems] = useState<ReportItem[]>(initialOnlineSalesItems);
 
+  // Dialog state for item editing
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState<ReportItem | null>(null);
   const [currentList, setCurrentList] = useState<'sisaIkan' | 'terjual' | 'onlineSales' | null>(null);
   const [isNew, setIsNew] = useState(false);
   
+  // State for report list
+  const [reports, setReports] = useState<SmwReport[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(true);
+  const [selectedReport, setSelectedReport] = useState<SmwReport | null>(null);
+  const [isDetailOpen, setDetailOpen] = useState(false);
+  const [isDeleteOpen, setDeleteOpen] = useState(false);
+
+
+  const fetchReports = async () => {
+    setIsLoadingReports(true);
+    try {
+        const fetchedReports = await getSmwReports();
+        setReports(fetchedReports);
+    } catch (error) {
+        toast({ title: "Gagal Memuat Laporan", description: "Terjadi kesalahan saat mengambil laporan dari database.", variant: "destructive"});
+    } finally {
+        setIsLoadingReports(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchReports();
+  }, []);
+
   const getListAndSetter = (listName: 'sisaIkan' | 'terjual' | 'onlineSales') => {
     switch(listName) {
         case 'sisaIkan': return { list: sisaIkanItems, setter: setSisaIkanItems };
@@ -108,13 +149,12 @@ export function SmwManyarManagement() {
   };
   
   const handleDelete = (id: string, listName: 'sisaIkan' | 'terjual' | 'onlineSales') => {
-    // In a real app, you'd want a confirmation dialog here.
     const { setter, list } = getListAndSetter(listName);
     setter(list.filter(item => item.id !== id));
     toast({ title: "Item Dihapus", description: "Item telah berhasil dihapus dari daftar."});
   }
 
-  const handleSave = () => {
+  const handleSaveItem = () => {
     if (!currentItem || !currentList) return;
     
     const { setter, list } = getListAndSetter(currentList);
@@ -132,6 +172,30 @@ export function SmwManyarManagement() {
     setCurrentItem(null);
     setCurrentList(null);
   };
+  
+  const handleViewDetails = (report: SmwReport) => {
+    setSelectedReport(report);
+    setDetailOpen(true);
+  };
+
+  const handleDeleteReport = (report: SmwReport) => {
+    setSelectedReport(report);
+    setDeleteOpen(true);
+  };
+
+  const confirmDeleteReport = async () => {
+    if (!selectedReport) return;
+    try {
+        await deleteSmwReport(selectedReport.id);
+        toast({ title: "Laporan Dihapus", description: "Laporan SMW Manyar telah berhasil dihapus."});
+        fetchReports(); // Refresh the list
+    } catch (error) {
+        toast({ title: "Gagal Menghapus", description: "Terjadi kesalahan saat menghapus laporan.", variant: "destructive"});
+    } finally {
+        setDeleteOpen(false);
+    }
+  };
+
 
   const ItemTable = ({ items, listName, onEdit, onDelete }: { items: ReportItem[], listName: any, onEdit: any, onDelete: any }) => (
     <div className="space-y-4">
@@ -175,18 +239,81 @@ export function SmwManyarManagement() {
     <>
     <Card>
       <CardHeader>
-        <CardTitle>Pengaturan Halaman SMW Manyar</CardTitle>
+        <CardTitle>Manajemen Laporan SMW Manyar</CardTitle>
         <CardDescription>
-          Sesuaikan item dan opsi yang tersedia di formulir laporan SMW Manyar.
+          Kelola item formulir laporan dan lihat daftar laporan yang telah dikirimkan.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="sisa-ikan" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="sisa-ikan">Sisa Ikan</TabsTrigger>
+        <Tabs defaultValue="report-list" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="report-list">Daftar Laporan</TabsTrigger>
+            <TabsTrigger value="sisa-ikan">Item Sisa Ikan</TabsTrigger>
             <TabsTrigger value="item-terjual">Item Terjual</TabsTrigger>
-            <TabsTrigger value="penjualan-online">Penjualan Online</TabsTrigger>
+            <TabsTrigger value="penjualan-online">Item Penjualan Online</TabsTrigger>
           </TabsList>
+           <TabsContent value="report-list" className="pt-6">
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Tanggal</TableHead>
+                                <TableHead>Dibuat Oleh</TableHead>
+                                <TableHead>Waktu Kirim</TableHead>
+                                <TableHead className="text-right">Aksi</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoadingReports ? (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="h-24 text-center">
+                                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                                    </TableCell>
+                                </TableRow>
+                            ) : reports.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                                        Belum ada laporan yang dibuat.
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                reports.map((report) => (
+                                    <TableRow key={report.id}>
+                                        <TableCell className="font-medium">
+                                            {format(report.date, 'eeee, d MMMM yyyy', { locale: id })}
+                                        </TableCell>
+                                        <TableCell>{report.createdBy}</TableCell>
+                                         <TableCell className="text-muted-foreground">
+                                            {format(report.createdAt, 'HH:mm', { locale: id })}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <span className="sr-only">Buka menu</span>
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleViewDetails(report)}>
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    Lihat Detail
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteReport(report)}>
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Hapus
+                                                </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+          </TabsContent>
           <TabsContent value="sisa-ikan" className="pt-6">
             <ItemTable items={sisaIkanItems} listName="sisaIkan" onEdit={handleEdit} onDelete={handleDelete} />
           </TabsContent>
@@ -240,10 +367,25 @@ export function SmwManyarManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
-            <Button type="submit" onClick={handleSave}>Simpan</Button>
+            <Button type="submit" onClick={handleSaveItem}>Simpan</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+       <AlertDialog open={isDeleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Laporan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Laporan untuk tanggal <span className="font-semibold">{selectedReport ? format(selectedReport.date, 'd MMM yyyy', {locale: id}) : ''}</span> akan dihapus permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteReport}>Hapus</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
