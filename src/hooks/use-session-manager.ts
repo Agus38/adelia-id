@@ -5,8 +5,9 @@ import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSessionConfig } from '@/lib/menu-store';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { toast } from './use-toast';
+import { useUserStore } from '@/lib/user-store';
 
 const LAST_ACTIVITY_KEY = 'lastActivityTime';
 let sessionCheckInterval: NodeJS.Timeout | null = null;
@@ -14,6 +15,7 @@ let sessionCheckInterval: NodeJS.Timeout | null = null;
 export function useSessionManager() {
   const { sessionConfig, isLoading } = useSessionConfig();
   const router = useRouter();
+  const { user } = useUserStore();
 
   const handleSignOut = useCallback(() => {
     signOut(auth).then(() => {
@@ -22,7 +24,7 @@ export function useSessionManager() {
         description: "Anda telah dikeluarkan secara otomatis karena tidak aktif.",
         variant: "destructive"
       });
-      // The onAuthStateChanged listener in MainLayout will handle routing.
+      // The user store listener will handle clearing the user state.
     });
   }, [router]);
 
@@ -53,7 +55,7 @@ export function useSessionManager() {
       localStorage.removeItem(LAST_ACTIVITY_KEY);
     };
 
-    if (durationMinutes <= 0) {
+    if (durationMinutes <= 0 || !user) {
       cleanupListeners();
       return;
     }
@@ -61,8 +63,6 @@ export function useSessionManager() {
     const checkSession = () => {
       const lastActivity = localStorage.getItem(LAST_ACTIVITY_KEY);
       if (!lastActivity) {
-        // If there's no activity timestamp but user is logged in, sign out.
-        // This can happen if the key is cleared manually or by another tab.
         if (auth.currentUser) {
             handleSignOut();
         }
@@ -90,18 +90,11 @@ export function useSessionManager() {
       sessionCheckInterval = setInterval(checkSession, 60 * 1000); // Check every minute
     };
     
-    const authUnsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setupListeners();
-      } else {
-        cleanupListeners();
-      }
-    });
+    setupListeners();
 
     // Clean up on component unmount or when dependencies change
     return () => {
-      authUnsubscribe();
       cleanupListeners();
     };
-  }, [sessionConfig, isLoading, router, handleSignOut, resetActivityTimer, clearSessionInterval]);
+  }, [sessionConfig, isLoading, user, handleSignOut, resetActivityTimer, clearSessionInterval]);
 }

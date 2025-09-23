@@ -16,15 +16,11 @@ import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users,
 import Link from 'next/link';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import type { UserProfile } from '@/app/main-layout';
+import { useUserStore } from '@/lib/user-store';
 
-interface UserNavProps {
-  user: UserProfile | null;
-  loading?: boolean;
-}
-
-export function UserNav({ user, loading }: UserNavProps) {
+export function UserNav() {
   const router = useRouter();
+  const { user, loading } = useUserStore();
 
   const handleLogout = async () => {
     await auth.signOut();

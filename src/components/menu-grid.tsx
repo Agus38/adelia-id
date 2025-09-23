@@ -6,40 +6,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "./ui/badge";
 import { useMenuConfig } from "@/lib/menu-store";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import type { UserProfile } from "@/app/main-layout";
 import { cn } from "@/lib/utils";
+import { useUserStore } from "@/lib/user-store";
 
 export function MenuGrid() {
   const { menuItems, isLoading: isLoadingMenu } = useMenuConfig();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
-
-   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
-      if (authUser) {
-        const userDocRef = doc(db, 'users', authUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setUser({
-            ...authUser,
-            fullName: userData.fullName || authUser.displayName,
-            role: userData.role,
-          });
-        } else {
-           setUser(authUser);
-        }
-      } else {
-        setUser(null);
-      }
-      setIsLoadingUser(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const { user, loading: isLoadingUser } = useUserStore();
 
   const filteredMenuItems = menuItems.filter(item => {
     // Admin sees everything.

@@ -6,17 +6,13 @@ import { UserNav } from './user-nav';
 import { ThemeToggle } from '../theme-toggle';
 import { Logo } from '../icons';
 import Link from 'next/link';
-import type { UserProfile } from '@/app/layout';
 import { useBrandingConfig } from '@/lib/menu-store';
 import { Skeleton } from '../ui/skeleton';
 import Image from 'next/image';
+import { useUserStore } from '@/lib/user-store';
 
-interface HeaderProps {
-  user: UserProfile | null;
-  loading?: boolean;
-}
-
-export function Header({ user, loading }: HeaderProps) {
+export function Header() {
+  const { user } = useUserStore();
   const { brandingConfig, isLoading: isBrandingLoading } = useBrandingConfig();
   const { appName, logoType, icon: AppIcon = Logo, imageUrl } = brandingConfig;
 
@@ -62,7 +58,7 @@ export function Header({ user, loading }: HeaderProps) {
 
       <div className="flex items-center gap-4 md:flex-1 md:justify-end">
         {user && <ThemeToggle />}
-        <UserNav user={user} loading={loading} />
+        <UserNav />
       </div>
     </header>
   );
