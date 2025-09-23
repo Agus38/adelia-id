@@ -19,9 +19,14 @@ import { UserNav } from './user-nav';
 import { Shield, Loader2 } from 'lucide-react';
 import { useSidebar } from '../ui/sidebar';
 import { useSidebarMenuConfig, useAdminSidebarMenuConfig } from '@/lib/menu-store';
+import type { UserProfile } from '@/app/main-layout';
 
+interface AppSidebarProps {
+  user: UserProfile | null;
+  loading?: boolean;
+}
 
-export function AppSidebar() {
+export function AppSidebar({ user, loading }: AppSidebarProps) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
   const { sidebarMenuItems, isLoading: isLoadingSidebar } = useSidebarMenuConfig();
@@ -90,7 +95,7 @@ export function AppSidebar() {
           <SidebarSeparator />
            <div className="p-2 flex items-center justify-between">
               <div>
-                {!isMobile && <UserNav />}
+                {!isMobile && <UserNav user={user} loading={loading} />}
               </div>
            </div>
         </SidebarFooter>

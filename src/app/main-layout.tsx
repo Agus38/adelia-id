@@ -75,7 +75,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
           <Header user={user} loading={loading} />
            <div className="flex flex-1">
-             <AppSidebar />
+             <AppSidebar user={user} loading={loading} />
              <main className="flex-1">{children}</main>
           </div>
           <Footer />
