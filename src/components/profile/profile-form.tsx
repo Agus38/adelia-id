@@ -20,10 +20,9 @@ import { toast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Camera, Loader2 } from "lucide-react"
-import { auth, db, storage } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
 import { updateProfile } from "firebase/auth"
 import { doc, updateDoc } from "firebase/firestore"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { useUserStore } from "@/lib/user-store"
 
 const profileFormSchema = z.object({
@@ -80,26 +79,47 @@ export function ProfileForm() {
     const file = event.target.files?.[0];
     if (!file || !auth.currentUser) return;
 
+    // File size check (1MB limit for Firestore document)
+    if (file.size > 1024 * 1024) {
+      toast({
+        title: "Ukuran File Terlalu Besar",
+        description: "Ukuran file gambar tidak boleh melebihi 1MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsUploading(true);
-    const storageRef = ref(storage, `avatars/${auth.currentUser.uid}/${file.name}_${Date.now()}`);
     
     try {
-        await uploadBytes(storageRef, file);
-        const photoURL = await getDownloadURL(storageRef);
-        
-        await updateProfile(auth.currentUser, { photoURL });
-        const userDocRef = doc(db, 'users', auth.currentUser.uid);
-        await updateDoc(userDocRef, { avatarUrl: photoURL });
+      // Convert image to Data URL (Base64)
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
 
+        // Update Firebase Auth profile
+        await updateProfile(auth.currentUser!, { photoURL: dataUrl });
+        
+        // Update Firestore document
+        const userDocRef = doc(db, 'users', auth.currentUser!.uid);
+        await updateDoc(userDocRef, { avatarUrl: dataUrl });
+        
+        // The user store listener will automatically update the UI
         toast({
             title: "Avatar Diperbarui",
             description: "Foto profil Anda telah berhasil diubah.",
         });
+      };
+      reader.onerror = (error) => {
+        console.error("Error reading file:", error);
+        throw new Error("Gagal membaca file gambar.");
+      }
 
     } catch (error) {
          toast({
             title: "Upload Gagal",
-            description: "Gagal mengunggah avatar. Pastikan file adalah gambar dan coba lagi.",
+            description: "Gagal memproses gambar. Coba lagi.",
             variant: "destructive"
         });
     } finally {
