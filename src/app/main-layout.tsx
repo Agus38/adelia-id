@@ -34,7 +34,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           <Header />
            <div className="flex flex-1">
              <AppSidebar />
-             <main className="flex-1 pt-16 sm:pt-0">{children}</main>
+             <main className="flex-1">{children}</main>
           </div>
           <Footer />
       </div>
