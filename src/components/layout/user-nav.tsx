@@ -42,10 +42,12 @@ export function UserNav({ user, loading }: UserNavProps) {
 
   if (!user) {
     return (
-      <Link href="/login">
-        <Button size="sm" className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm">
+      <Link href="/login" legacyBehavior passHref>
+        <Button asChild size="sm" className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm">
+          <a>
             <LogIn className="mr-2 h-4 w-4"/>
             Masuk
+          </a>
         </Button>
       </Link>
     );
