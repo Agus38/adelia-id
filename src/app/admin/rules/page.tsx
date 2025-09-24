@@ -72,6 +72,14 @@ service cloud.firestore {
       // Only Admin can read, update, or delete logs.
       allow read, update, delete, list: if isAdmin();
     }
+    
+    // Rules for age calculation logs
+    match /ageCalculations/{calculationId} {
+      // Allow anyone to create an entry (public feature)
+      allow create: if true;
+      // Only Admin can read or list entries
+      allow read, list, delete: if isAdmin();
+    }
 
     // Rules for digital products synced from Digiflazz
     match /products/{productId} {
