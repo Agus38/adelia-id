@@ -224,6 +224,15 @@ export const defaultAdminMenuItems: MenuItem[] = [
     requiresAuth: true,
   },
    {
+    id: 'age-calculation-management',
+    title: 'Manajemen Kalkulator Usia',
+    href: '/admin/age-calculations',
+    icon: Cake,
+    description: 'Lihat data penggunaan dari fitur kalkulator usia.',
+    access: 'admin',
+    requiresAuth: true,
+  },
+   {
     id: 'digital-product-management',
     title: 'Manajemen Produk',
     href: '/admin/digital-products',
@@ -473,3 +482,5 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Wallet,
   Wand2,
 };
+
+    

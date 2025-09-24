@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { TriangleAlert, Gift, Calendar, Sparkles, Scale, PawPrint, Hourglass, RefreshCw, CheckCircle2, Loader2 } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 interface Age {
   years: number;
@@ -90,7 +92,7 @@ export function AgeCalculator() {
   };
 
 
-  const handleCalculateAge = () => {
+  const handleCalculateAge = async () => {
     const dayNum = parseInt(day, 10);
     const monthNum = parseInt(month, 10);
     const yearNum = parseInt(year, 10);
@@ -137,6 +139,22 @@ export function AgeCalculator() {
 
     setError(null);
     setIsLoading(true);
+
+    try {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 3);
+
+      await addDoc(collection(db, 'ageCalculations'), {
+        dateOfBirth: birthDate,
+        calculatedAt: serverTimestamp(),
+        expiresAt: Timestamp.fromDate(expiresAt),
+      });
+
+    } catch (dbError) {
+      console.error("Error saving age calculation to Firestore:", dbError);
+      // Don't block the user, just log the error. The main function is to calculate age.
+    }
+
 
     setTimeout(() => {
         // Calculate age
@@ -383,3 +401,5 @@ export function AgeCalculator() {
     </div>
   );
 }
+
+    
