@@ -66,25 +66,28 @@ export function AppSidebar({ }: AppSidebarProps) {
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
-            itemsToDisplay.map((item) => (
-              <SidebarMenuItem key={item.id} onClick={handleMenuItemClick}>
-                <Link href={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    tooltip={{
-                      children: item.title,
-                      side: 'right',
-                    }}
-                  >
-                    <span>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))
+            itemsToDisplay.map((item) => {
+              const href = item.isUnderMaintenance ? '/maintenance' : item.href;
+              return (
+                <SidebarMenuItem key={item.id} onClick={handleMenuItemClick}>
+                  <Link href={href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href && !item.isUnderMaintenance}
+                      tooltip={{
+                        children: item.title,
+                        side: 'right',
+                      }}
+                    >
+                      <span>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              )
+            })
           )}
         </SidebarMenu>
         
