@@ -51,12 +51,12 @@ export function UserBalanceCard() {
             <p className="text-sm font-bold text-primary">{formatCurrency(userInfo.balance)}</p>
           </div>
         </div>
-        <Link href="/top-up">
-          <Button variant="outline">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Top Up
-          </Button>
-        </Link>
+        <Button asChild variant="outline">
+            <Link href="/top-up">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Top Up
+            </Link>
+        </Button>
       </CardContent>
     </Card>
   );

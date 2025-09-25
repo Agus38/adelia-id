@@ -229,11 +229,11 @@ export function PaketDataTransactionForm() {
                             <SheetClose asChild>
                                 <Button variant="outline" className="w-full">Batal</Button>
                             </SheetClose>
-                             <Link href="/payment" className="w-full">
-                                <Button className="w-full bg-green-600 hover:bg-green-700">
+                             <Button asChild className="w-full bg-green-600 hover:bg-green-700">
+                                <Link href="/payment">
                                    <Wallet className="mr-2 h-4 w-4" /> Konfirmasi & Bayar
-                                </Button>
-                            </Link>
+                                </Link>
+                            </Button>
                         </SheetFooter>
                     </SheetContent>
                 </Sheet>

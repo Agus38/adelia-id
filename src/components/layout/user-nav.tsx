@@ -38,14 +38,12 @@ export function UserNav() {
 
   if (!user) {
     return (
-      <Link href="/login" legacyBehavior passHref>
-        <Button asChild size="sm" className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm">
-          <a>
+      <Button asChild size="sm" className="h-9 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm">
+        <Link href="/login">
             <LogIn className="mr-2 h-4 w-4"/>
             Masuk
-          </a>
-        </Button>
-      </Link>
+        </Link>
+      </Button>
     );
   }
   
