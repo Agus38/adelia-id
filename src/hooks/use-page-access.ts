@@ -25,14 +25,21 @@ export function usePageAccess(pageId: string) {
       return;
     }
     
-    // First, check for authentication requirement.
+    // First, check for maintenance mode. This takes precedence over all other checks.
+    if (menuItem.isUnderMaintenance) {
+        router.push('/maintenance');
+        setHasAccess(false);
+        return;
+    }
+
+    // Then, check for authentication requirement.
     if (menuItem.requiresAuth && !user) {
         router.push('/login');
         setHasAccess(false);
         return;
     }
 
-    // Then, check for role-based access.
+    // Finally, check for role-based access.
     if (menuItem.access === 'admin' && user?.role !== 'Admin') {
       router.push('/unauthorized');
       setHasAccess(false);
