@@ -20,6 +20,7 @@ import {
   PanelLeft,
   Info,
   Loader2,
+  Link as LinkIcon,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -62,7 +63,7 @@ const managementLinks = [
   {
     title: "Manajemen Tim",
     href: "/admin/tim",
-    icon: Users2,
+icon: Users2,
     description: "Kelola anggota tim yang ditampilkan.",
   },
   {
@@ -94,6 +95,12 @@ const managementLinks = [
     href: "/admin/banner",
     icon: Info, // Changed to a more generic icon
     description: "Kelola banner dan slide di halaman utama.",
+  },
+  {
+    title: "Daftar Rute Aplikasi",
+    href: "/admin/routes",
+    icon: LinkIcon,
+    description: "Lihat semua rute halaman aplikasi.",
   },
   {
     title: "Pengaturan 'Tentang'",

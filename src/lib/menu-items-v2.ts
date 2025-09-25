@@ -323,6 +323,15 @@ export const defaultAdminMenuItems: MenuItem[] = [
     requiresAuth: true,
   },
   {
+    id: 'routes-list',
+    title: 'Daftar Rute',
+    href: '/admin/routes',
+    icon: Link,
+    description: 'Lihat semua rute halaman aplikasi.',
+    access: 'admin',
+    requiresAuth: true,
+  },
+  {
     id: 'firestore-rules',
     title: 'Aturan Firestore',
     href: '/admin/rules',
