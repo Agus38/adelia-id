@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { collection, setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
