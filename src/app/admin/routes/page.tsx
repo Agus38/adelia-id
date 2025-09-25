@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Link as LinkIcon, Shield, Globe, Lock } from 'lucide-react';
-import { menuItems, adminMenuItems, allMenuItems } from '@/lib/menu-items-v2';
+import { menuItems, defaultAdminMenuItems, allMenuItems } from '@/lib/menu-items-v2';
 import type { MenuItem } from '@/lib/menu-items-v2';
 
 const AccessBadge = ({ access }: { access: 'admin' | 'all' | undefined }) => {
@@ -21,7 +21,7 @@ const AuthBadge = ({ requiresAuth }: { requiresAuth: boolean | undefined }) => {
 }
 
 export default function RoutesListPage() {
-  const allRoutes: MenuItem[] = [...menuItems, ...adminMenuItems, ...allMenuItems];
+  const allRoutes: MenuItem[] = [...menuItems, ...defaultAdminMenuItems, ...allMenuItems];
   
   const uniqueRoutes = allRoutes.reduce((acc, current) => {
     if (!acc.find(item => item.id === current.id)) {
