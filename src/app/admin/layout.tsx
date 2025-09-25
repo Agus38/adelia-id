@@ -46,14 +46,9 @@ export default function AdminLayout({
   }
 
   if (isAuthorized) {
-    return (
-      <div className="flex min-h-screen w-full bg-muted/40">
-        <AppSidebar />
-        <div className="flex flex-1 flex-col">
-            {children}
-        </div>
-      </div>
-    );
+    // The AppSidebar is already rendered in the parent MainLayout.
+    // Rendering it here would cause duplication.
+    return <>{children}</>;
   }
 
   return null;
