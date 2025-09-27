@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -222,6 +223,7 @@ const Sidebar = React.forwardRef<
         {/* Desktop Sidebar */}
         <div
           ref={ref}
+          suppressHydrationWarning={true}
           className={cn(
           "group peer hidden md:flex flex-col text-foreground h-full border-r bg-background transition-all duration-300 ease-in-out",
           state === 'expanded' ? "w-[--sidebar-width]" : "w-[--sidebar-width-icon]",

@@ -33,11 +33,6 @@ export function AppSidebar({ }: AppSidebarProps) {
 
   const isLoading = isLoadingSidebar || isLoadingAdminSidebar;
 
-  const [isClient, setIsClient] = React.useState(false);
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   const itemsToDisplay = isAdminPage ? adminSidebarMenuItems : sidebarMenuItems.filter(item => item.access !== 'admin');
 
   const handleMenuItemClick = () => {
@@ -45,10 +40,6 @@ export function AppSidebar({ }: AppSidebarProps) {
       setOpenMobile(false);
     }
   };
-
-  if (!isClient) {
-    return null; // Don't render on the server
-  }
 
   return (
     <Sidebar>
