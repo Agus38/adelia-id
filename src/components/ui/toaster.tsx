@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useToast } from "@/hooks/use-toast"
@@ -10,6 +11,7 @@ import {
   ToastViewport,
 } from "@/components/ui/toast"
 import { useEffect, useState } from "react"
+import { cn } from "@/lib/utils"
 
 export function Toaster() {
   const { toasts } = useToast()
@@ -19,7 +21,6 @@ export function Toaster() {
     setIsClient(true)
   }, [])
 
-  // Render nothing on the server to avoid hydration mismatch
   if (!isClient) {
     return null
   }
@@ -28,7 +29,7 @@ export function Toaster() {
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, ...props }) {
         return (
-          <Toast key={id} {...props}>
+          <Toast key={id} {...props} className={cn("sm:mt-0 mt-16")}>
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
