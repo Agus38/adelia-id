@@ -4,6 +4,8 @@
 import { Separator } from "@/components/ui/separator";
 import { ThemeSettings } from "@/components/settings/theme-settings";
 import { Settings } from "lucide-react";
+import { NotificationSettings } from "@/components/settings/notification-settings";
+import { AccountSettings } from "@/components/settings/account-settings";
 
 export default function SettingsPage() {
 
@@ -14,11 +16,15 @@ export default function SettingsPage() {
         <h2 className="text-3xl font-bold tracking-tight">Pengaturan</h2>
       </div>
        <p className="text-muted-foreground">
-        Kelola pengaturan dan preferensi aplikasi Anda.
+        Kelola pengaturan aplikasi, preferensi notifikasi, dan akun Anda.
       </p>
       <Separator />
       <div className="space-y-6">
         <ThemeSettings />
+        <Separator />
+        <NotificationSettings />
+        <Separator />
+        <AccountSettings />
       </div>
     </div>
   )
