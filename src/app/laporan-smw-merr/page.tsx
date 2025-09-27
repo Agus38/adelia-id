@@ -362,6 +362,15 @@ export default function DailyReportPage() {
   };
 
   const handleSendWhatsApp = () => {
+    if (isDirty) {
+      toast({
+        title: 'Simpan Perubahan Dahulu',
+        description: 'Anda memiliki perubahan yang belum disimpan. Silakan simpan laporan sebelum mengirimnya via WhatsApp.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const reportDate = date ? format(date, 'dd-MM-yyyy') : 'Belum diisi';
     const reportShift = shift.charAt(0).toUpperCase() + shift.slice(1);
 
@@ -619,5 +628,3 @@ ${pemasukanText}
     </>
   );
 }
-
-    
