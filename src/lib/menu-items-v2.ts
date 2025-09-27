@@ -73,6 +73,7 @@ import {
   Printer,
   Github,
   Linkedin,
+  UsersRound,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -193,6 +194,15 @@ export const defaultAdminMenuItems: MenuItem[] = [
     href: '/admin/users',
     icon: Users,
     description: 'Kelola pengguna, peran, dan hak akses.',
+    access: 'admin',
+    requiresAuth: true,
+  },
+  {
+    id: 'user-group-management',
+    title: 'Grup Pengguna',
+    href: '/admin/user-groups',
+    icon: UsersRound,
+    description: 'Buat grup dan kelola hak akses menu.',
     access: 'admin',
     requiresAuth: true,
   },
@@ -488,6 +498,7 @@ export const allIcons: { [key: string]: LucideIcon } = {
   UserPlus,
   Users,
   Users2,
+  UsersRound,
   Wallet,
   Wand2,
 };
