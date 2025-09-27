@@ -12,6 +12,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users, Loader2, Info } from 'lucide-react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase';
@@ -59,89 +69,115 @@ export function UserNav() {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={user.avatarUrl || user.photoURL || ''} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
-            <AvatarFallback>{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.fullName || 'Pengguna'}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
-            </p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <Link href="/profile">
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              <span>Profil</span>
-            </DropdownMenuItem>
-          </Link>
-          <Link href="/settings">
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Pengaturan</span>
-            </DropdownMenuItem>
-          </Link>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-         <DropdownMenuGroup>
-           <Link href="/tentang">
-            <DropdownMenuItem>
-              <Info className="mr-2 h-4 w-4" />
-              <span>Tentang Aplikasi</span>
-            </DropdownMenuItem>
-          </Link>
-          <Link href="/tim">
-            <DropdownMenuItem>
-              <Users className="mr-2 h-4 w-4" />
-              <span>Tim Kami</span>
-            </DropdownMenuItem>
-          </Link>
-           <Link href="/developer">
-            <DropdownMenuItem>
-              <Code className="mr-2 h-4 w-4" />
-              <span>Developer</span>
-            </DropdownMenuItem>
-          </Link>
-           <Link href="/support">
-            <DropdownMenuItem>
-              <LifeBuoy className="mr-2 h-4 w-4" />
-              <span>Bantuan & Dukungan</span>
-            </DropdownMenuItem>
-          </Link>
-          <Link href="/terms-and-conditions">
-            <DropdownMenuItem>
-              <FileText className="mr-2 h-4 w-4" />
-              <span>Syarat & Ketentuan</span>
-            </DropdownMenuItem>
-          </Link>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-         {user && user.role === 'Admin' && (
-          <>
-            <Link href="/admin">
-              <DropdownMenuItem className="text-primary focus:text-primary">
-                <Shield className="mr-2 h-4 w-4" />
-                <span>Panel Admin</span>
+    <Dialog>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+            <Avatar className="h-9 w-9">
+              <AvatarImage src={user.avatarUrl || user.photoURL || ''} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
+              <AvatarFallback>{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DialogTrigger asChild>
+              <DropdownMenuLabel className="font-normal cursor-pointer">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user.fullName || 'Pengguna'}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user.email}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+          </DialogTrigger>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <Link href="/profile">
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profil</span>
               </DropdownMenuItem>
             </Link>
-            <DropdownMenuSeparator />
-          </>
-         )}
-        <DropdownMenuItem onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Keluar</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <Link href="/settings">
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Pengaturan</span>
+              </DropdownMenuItem>
+            </Link>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <Link href="/tentang">
+              <DropdownMenuItem>
+                <Info className="mr-2 h-4 w-4" />
+                <span>Tentang Aplikasi</span>
+              </DropdownMenuItem>
+            </Link>
+            <Link href="/tim">
+              <DropdownMenuItem>
+                <Users className="mr-2 h-4 w-4" />
+                <span>Tim Kami</span>
+              </DropdownMenuItem>
+            </Link>
+            <Link href="/developer">
+              <DropdownMenuItem>
+                <Code className="mr-2 h-4 w-4" />
+                <span>Developer</span>
+              </DropdownMenuItem>
+            </Link>
+            <Link href="/support">
+              <DropdownMenuItem>
+                <LifeBuoy className="mr-2 h-4 w-4" />
+                <span>Bantuan & Dukungan</span>
+              </DropdownMenuItem>
+            </Link>
+            <Link href="/terms-and-conditions">
+              <DropdownMenuItem>
+                <FileText className="mr-2 h-4 w-4" />
+                <span>Syarat & Ketentuan</span>
+              </DropdownMenuItem>
+            </Link>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          {user && user.role === 'Admin' && (
+            <>
+              <Link href="/admin">
+                <DropdownMenuItem className="text-primary focus:text-primary">
+                  <Shield className="mr-2 h-4 w-4" />
+                  <span>Panel Admin</span>
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator />
+            </>
+          )}
+          <DropdownMenuItem onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Keluar</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DialogContent className="sm:max-w-xs">
+          <DialogHeader className="items-center text-center">
+             <Avatar className="h-24 w-24 mb-4">
+                <AvatarImage src={user.avatarUrl || user.photoURL || ''} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
+                <AvatarFallback className="text-4xl">{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
+            </Avatar>
+            <DialogTitle className="text-2xl">{user.fullName || 'Pengguna'}</DialogTitle>
+            <DialogDescription>{user.email}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="grid grid-cols-2 gap-2 pt-4">
+             <DialogClose asChild>
+                <Button variant="outline">Tutup</Button>
+            </DialogClose>
+            <DialogClose asChild>
+                 <Button asChild>
+                    <Link href="/profile">Kelola Akun</Link>
+                </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+
+    </Dialog>
   );
 }
