@@ -96,24 +96,33 @@ export function BannerManagement() {
     }
 
     setIsUploading(true);
-    const storageRef = ref(storage, `branding/banners/${file.name}_${Date.now()}`);
 
     try {
-      await uploadBytes(storageRef, file);
-      const imageUrl = await getDownloadURL(storageRef);
-      setSelectedSlide(prev => prev ? { ...prev, image: imageUrl } : null);
-      toast({
-        title: "Unggah Berhasil",
-        description: "Gambar banner berhasil diunggah. Jangan lupa simpan perubahan.",
-      });
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setSelectedSlide(prev => prev ? { ...prev, image: dataUrl } : null);
+        toast({
+          title: "Gambar Diproses",
+          description: "Gambar berhasil diproses. Jangan lupa simpan perubahan.",
+        });
+      };
+      reader.onerror = () => {
+        throw new Error("Gagal membaca file gambar.");
+      };
     } catch (error) {
       toast({
-        title: "Unggah Gagal",
-        description: "Terjadi kesalahan saat mengunggah gambar.",
+        title: "Gagal Memproses Gambar",
+        description: "Terjadi kesalahan saat memproses gambar.",
         variant: "destructive",
       });
     } finally {
       setIsUploading(false);
+       // Reset file input to allow re-uploading the same file
+      if(fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -122,7 +131,8 @@ export function BannerManagement() {
     try {
       url = new URL(string);
     } catch (_) {
-      return false;  
+      // If it's not a valid URL, it might be a data URI
+      return string.startsWith('data:image/');
     }
     return url.protocol === "http:" || url.protocol === "https:";
   }
