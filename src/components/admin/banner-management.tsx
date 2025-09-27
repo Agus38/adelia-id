@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Table,
   TableBody,
@@ -27,16 +27,19 @@ import { Textarea } from '../ui/textarea';
 import Image from 'next/image';
 import { useBannerConfig, saveBannerConfig, type BannerSlide } from '@/lib/menu-store';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import { Skeleton } from '../ui/skeleton';
+import { Loader2, UploadCloud } from 'lucide-react';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 
 export function BannerManagement() {
   const { bannerSlides, isLoading } = useBannerConfig();
   const [slides, setSlides] = useState<BannerSlide[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedSlide, setSelectedSlide] = useState<BannerSlide | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (bannerSlides) {
@@ -45,7 +48,7 @@ export function BannerManagement() {
   }, [bannerSlides]);
 
   const handleEdit = (slide: BannerSlide) => {
-    setSelectedSlide(slide);
+    setSelectedSlide(JSON.parse(JSON.stringify(slide))); // Create a deep copy to avoid direct state mutation
     setEditDialogOpen(true);
   };
   
@@ -79,6 +82,41 @@ export function BannerManagement() {
     }
   }
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedSlide) return;
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      toast({
+        title: "Ukuran File Terlalu Besar",
+        description: "Ukuran file tidak boleh melebihi 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    const storageRef = ref(storage, `branding/banners/${file.name}_${Date.now()}`);
+
+    try {
+      await uploadBytes(storageRef, file);
+      const imageUrl = await getDownloadURL(storageRef);
+      setSelectedSlide(prev => prev ? { ...prev, image: imageUrl } : null);
+      toast({
+        title: "Unggah Berhasil",
+        description: "Gambar banner berhasil diunggah. Jangan lupa simpan perubahan.",
+      });
+    } catch (error) {
+      toast({
+        title: "Unggah Gagal",
+        description: "Terjadi kesalahan saat mengunggah gambar.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const isValidHttpUrl = (string: string) => {
     let url;
     try {
@@ -88,12 +126,14 @@ export function BannerManagement() {
     }
     return url.protocol === "http:" || url.protocol === "https:";
   }
+  
+  const isSaveDisabled = isSaving || isLoading || isUploading;
 
   return (
     <>
       <div className="flex justify-end mb-4">
-        <Button onClick={handleSaveChanges} disabled={isSaving || isLoading}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button onClick={handleSaveChanges} disabled={isSaveDisabled}>
+            {(isSaving || isLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Simpan Perubahan
         </Button>
       </div>
@@ -176,12 +216,26 @@ export function BannerManagement() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="imageUrl" className="text-right">URL Gambar</Label>
-                <Input
-                  id="imageUrl"
-                  value={selectedSlide.image}
-                  onChange={(e) => setSelectedSlide({...selectedSlide, image: e.target.value})}
-                  className="col-span-3"
-                />
+                 <div className="col-span-3 flex gap-2">
+                    <Input
+                      id="imageUrl"
+                      value={selectedSlide.image}
+                      onChange={(e) => setSelectedSlide({...selectedSlide, image: e.target.value})}
+                      placeholder="https://example.com/image.png"
+                    />
+                     <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                       {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+                       <span className="sr-only">Unggah Gambar</span>
+                    </Button>
+                     <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        accept="image/png, image/jpeg, image/webp"
+                        disabled={isUploading}
+                    />
+                </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="hint" className="text-right">Petunjuk AI</Label>
