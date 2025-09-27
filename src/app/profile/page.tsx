@@ -4,7 +4,6 @@
 import { Separator } from "@/components/ui/separator";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { PasswordForm } from "@/components/profile/password-form";
-import { Sessions } from "@/components/profile/sessions";
 import { User } from "lucide-react";
 
 export default function SettingsProfilePage() {
@@ -23,8 +22,6 @@ export default function SettingsProfilePage() {
         <ProfileForm />
         <Separator />
         <PasswordForm />
-        <Separator />
-        <Sessions />
       </div>
     </div>
   )
