@@ -6,9 +6,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Moon, Sun, Monitor } from 'lucide-react';
+import * as React from 'react';
+import { Skeleton } from '../ui/skeleton';
 
 export function ThemeSettings() {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Tampilan</CardTitle>
+                <CardDescription>
+                Pilih tema tampilan untuk aplikasi. Tema akan berlaku di seluruh antarmuka.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="grid sm:grid-cols-3 gap-4">
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                </div>
+            </CardContent>
+        </Card>
+    )
+  }
 
   return (
     <Card>
