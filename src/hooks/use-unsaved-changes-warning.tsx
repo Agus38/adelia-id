@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from './use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from './use-toast';
 import { AlertTriangle } from 'lucide-react';
 
