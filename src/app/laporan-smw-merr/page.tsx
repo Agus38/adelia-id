@@ -598,7 +598,7 @@ ${pemasukanText}
             >
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Save className="mr-2 h-4 w-4" />
-              {isDirty ? 'Perbarui Laporan' : 'Simpan'}
+              {isDirty ? 'Update' : 'Simpan'}
             </Button>
             <Button 
               className="flex-1 bg-green-600 text-white hover:bg-green-700"
@@ -628,3 +628,5 @@ ${pemasukanText}
     </>
   );
 }
+
+    
