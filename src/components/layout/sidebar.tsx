@@ -20,6 +20,7 @@ import { UserNav } from './user-nav';
 import { Shield, Loader2 } from 'lucide-react';
 import { useSidebar } from '../ui/sidebar';
 import { useSidebarMenuConfig, useAdminSidebarMenuConfig } from '@/lib/menu-store';
+import { useUserStore } from '@/lib/user-store';
 
 interface AppSidebarProps {
 }
@@ -27,13 +28,22 @@ interface AppSidebarProps {
 export function AppSidebar({ }: AppSidebarProps) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
+  const { user } = useUserStore();
   const { sidebarMenuItems, isLoading: isLoadingSidebar } = useSidebarMenuConfig();
   const { adminSidebarMenuItems, isLoading: isLoadingAdminSidebar } = useAdminSidebarMenuConfig();
   const isAdminPage = pathname.startsWith('/admin');
 
   const isLoading = isLoadingSidebar || isLoadingAdminSidebar;
 
-  const itemsToDisplay = isAdminPage ? adminSidebarMenuItems : sidebarMenuItems.filter(item => item.access !== 'admin');
+  // Filter items based on user role
+  const filteredSidebarItems = React.useMemo(() => {
+    if (user?.role === 'Admin') {
+      return sidebarMenuItems; // Admins see all sidebar items
+    }
+    return sidebarMenuItems.filter(item => item.access !== 'admin');
+  }, [sidebarMenuItems, user]);
+
+  const itemsToDisplay = isAdminPage ? adminSidebarMenuItems : filteredSidebarItems;
 
   const handleMenuItemClick = () => {
     if (isMobile) {
