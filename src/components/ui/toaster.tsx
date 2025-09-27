@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useToast } from "@/hooks/use-toast"
@@ -10,9 +9,20 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
+import { useEffect, useState } from "react"
 
 export function Toaster() {
   const { toasts } = useToast()
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  // Render nothing on the server to avoid hydration mismatch
+  if (!isClient) {
+    return null
+  }
 
   return (
     <ToastProvider>
