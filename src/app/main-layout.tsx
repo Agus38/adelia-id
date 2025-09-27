@@ -38,7 +38,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </div>
           <Footer />
       </div>
-      <Toaster />
+       <div className="mt-16 sm:mt-0">
+        <Toaster />
+      </div>
     </>
   );
 }
