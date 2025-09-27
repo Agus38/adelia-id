@@ -572,6 +572,7 @@ ${pemasukanText}
               <h3 className="text-lg font-semibold">Ringkasan Keuangan</h3>
               <div className="space-y-2 rounded-lg border bg-muted/50 p-4">
                   <SummaryRow label="Modal Awal" value={formatCurrency(modalAwal)} />
+                  <Separator className="my-2" />
                   <SummaryRow label="Omset Bersih" value={formatCurrency(omsetBersih)} />
                   <SummaryRow label="Pajak" value={formatCurrency(pajak)} />
                   <SummaryRow label="Omset Kotor" value={formatCurrency(omsetKotor)} isBold />
@@ -628,5 +629,3 @@ ${pemasukanText}
     </>
   );
 }
-
-    
