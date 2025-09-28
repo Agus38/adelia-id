@@ -42,15 +42,18 @@ export default function LoginPage() {
           setIsLoading(false);
           return;
       }
-
-      toast({
-        title: 'Login Berhasil!',
-        description: 'Anda akan diarahkan...',
-      });
       
       if (userDoc.exists() && userDoc.data().role === 'Admin') {
+        toast({
+            title: 'Login Berhasil!',
+            description: 'Anda akan diarahkan ke Panel Admin...',
+        });
         router.push('/admin');
       } else {
+         toast({
+            title: `Selamat Datang, ${userDoc.data()?.fullName || 'Pengguna'}!`,
+            description: 'Anda berhasil masuk ke akun Anda.',
+        });
         router.push('/');
       }
     } catch (error: any) {
