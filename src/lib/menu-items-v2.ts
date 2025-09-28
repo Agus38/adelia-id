@@ -144,6 +144,14 @@ export const menuItems: MenuItem[] = [
     access: 'all',
     requiresAuth: false,
   },
+   {
+    id: 'firestore-rules',
+    title: 'Aturan Firestore',
+    href: '/firestore-rules',
+    icon: ShieldCheck,
+    access: 'all',
+    requiresAuth: false,
+  },
   {
     id: 'kalkulator',
     title: 'Kalkulator',

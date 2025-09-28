@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -30,9 +29,7 @@ service cloud.firestore {
       
       // A regular user can only read/update their own profile.
       // Crucially, an existing user cannot change their own role.
-      allow get, update: if request.auth.uid == userId && request.resource.data.role == resource.data.role;
-      // Allow users to create their own profile document
-      allow create: if request.auth.uid == userId;
+      allow get, create, update: if request.auth.uid == userId && request.resource.data.role == resource.data.role;
     }
     
     // Rules for user groups
@@ -139,9 +136,9 @@ export default function FirestoreRulesPage() {
        
        <Alert>
           <Info className="h-4 w-4" />
-          <AlertTitle>Perubahan Logika Verifikasi Admin</AlertTitle>
+          <AlertTitle>Logika Verifikasi Admin</AlertTitle>
           <AlertDescription>
-            Sistem verifikasi Admin sekarang membaca peran langsung dari dokumen pengguna di database, bukan lagi menggunakan Custom Claims. Pastikan peran pengguna diatur dengan benar di koleksi 'users'.
+            Sistem verifikasi Admin sekarang membaca peran langsung dari dokumen pengguna di database (koleksi 'users'), bukan lagi menggunakan Custom Claims. Pastikan akun admin Anda memiliki `role: "Admin"` di databasenya.
           </AlertDescription>
        </Alert>
 
