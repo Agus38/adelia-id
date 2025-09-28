@@ -43,6 +43,7 @@ export const useUserStore = create<UserState>((set) => ({
             const userData = docSnap.data();
 
             // CRITICAL: Real-time check for blocked status.
+            // This will trigger whenever the user document changes.
             if (userData.status === 'Diblokir') {
               toast({
                 title: "Akses Ditolak",
@@ -67,27 +68,23 @@ export const useUserStore = create<UserState>((set) => ({
               loading: false,
             });
           } else {
-            // User exists in Auth but not in Firestore. This can happen during registration
-            // or if the document was deleted manually. Treat as a non-privileged user.
-            // Use displayName from auth as the primary source for fullName here.
-            set({ 
-              user: { 
-                ...authUser, 
-                fullName: authUser.displayName, 
-                role: 'Pengguna',
-                status: 'Aktif', // Assume active if no doc exists
-              },
-              loading: false 
+            // User exists in Auth but not in Firestore. This is an invalid state.
+            // Force sign out.
+            toast({
+              title: "Kesalahan Akun",
+              description: "Data profil Anda tidak ditemukan. Silakan hubungi administrator.",
+              variant: "destructive",
             });
+            signOut(auth);
           }
         }, (error) => {
             console.error("Firestore error listening to user document:", error);
             // This can happen if a regular user doesn't have permission to read their own doc.
-            // Treat them as a standard user using data from the auth object.
+            // For now, we will treat them as a standard user, but this indicates a potential rules issue.
              set({
               user: {
                 ...authUser,
-                fullName: authUser.displayName, // Use displayName from auth object
+                fullName: authUser.displayName,
                 role: 'Pengguna', // Fallback to a non-privileged role
                 status: 'Aktif',
               },

@@ -60,7 +60,7 @@ export default function LoginPage() {
 
     const user = userCredential.user;
 
-    // After successful authentication, check the user's document for role and status
+    // CRITICAL: After successful authentication, ALWAYS check the user's document for status.
     try {
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
@@ -76,7 +76,7 @@ export default function LoginPage() {
 
             toast({
                 title: 'Login Berhasil!',
-                description: `Selamat datang kembali, ${userData.fullName || 'Pengguna'}!`,
+                description: `Selamat datang kembali, ${userData.fullName || user.displayName || 'Pengguna'}!`,
             });
             
             // Redirect based on role
@@ -87,23 +87,17 @@ export default function LoginPage() {
             }
 
         } else {
-            // User exists in Auth, but not in Firestore. This is a valid state for a regular user.
-            toast({
-                title: 'Login Berhasil!',
-                description: 'Selamat datang kembali!',
-            });
-            router.push('/');
+             // If the user document doesn't exist, something is wrong. Do not allow login.
+            await auth.signOut();
+            setError('Gagal memverifikasi data pengguna. Akun mungkin tidak terdaftar dengan benar. Hubungi administrator.');
+            setIsLoading(false);
         }
     } catch (firestoreError: any) {
-        // This catch block handles cases where the user might not have permission
-        // to read their own doc immediately, which can happen.
-        // We will proceed with login and let the main app layout handle role verification.
-        console.warn("Could not read user doc on login, proceeding...", firestoreError.message);
-        toast({
-            title: 'Login Berhasil!',
-            description: 'Selamat datang kembali!',
-        });
-        router.push('/');
+        // This catch block handles cases where reading the doc fails for other reasons.
+        console.error("Firestore error during login check:", firestoreError);
+        await auth.signOut();
+        setError('Terjadi kesalahan saat memverifikasi akun Anda. Silakan coba lagi.');
+        setIsLoading(false);
     }
   };
 
