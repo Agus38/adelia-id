@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -15,20 +14,25 @@ const firestoreRules = `rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Helper function to check for Admin role using custom claims.
-    // This is more secure and efficient than reading from a document.
+    // Helper function to check for Admin role by reading the user's document.
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
     function isAdmin() {
-      return request.auth.token.admin == true;
+        return getUserRole() == 'Admin';
     }
 
     // Rules for user profiles
     match /users/{userId} {
-      // Admin has full read and write access to all user documents.
+      // Admin can read any user profile and list all users.
       allow get, list, write: if isAdmin();
       
-      // A regular user can only read their own profile,
-      // and create/update their own profile without changing their role.
-      allow get, create, update: if request.auth.uid == userId && request.resource.data.role == resource.data.role;
+      // A regular user can only read/update their own profile.
+      // Crucially, an existing user cannot change their own role.
+      allow get, update: if request.auth.uid == userId && request.resource.data.role == resource.data.role;
+      // Allow users to create their own profile document
+      allow create: if request.auth.uid == userId;
     }
     
     // Rules for user groups
@@ -125,19 +129,19 @@ export default function FirestoreRulesPage() {
         Gunakan aturan ini untuk mengamankan database Firestore Anda. Salin dan tempelkan di Firebase Console.
       </p>
       
-       <Alert>
-          <Info className="h-4 w-4" />
-          <AlertTitle>Penting: Perbarui Aturan Anda</AlertTitle>
+       <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>PENTING: Segera Perbarui Aturan Anda!</AlertTitle>
           <AlertDescription>
-            Aturan ini harus diperbarui secara manual di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong>. Aplikasi tidak dapat mengubahnya secara otomatis.
+            Aturan keamanan telah diubah untuk memperbaiki masalah akses data. Anda **WAJIB** menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong>.
           </AlertDescription>
        </Alert>
        
-       <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Aksi Diperlukan: Atur Custom Claims</AlertTitle>
+       <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>Perubahan Logika Verifikasi Admin</AlertTitle>
           <AlertDescription>
-            Aturan keamanan baru ini menggunakan Custom Claims. Untuk akun admin Anda, seorang developer harus mengatur claim `&#123;"admin": true&#125;` menggunakan Firebase Admin SDK di lingkungan server. Tanpa ini, akses admin tidak akan berfungsi.
+            Sistem verifikasi Admin sekarang membaca peran langsung dari dokumen pengguna di database, bukan lagi menggunakan Custom Claims. Pastikan peran pengguna diatur dengan benar di koleksi 'users'.
           </AlertDescription>
        </Alert>
 
@@ -145,7 +149,7 @@ export default function FirestoreRulesPage() {
         <CardHeader>
           <CardTitle>Konten file firestore.rules</CardTitle>
           <CardDescription>
-            Klik tombol di bawah untuk menyalin seluruh konten aturan keamanan.
+            Klik tombol di bawah untuk menyalin seluruh konten aturan keamanan yang baru.
           </CardDescription>
         </CardHeader>
         <CardContent>
