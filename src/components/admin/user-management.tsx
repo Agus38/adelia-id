@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -92,6 +93,7 @@ const statusBadgeVariant: { [key in UserStatus]: 'default' | 'destructive' } = {
 export function UserManagement() {
   const { user: currentUser, loading: isLoadingUser } = useUserStore();
   const [users, setUsers] = React.useState<User[]>([]);
+  const [isDataLoading, setIsDataLoading] = React.useState(true);
   
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -109,6 +111,7 @@ export function UserManagement() {
   const [editedUserData, setEditedUserData] = React.useState<Partial<User>>({});
 
   const fetchUsers = React.useCallback(async () => {
+    setIsDataLoading(true);
     try {
       const usersCollection = collection(db, 'users');
       const usersSnapshot = await getDocs(usersCollection);
@@ -120,12 +123,17 @@ export function UserManagement() {
         description: "Terjadi kesalahan saat mengambil data dari Firestore.",
         variant: "destructive",
       });
+    } finally {
+      setIsDataLoading(false);
     }
   }, [toast]);
   
   React.useEffect(() => {
     if (!isLoadingUser && currentUser?.role === 'Admin') {
       fetchUsers();
+    } else if (!isLoadingUser) {
+      // If user is not admin or not logged in, stop loading
+      setIsDataLoading(false);
     }
   }, [isLoadingUser, currentUser, fetchUsers]);
 
@@ -521,11 +529,11 @@ export function UserManagement() {
             ))}
           </TableHeader>
           <TableBody>
-            {isLoadingUser ? (
+            {isLoadingUser || isDataLoading ? (
                 <TableRow>
                     <TableCell colSpan={columns.length} className="h-24 text-center">
                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                        <p className="mt-2 text-sm">Memverifikasi dan memuat pengguna...</p>
+                        <p className="mt-2 text-sm">Memuat pengguna...</p>
                     </TableCell>
                 </TableRow>
             ) : table.getRowModel().rows?.length ? (
@@ -719,5 +727,3 @@ export function UserManagement() {
     </div>
   );
 }
-
-    
