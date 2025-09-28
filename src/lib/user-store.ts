@@ -76,13 +76,20 @@ export const useUserStore = create<UserState>((set) => ({
         }, (error) => {
             console.error("Firestore error listening to user document:", error);
             // This is a critical error, likely due to permissions.
-            // Log the user out to force a clean state.
+            // DO NOT sign the user out. Instead, treat them as a standard user.
+            // This allows the app to function for non-admin roles even if admin-only data fails to load.
+             set({
+              user: {
+                ...authUser,
+                role: 'Pengguna', // Fallback to a non-privileged role
+              },
+              loading: false,
+            });
             toast({
-              title: "Gagal Memuat Profil",
-              description: "Tidak dapat mengambil data peran Anda. Sesi akan diakhiri.",
+              title: "Gagal Memuat Peran",
+              description: "Tidak dapat memverifikasi peran Anda, beberapa fitur mungkin tidak tersedia.",
               variant: "destructive",
             });
-            signOut(auth);
         });
       } else {
         // No user is signed in, clear user data and ensure loading is false.
