@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -22,10 +23,13 @@ service cloud.firestore {
 
     // Rules for user profiles
     match /users/{userId} {
-      // Admin can read any profile and list all users.
-      // A regular user can only read their own profile.
-      allow read, list: if isAdmin() || request.auth.uid == userId;
+      // Admin can read any user profile and list all users.
+      // This is the most critical fix.
+      allow read, list: if isAdmin();
       
+      // A regular user can only read their own profile.
+      allow get: if request.auth.uid == userId;
+
       // Admin has full write access (create, update, delete).
       allow write: if isAdmin();
 
@@ -168,3 +172,4 @@ export default function FirestoreRulesPage() {
     </div>
   );
 }
+

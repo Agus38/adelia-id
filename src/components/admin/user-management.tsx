@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -132,6 +133,7 @@ export function UserManagement() {
     if (!isLoadingUser && currentUser?.role === 'Admin') {
       fetchUsers();
     } else if (!isLoadingUser) {
+      // If not admin, stop loading but don't fetch
       setIsDataLoading(false);
     }
   }, [isLoadingUser, currentUser, fetchUsers]);
@@ -403,6 +405,8 @@ export function UserManagement() {
     },
   });
 
+  const isLoading = isLoadingUser || isDataLoading;
+
   return (
     <div className="space-y-4">
        <div className="flex items-center justify-between">
@@ -528,7 +532,7 @@ export function UserManagement() {
             ))}
           </TableHeader>
           <TableBody>
-            {isLoadingUser || isDataLoading ? (
+            {isLoading ? (
                 <TableRow>
                     <TableCell colSpan={columns.length} className="h-24 text-center">
                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
@@ -726,3 +730,4 @@ export function UserManagement() {
     </div>
   );
 }
+
