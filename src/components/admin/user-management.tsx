@@ -126,13 +126,12 @@ export function UserManagement() {
     } finally {
       setIsDataLoading(false);
     }
-  }, [toast]);
+  }, []);
   
   React.useEffect(() => {
     if (!isLoadingUser && currentUser?.role === 'Admin') {
       fetchUsers();
     } else if (!isLoadingUser) {
-      // If user is not admin or not logged in, stop loading
       setIsDataLoading(false);
     }
   }, [isLoadingUser, currentUser, fetchUsers]);
