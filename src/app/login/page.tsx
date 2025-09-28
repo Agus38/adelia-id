@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, type User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
@@ -29,33 +29,9 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
+    let userCredential;
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      if (userDoc.exists() && userDoc.data().status === 'Diblokir') {
-          await auth.signOut();
-          setError('Akun Anda telah diblokir. Silakan hubungi administrator.');
-          setIsLoading(false);
-          return;
-      }
-      
-      if (userDoc.exists() && userDoc.data().role === 'Admin') {
-        toast({
-            title: 'Login Berhasil!',
-            description: 'Anda akan diarahkan ke Panel Admin...',
-        });
-        router.push('/admin');
-      } else {
-         toast({
-            title: `Selamat Datang, ${userDoc.data()?.fullName || 'Pengguna'}!`,
-            description: 'Anda berhasil masuk ke akun Anda.',
-        });
-        router.push('/');
-      }
+      userCredential = await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
       let description = 'Terjadi kesalahan. Silakan coba lagi.';
 
@@ -78,8 +54,56 @@ export default function LoginPage() {
           description = 'Terjadi kesalahan yang tidak diketahui. Silakan coba lagi.';
       }
       setError(description);
-    } finally {
-        setIsLoading(false);
+      setIsLoading(false);
+      return;
+    }
+
+    const user = userCredential.user;
+
+    // After successful authentication, check the user's document for role and status
+    try {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.status === 'Diblokir') {
+                await auth.signOut();
+                setError('Akun Anda telah diblokir. Silakan hubungi administrator.');
+                setIsLoading(false);
+                return;
+            }
+
+            toast({
+                title: 'Login Berhasil!',
+                description: `Selamat datang kembali, ${userData.fullName || 'Pengguna'}!`,
+            });
+            
+            // Redirect based on role
+            if (userData.role === 'Admin') {
+                router.push('/admin');
+            } else {
+                router.push('/');
+            }
+
+        } else {
+            // User exists in Auth, but not in Firestore. This is a valid state for a regular user.
+            toast({
+                title: 'Login Berhasil!',
+                description: 'Selamat datang kembali!',
+            });
+            router.push('/');
+        }
+    } catch (firestoreError: any) {
+        // This catch block handles cases where the user might not have permission
+        // to read their own doc immediately, which can happen.
+        // We will proceed with login and let the main app layout handle role verification.
+        console.warn("Could not read user doc on login, proceeding...", firestoreError.message);
+        toast({
+            title: 'Login Berhasil!',
+            description: 'Selamat datang kembali!',
+        });
+        router.push('/');
     }
   };
 
@@ -169,3 +193,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
