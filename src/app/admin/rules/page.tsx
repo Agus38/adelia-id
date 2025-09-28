@@ -7,16 +7,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Copy, ShieldCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
+import { Info, AlertTriangle } from 'lucide-react';
 
 const firestoreRules = `rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Helper function to check for Admin role
+    // Helper function to check for Admin role using custom claims.
+    // This is more secure and efficient than reading from a document.
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+      return request.auth.token.admin == true;
     }
 
     // Rules for user profiles
@@ -25,13 +26,18 @@ service cloud.firestore {
       // A regular user can only read their own profile.
       allow read, list: if isAdmin() || request.auth.uid == userId;
       
-      // Admin can create/update any user profile.
-      // A regular user can only create/update their own profile.
-      // An existing user cannot change their own role.
-      allow write: if isAdmin() || (request.auth.uid == userId && request.resource.data.role == resource.data.role);
+      // Admin has full write access (create, update, delete).
+      allow write: if isAdmin();
 
-      // Only Admin can delete a user document.
-      allow delete: if isAdmin();
+      // A regular user can only create/update their own profile.
+      // Crucially, an existing user cannot change their own role.
+      allow create, update: if request.auth.uid == userId && request.resource.data.role == resource.data.role;
+    }
+    
+    // Rules for user groups
+    match /userGroups/{groupId} {
+        // Only Admin can manage user groups
+        allow read, write, delete, list: if isAdmin();
     }
 
     // Rules for daily financial reports
@@ -124,9 +130,17 @@ export default function FirestoreRulesPage() {
       
        <Alert>
           <Info className="h-4 w-4" />
-          <AlertTitle>Penting</AlertTitle>
+          <AlertTitle>Penting: Perbarui Aturan Anda</AlertTitle>
           <AlertDescription>
             Aturan ini harus diperbarui secara manual di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong>. Aplikasi tidak dapat mengubahnya secara otomatis.
+          </AlertDescription>
+       </Alert>
+       
+       <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Aksi Diperlukan: Atur Custom Claims</AlertTitle>
+          <AlertDescription>
+            Aturan keamanan baru ini menggunakan Custom Claims. Untuk akun admin Anda, seorang developer harus mengatur claim `&#123;"admin": true&#125;` menggunakan Firebase Admin SDK di lingkungan server. Tanpa ini, akses admin tidak akan berfungsi.
           </AlertDescription>
        </Alert>
 

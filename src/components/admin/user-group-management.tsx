@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle, Trash2, Edit, Users, Settings } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, Edit, Users, Settings, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,8 +25,10 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Switch } from '../ui/switch';
 import { ScrollArea } from '../ui/scroll-area';
-import { Separator } from '../ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { useUserStore } from '@/lib/user-store';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 // Mock Data - In a real app, this would come from Firestore
 const mockUsers = [
@@ -52,12 +54,45 @@ const mockGroups = [
 ];
 
 export function UserGroupManagement() {
+  const { user, loading: isLoadingUser } = useUserStore();
   const [groups, setGroups] = React.useState(mockGroups);
   const [defaultGroup, setDefaultGroup] = React.useState('group1');
   const [isEditGroupOpen, setEditGroupOpen] = React.useState(false);
   const [isEditPermissionsOpen, setEditPermissionsOpen] = React.useState(false);
   const [isEditMembersOpen, setEditMembersOpen] = React.useState(false);
   const [selectedGroup, setSelectedGroup] = React.useState<(typeof mockGroups)[0] | null>(null);
+
+  const [users, setUsers] = React.useState<any[]>([]);
+  const [userGroups, setUserGroups] = React.useState<any[]>([]);
+  const [loadingData, setLoadingData] = React.useState(true);
+
+
+  React.useEffect(() => {
+    if (isLoadingUser || user?.role !== 'Admin') {
+       if(!isLoadingUser) setLoadingData(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      setLoadingData(true);
+      try {
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setUsers(usersList);
+
+        const groupsSnapshot = await getDocs(collection(db, 'userGroups'));
+        const groupsList = groupsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setUserGroups(groupsList);
+
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    fetchData();
+  }, [isLoadingUser, user]);
 
   const handleEditGroup = (group: (typeof mockGroups)[0]) => {
     setSelectedGroup(group);
@@ -74,6 +109,8 @@ export function UserGroupManagement() {
     setEditMembersOpen(true);
   };
   
+  const isLoading = isLoadingUser || loadingData;
+
   return (
     <div className="space-y-6">
       <Card>
@@ -86,7 +123,7 @@ export function UserGroupManagement() {
         <CardContent>
           <div className="flex items-center gap-4">
             <Label htmlFor="default-group" className="whitespace-nowrap">Grup Default</Label>
-            <Select value={defaultGroup} onValueChange={setDefaultGroup}>
+            <Select value={defaultGroup} onValueChange={setDefaultGroup} disabled={isLoading}>
               <SelectTrigger id="default-group" className="w-full max-w-xs">
                 <SelectValue placeholder="Pilih grup default" />
               </SelectTrigger>
@@ -107,7 +144,7 @@ export function UserGroupManagement() {
                 <CardTitle>Daftar Grup Pengguna</CardTitle>
                 <CardDescription>Kelompokkan pengguna berdasarkan peran dan hak akses mereka.</CardDescription>
             </div>
-            <Button>
+            <Button disabled={isLoading}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Tambah Grup
             </Button>
@@ -124,7 +161,13 @@ export function UserGroupManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {groups.map(group => (
+                {isLoading ? (
+                   <TableRow>
+                        <TableCell colSpan={3} className="h-24 text-center">
+                            <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                        </TableCell>
+                    </TableRow>
+                ) : groups.map(group => (
                   <TableRow key={group.id}>
                     <TableCell>
                       <p className="font-medium">{group.name}</p>

@@ -37,6 +37,7 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { useUserStore } from '@/lib/user-store';
 
 interface ActivityLog {
   id: string;
@@ -118,6 +119,7 @@ icon: Users2,
 
 
 export function AdminDashboard() {
+  const { user, loading: isLoadingUser } = useUserStore();
   const [userCount, setUserCount] = React.useState<number | null>(null);
   const [loadingStats, setLoadingStats] = React.useState(true);
   const [recentActivities, setRecentActivities] = React.useState<ActivityLog[]>([]);
@@ -125,6 +127,16 @@ export function AdminDashboard() {
 
 
   React.useEffect(() => {
+    // Wait until user role is confirmed before fetching data
+    if (isLoadingUser || user?.role !== 'Admin') {
+      if (!isLoadingUser) {
+        // If loading is finished and user is not admin, stop loading stats.
+        setLoadingStats(false);
+        setLoadingActivities(false);
+      }
+      return;
+    }
+
     const fetchStats = async () => {
       setLoadingStats(true);
       try {
@@ -155,7 +167,7 @@ export function AdminDashboard() {
     fetchStats();
 
     return () => unsubscribeActivities();
-  }, []);
+  }, [isLoadingUser, user]);
 
   return (
     <div className="space-y-6">
@@ -203,7 +215,7 @@ export function AdminDashboard() {
                 </div>
             ) : (
                 <>
-                  <div className="text-2xl font-bold">{userCount}</div>
+                  <div className="text-2xl font-bold">{userCount === null ? '-' : userCount}</div>
                   <p className="text-xs text-muted-foreground">Total pengguna terdaftar</p>
                 </>
             )}

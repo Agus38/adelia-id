@@ -62,6 +62,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { useUserStore } from '@/lib/user-store';
 
 type UserStatus = 'Aktif' | 'Diblokir';
 type UserRole = 'Admin' | 'Pengguna' | 'Editor';
@@ -90,6 +91,7 @@ const statusBadgeVariant: { [key in UserStatus]: 'default' | 'destructive' } = {
 };
 
 export function UserManagement() {
+  const { user, loading: isLoadingUser } = useUserStore();
   const [users, setUsers] = React.useState<User[]>([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -107,28 +109,34 @@ export function UserManagement() {
   
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
   const [editedUserData, setEditedUserData] = React.useState<Partial<User>>({});
-
-  const fetchUsers = React.useCallback(async () => {
-    setLoading(true);
-    try {
-      const usersCollection = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersCollection);
-      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-      setUsers(usersList);
-    } catch (error) {
-       toast({
-        title: "Gagal memuat pengguna",
-        description: "Terjadi kesalahan saat mengambil data dari Firestore.",
-        variant: "destructive",
-      });
-    } finally {
-        setLoading(false);
-    }
-  }, []);
-
+  
   React.useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const usersCollection = collection(db, 'users');
+        const usersSnapshot = await getDocs(usersCollection);
+        const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+        setUsers(usersList);
+      } catch (error) {
+         toast({
+          title: "Gagal memuat pengguna",
+          description: "Terjadi kesalahan saat mengambil data dari Firestore.",
+          variant: "destructive",
+        });
+      } finally {
+          setLoading(false);
+      }
+    };
+    
+    // Only fetch users if the current user is an admin and user loading is finished.
+    if (!isLoadingUser && user?.role === 'Admin') {
+      fetchUsers();
+    } else if (!isLoadingUser) {
+      // If not admin or not logged in, stop the loading indicator.
+      setLoading(false);
+    }
+  }, [isLoadingUser, user]);
 
 
   const handleEdit = (user: User) => {
@@ -202,7 +210,12 @@ export function UserManagement() {
         });
         toast({ title: "Pengguna Ditambahkan", description: "Pengguna baru telah berhasil ditambahkan." });
       }
-      fetchUsers(); // Refresh data
+      if (!isLoadingUser && user?.role === 'Admin') {
+          const usersCollection = collection(db, 'users');
+          const usersSnapshot = await getDocs(usersCollection);
+          const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+          setUsers(usersList);
+      }
       setAddEditDialogOpen(false);
       setSelectedUser(null);
       setEditedUserData({});
@@ -231,7 +244,12 @@ export function UserManagement() {
       try {
         await deleteDoc(doc(db, 'users', selectedUser.id));
         toast({ title: "Pengguna Dihapus", description: `Pengguna ${selectedUser.fullName} telah dihapus.` });
-        fetchUsers(); // Refresh data
+        if (!isLoadingUser && user?.role === 'Admin') {
+          const usersCollection = collection(db, 'users');
+          const usersSnapshot = await getDocs(usersCollection);
+          const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+          setUsers(usersList);
+        }
       } catch (error) {
         toast({ title: "Error", description: "Gagal menghapus pengguna.", variant: "destructive" });
       }
@@ -246,7 +264,12 @@ export function UserManagement() {
         const userDocRef = doc(db, 'users', selectedUser.id);
         await updateDoc(userDocRef, { status: 'Diblokir' });
         toast({ title: "Pengguna Diblokir", description: `${selectedUser.fullName} telah diblokir.` });
-        fetchUsers();
+        if (!isLoadingUser && user?.role === 'Admin') {
+            const usersCollection = collection(db, 'users');
+            const usersSnapshot = await getDocs(usersCollection);
+            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+            setUsers(usersList);
+        }
       } catch (error) {
          toast({ title: "Error", description: "Gagal memblokir pengguna.", variant: "destructive" });
       }
@@ -261,7 +284,12 @@ export function UserManagement() {
         const userDocRef = doc(db, 'users', selectedUser.id);
         await updateDoc(userDocRef, { status: 'Aktif' });
         toast({ title: "Blokir Dibuka", description: `Blokir untuk ${selectedUser.fullName} telah dibuka.` });
-        fetchUsers();
+        if (!isLoadingUser && user?.role === 'Admin') {
+            const usersCollection = collection(db, 'users');
+            const usersSnapshot = await getDocs(usersCollection);
+            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+            setUsers(usersList);
+        }
       } catch (error) {
         toast({ title: "Error", description: "Gagal membuka blokir pengguna.", variant: "destructive" });
       }
@@ -398,6 +426,8 @@ export function UserManagement() {
       rowSelection,
     },
   });
+  
+  const finalIsLoading = isLoadingUser || loading;
 
   return (
     <div className="space-y-4">
@@ -524,7 +554,7 @@ export function UserManagement() {
             ))}
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {finalIsLoading ? (
                 <TableRow>
                     <TableCell colSpan={columns.length} className="h-24 text-center">
                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
