@@ -273,7 +273,7 @@ export function AdminDashboard() {
                 {loadingActivities ? (
                    <TableRow>
                       <TableCell colSpan={3} className="h-24 text-center">
-                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                          <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                           <p className="text-sm mt-2">Memuat aktivitas...</p>
                       </TableCell>
                   </TableRow>
