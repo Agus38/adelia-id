@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -526,6 +525,7 @@ export function UserManagement() {
                 <TableRow>
                     <TableCell colSpan={columns.length} className="h-24 text-center">
                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                        <p className="mt-2 text-sm">Memverifikasi dan memuat pengguna...</p>
                     </TableCell>
                 </TableRow>
             ) : table.getRowModel().rows?.length ? (
@@ -550,7 +550,7 @@ export function UserManagement() {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  Tidak ada pengguna.
+                  Tidak ada pengguna ditemukan.
                 </TableCell>
               </TableRow>
             )}
