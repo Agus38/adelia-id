@@ -43,6 +43,7 @@ export const useUserStore = create<UserState>((set) => ({
           if (docSnap.exists()) {
             const userData = docSnap.data();
 
+            // CRITICAL: Real-time check for blocked status.
             if (userData.status === 'Diblokir') {
               toast({
                 title: "Akses Ditolak",
@@ -71,20 +72,25 @@ export const useUserStore = create<UserState>((set) => ({
             // or if the document was deleted manually. Treat as a non-privileged user.
             // Use displayName from auth as the primary source for fullName here.
             set({ 
-              user: { ...authUser, fullName: authUser.displayName, role: 'Pengguna' },
+              user: { 
+                ...authUser, 
+                fullName: authUser.displayName, 
+                role: 'Pengguna',
+                status: 'Aktif', // Assume active if no doc exists
+              },
               loading: false 
             });
           }
         }, (error) => {
             console.error("Firestore error listening to user document:", error);
-            // This is a critical error, likely due to permissions for regular users.
-            // DO NOT sign the user out. Instead, treat them as a standard user
-            // using the data we already have from the auth object itself.
+            // This can happen if a regular user doesn't have permission to read their own doc.
+            // Treat them as a standard user using data from the auth object.
              set({
               user: {
                 ...authUser,
                 fullName: authUser.displayName, // Use displayName from auth object
                 role: 'Pengguna', // Fallback to a non-privileged role
+                status: 'Aktif',
               },
               loading: false,
             });
