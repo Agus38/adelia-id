@@ -3,11 +3,8 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { useUserStore } from '@/lib/user-store';
 import { Loader2 } from 'lucide-react';
-import { AppSidebar } from '@/components/layout/sidebar';
 
 export default function AdminLayout({
   children,
@@ -15,29 +12,27 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const { user, loading } = useUserStore();
   const [isAuthorized, setIsAuthorized] = React.useState<boolean | null>(null);
 
   React.useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.push('/unauthorized');
-        return;
-      }
+    // Wait until the user loading process is complete
+    if (loading) {
+      return;
+    }
 
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
+    // If loading is done and there's no user, or user is not an Admin
+    if (!user || user.role !== 'Admin') {
+      router.push('/unauthorized');
+    } else {
+      // If user is an Admin, grant access
+      setIsAuthorized(true);
+    }
+  }, [user, loading, router]);
 
-      if (userDoc.exists() && userDoc.data().role === 'Admin') {
-        setIsAuthorized(true);
-      } else {
-        router.push('/unauthorized');
-      }
-    });
 
-    return () => unsubscribe();
-  }, [router]);
-
-  if (isAuthorized === null) {
+  // While checking authorization, show a loading spinner
+  if (isAuthorized === null || loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -45,11 +40,11 @@ export default function AdminLayout({
     );
   }
 
+  // If authorized, render the admin page content
   if (isAuthorized) {
-    // The AppSidebar is already rendered in the parent MainLayout.
-    // Rendering it here would cause duplication.
     return <>{children}</>;
   }
 
+  // This return is for the case where the redirect is happening, preventing any flash of content.
   return null;
 }
