@@ -125,7 +125,7 @@ export function UserManagement() {
     } finally {
       setIsDataLoading(false);
     }
-  }, []);
+  }, [toast]);
   
   React.useEffect(() => {
     if (!isLoadingUser && currentUser?.role === 'Admin') {
@@ -556,7 +556,7 @@ export function UserManagement() {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  Tidak ada pengguna ditemukan.
+                  Masih kosong data user masih belum terbaca 🥲
                 </TableCell>
               </TableRow>
             )}
