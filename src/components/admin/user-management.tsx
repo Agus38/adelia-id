@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -556,7 +557,7 @@ export function UserManagement() {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  Masih kosong data user masih belum terbaca 🥲
+                  Tidak ada pengguna ditemukan.
                 </TableCell>
               </TableRow>
             )}
