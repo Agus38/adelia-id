@@ -13,26 +13,20 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const { user, loading } = useUserStore();
-  const [isAuthorized, setIsAuthorized] = React.useState<boolean | null>(null);
 
   React.useEffect(() => {
-    // Wait until the user loading process is complete
-    if (loading) {
-      return;
-    }
-
-    // If loading is done and there's no user, or user is not an Admin
-    if (!user || user.role !== 'Admin') {
-      router.push('/unauthorized');
-    } else {
-      // If user is an Admin, grant access
-      setIsAuthorized(true);
+    // This effect runs whenever loading or user state changes.
+    // If loading is finished, we make a decision.
+    if (!loading) {
+      if (!user || user.role !== 'Admin') {
+        router.push('/unauthorized');
+      }
     }
   }, [user, loading, router]);
 
-
-  // While checking authorization, show a loading spinner
-  if (isAuthorized === null || loading) {
+  // While checking authorization, show a loading spinner.
+  // This is the crucial part: we do not render children until loading is false AND the user is verified.
+  if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -40,11 +34,17 @@ export default function AdminLayout({
     );
   }
 
-  // If authorized, render the admin page content
-  if (isAuthorized) {
+  // If loading is complete and we have a user with the Admin role, render the admin page content.
+  // The useEffect above will handle redirection for unauthorized users.
+  if (user && user.role === 'Admin') {
     return <>{children}</>;
   }
 
-  // This return is for the case where the redirect is happening, preventing any flash of content.
-  return null;
+  // In the brief moment between the user state being non-admin and the redirect effect kicking in,
+  // render a loading screen to prevent any flash of content or child components attempting to render.
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  );
 }
