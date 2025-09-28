@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { create } from 'zustand';
@@ -68,19 +69,21 @@ export const useUserStore = create<UserState>((set) => ({
           } else {
             // User exists in Auth but not in Firestore. This can happen during registration
             // or if the document was deleted manually. Treat as a non-privileged user.
+            // Use displayName from auth as the primary source for fullName here.
             set({ 
-              user: { ...authUser, role: 'Pengguna' }, // Assign default role
+              user: { ...authUser, fullName: authUser.displayName, role: 'Pengguna' },
               loading: false 
             });
           }
         }, (error) => {
             console.error("Firestore error listening to user document:", error);
-            // This is a critical error, likely due to permissions.
-            // DO NOT sign the user out. Instead, treat them as a standard user.
-            // This allows the app to function for non-admin roles even if admin-only data fails to load.
+            // This is a critical error, likely due to permissions for regular users.
+            // DO NOT sign the user out. Instead, treat them as a standard user
+            // using the data we already have from the auth object itself.
              set({
               user: {
                 ...authUser,
+                fullName: authUser.displayName, // Use displayName from auth object
                 role: 'Pengguna', // Fallback to a non-privileged role
               },
               loading: false,
