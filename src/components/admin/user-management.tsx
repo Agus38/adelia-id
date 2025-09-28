@@ -91,10 +91,9 @@ const statusBadgeVariant: { [key in UserStatus]: 'default' | 'destructive' } = {
 };
 
 export function UserManagement() {
-  const { user, loading: isLoadingUser } = useUserStore();
+  const { user: currentUser, loading: isLoadingUser } = useUserStore();
   const [users, setUsers] = React.useState<User[]>([]);
-  const [loading, setLoading] = React.useState(true);
-
+  
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -109,34 +108,27 @@ export function UserManagement() {
   
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
   const [editedUserData, setEditedUserData] = React.useState<Partial<User>>({});
+
+  const fetchUsers = React.useCallback(async () => {
+    try {
+      const usersCollection = collection(db, 'users');
+      const usersSnapshot = await getDocs(usersCollection);
+      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+      setUsers(usersList);
+    } catch (error) {
+        toast({
+        title: "Gagal memuat pengguna",
+        description: "Terjadi kesalahan saat mengambil data dari Firestore.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
   
   React.useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        const usersCollection = collection(db, 'users');
-        const usersSnapshot = await getDocs(usersCollection);
-        const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-        setUsers(usersList);
-      } catch (error) {
-         toast({
-          title: "Gagal memuat pengguna",
-          description: "Terjadi kesalahan saat mengambil data dari Firestore.",
-          variant: "destructive",
-        });
-      } finally {
-          setLoading(false);
-      }
-    };
-    
-    // Only fetch users if the current user is an admin and user loading is finished.
-    if (!isLoadingUser && user?.role === 'Admin') {
+    if (!isLoadingUser && currentUser?.role === 'Admin') {
       fetchUsers();
-    } else if (!isLoadingUser) {
-      // If not admin or not logged in, stop the loading indicator.
-      setLoading(false);
     }
-  }, [isLoadingUser, user]);
+  }, [isLoadingUser, currentUser, fetchUsers]);
 
 
   const handleEdit = (user: User) => {
@@ -203,19 +195,12 @@ export function UserManagement() {
             role: editedUserData.role,
             status: 'Aktif',
             createdAt: serverTimestamp(),
-            // You might want to set a temporary UID or leave it empty
-            // as this user hasn't authenticated yet.
             uid: `temp_${Date.now()}`,
             avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(editedUserData.fullName)}&background=random`,
         });
         toast({ title: "Pengguna Ditambahkan", description: "Pengguna baru telah berhasil ditambahkan." });
       }
-      if (!isLoadingUser && user?.role === 'Admin') {
-          const usersCollection = collection(db, 'users');
-          const usersSnapshot = await getDocs(usersCollection);
-          const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-          setUsers(usersList);
-      }
+      fetchUsers();
       setAddEditDialogOpen(false);
       setSelectedUser(null);
       setEditedUserData({});
@@ -244,12 +229,7 @@ export function UserManagement() {
       try {
         await deleteDoc(doc(db, 'users', selectedUser.id));
         toast({ title: "Pengguna Dihapus", description: `Pengguna ${selectedUser.fullName} telah dihapus.` });
-        if (!isLoadingUser && user?.role === 'Admin') {
-          const usersCollection = collection(db, 'users');
-          const usersSnapshot = await getDocs(usersCollection);
-          const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-          setUsers(usersList);
-        }
+        fetchUsers();
       } catch (error) {
         toast({ title: "Error", description: "Gagal menghapus pengguna.", variant: "destructive" });
       }
@@ -264,12 +244,7 @@ export function UserManagement() {
         const userDocRef = doc(db, 'users', selectedUser.id);
         await updateDoc(userDocRef, { status: 'Diblokir' });
         toast({ title: "Pengguna Diblokir", description: `${selectedUser.fullName} telah diblokir.` });
-        if (!isLoadingUser && user?.role === 'Admin') {
-            const usersCollection = collection(db, 'users');
-            const usersSnapshot = await getDocs(usersCollection);
-            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-            setUsers(usersList);
-        }
+        fetchUsers();
       } catch (error) {
          toast({ title: "Error", description: "Gagal memblokir pengguna.", variant: "destructive" });
       }
@@ -284,12 +259,7 @@ export function UserManagement() {
         const userDocRef = doc(db, 'users', selectedUser.id);
         await updateDoc(userDocRef, { status: 'Aktif' });
         toast({ title: "Blokir Dibuka", description: `Blokir untuk ${selectedUser.fullName} telah dibuka.` });
-        if (!isLoadingUser && user?.role === 'Admin') {
-            const usersCollection = collection(db, 'users');
-            const usersSnapshot = await getDocs(usersCollection);
-            const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-            setUsers(usersList);
-        }
+        fetchUsers();
       } catch (error) {
         toast({ title: "Error", description: "Gagal membuka blokir pengguna.", variant: "destructive" });
       }
@@ -426,8 +396,6 @@ export function UserManagement() {
       rowSelection,
     },
   });
-  
-  const finalIsLoading = isLoadingUser || loading;
 
   return (
     <div className="space-y-4">
@@ -554,7 +522,7 @@ export function UserManagement() {
             ))}
           </TableHeader>
           <TableBody>
-            {finalIsLoading ? (
+            {isLoadingUser ? (
                 <TableRow>
                     <TableCell colSpan={columns.length} className="h-24 text-center">
                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
@@ -582,7 +550,7 @@ export function UserManagement() {
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  Tidak ada hasil.
+                  Tidak ada pengguna.
                 </TableCell>
               </TableRow>
             )}
@@ -751,3 +719,5 @@ export function UserManagement() {
     </div>
   );
 }
+
+    
