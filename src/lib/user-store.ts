@@ -85,11 +85,6 @@ export const useUserStore = create<UserState>((set) => ({
               },
               loading: false,
             });
-            toast({
-              title: "Gagal Memuat Peran",
-              description: "Tidak dapat memverifikasi peran Anda, beberapa fitur mungkin tidak tersedia.",
-              variant: "destructive",
-            });
         });
       } else {
         // No user is signed in, clear user data and ensure loading is false.
