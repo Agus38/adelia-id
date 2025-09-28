@@ -30,8 +30,11 @@ export const useUserStore = create<UserState>((set) => ({
       }
 
       if (authUser) {
-        // If there's already a listener, don't create a new one.
-        if (firestoreUnsubscribe) return; 
+        // If there's already a listener for a different user, unsubscribe first.
+        if (firestoreUnsubscribe) {
+          firestoreUnsubscribe();
+          firestoreUnsubscribe = null;
+        }
 
         const userDocRef = doc(db, 'users', authUser.uid);
         
@@ -47,7 +50,7 @@ export const useUserStore = create<UserState>((set) => ({
                 duration: 5000,
               });
               signOut(auth);
-              // State will be cleared by the auth listener below.
+              // State will be cleared by the auth listener when signOut completes.
               return;
             }
 
@@ -63,16 +66,26 @@ export const useUserStore = create<UserState>((set) => ({
               loading: false,
             });
           } else {
-            // User in Auth but not Firestore (e.g., during registration)
-            set({ user: authUser, loading: false });
+            // User exists in Auth but not in Firestore. This can happen during registration
+            // or if the document was deleted manually. Treat as a non-privileged user.
+            set({ 
+              user: { ...authUser, role: 'Pengguna' }, // Assign default role
+              loading: false 
+            });
           }
         }, (error) => {
-            console.error("Error fetching user document:", error);
-            // Fallback to auth user data if Firestore fails
-            set({ user: authUser, loading: false }); 
+            console.error("Firestore error listening to user document:", error);
+            // This is a critical error, likely due to permissions.
+            // Log the user out to force a clean state.
+            toast({
+              title: "Gagal Memuat Profil",
+              description: "Tidak dapat mengambil data peran Anda. Sesi akan diakhiri.",
+              variant: "destructive",
+            });
+            signOut(auth);
         });
       } else {
-        // No user is signed in, clear user data.
+        // No user is signed in, clear user data and ensure loading is false.
         set({ user: null, loading: false });
       }
     });

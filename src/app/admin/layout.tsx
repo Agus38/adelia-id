@@ -41,7 +41,7 @@ export default function AdminLayout({
   }
 
   // In the brief moment between the user state being non-admin and the redirect effect kicking in,
-  // render a loading screen to prevent any flash of content or child components attempting to render.
+  // or if the user data is somehow invalid, render a loading screen to prevent any flash of content.
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background">
       <Loader2 className="h-8 w-8 animate-spin" />
