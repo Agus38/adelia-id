@@ -730,4 +730,3 @@ export function UserManagement() {
     </div>
   );
 }
-
