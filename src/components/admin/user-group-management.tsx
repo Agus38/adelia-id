@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -21,130 +20,198 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Switch } from '../ui/switch';
 import { ScrollArea } from '../ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { useUserStore } from '@/lib/user-store';
-import { collection, getDocs } from 'firebase/firestore';
+import { useUserStore, type UserProfile } from '@/lib/user-store';
+import { collection, getDocs, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { toast } from '@/hooks/use-toast';
+import { useMenuConfig } from '@/lib/menu-store';
 
-// Mock Data - In a real app, this would come from Firestore
-const mockUsers = [
-  { id: 'user1', name: 'Adelia', email: 'adelia@example.com' },
-  { id: 'user2', name: 'Budi', email: 'budi@example.com' },
-  { id: 'user3', name: 'Citra', email: 'citra@example.com' },
-  { id: 'user4', name: 'Dewi', email: 'dewi@example.com' },
-  { id: 'user5', name: 'Eka', email: 'eka@example.com' },
-];
-
-const mockMenuItems = [
-    { id: 'laporan-smw-merr', title: 'Laporan Harian' },
-    { id: 'digital-products', title: 'Produk Digital' },
-    { id: 'stok-produk', title: 'Stok Produk' },
-    { id: 'smw-manyar', title: 'SMW Manyar' },
-    { id: 'nexus-ai', title: 'Nexus AI' },
-    { id: 'cek-usia', title: 'Cek Usia' },
-];
-
-const mockGroups = [
-  { id: 'group1', name: 'Kasir', description: 'Akses terbatas untuk kasir.', memberIds: ['user2', 'user3'], menuAccess: { 'digital-products': true, 'laporan-smw-merr': true } },
-  { id: 'group2', name: 'Manajer Area', description: 'Akses penuh ke laporan dan stok.', memberIds: ['user4'], menuAccess: { 'laporan-smw-merr': true, 'stok-produk': true, 'smw-manyar': true } },
-];
+interface UserGroup {
+    id: string;
+    name: string;
+    description: string;
+    memberIds: string[];
+    menuAccess: Record<string, boolean>;
+    createdAt?: any;
+}
 
 export function UserGroupManagement() {
-  const { user, loading: isLoadingUser } = useUserStore();
-  const [groups, setGroups] = React.useState(mockGroups);
-  const [defaultGroup, setDefaultGroup] = React.useState('group1');
-  const [isEditGroupOpen, setEditGroupOpen] = React.useState(false);
-  const [isEditPermissionsOpen, setEditPermissionsOpen] = React.useState(false);
-  const [isEditMembersOpen, setEditMembersOpen] = React.useState(false);
-  const [selectedGroup, setSelectedGroup] = React.useState<(typeof mockGroups)[0] | null>(null);
-
-  const [users, setUsers] = React.useState<any[]>([]);
-  const [userGroups, setUserGroups] = React.useState<any[]>([]);
+  const { user: currentUser, loading: isLoadingUser } = useUserStore();
+  const { menuItems } = useMenuConfig();
+  
+  const [users, setUsers] = React.useState<UserProfile[]>([]);
+  const [groups, setGroups] = React.useState<UserGroup[]>([]);
   const [loadingData, setLoadingData] = React.useState(true);
+  
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
+  // Dialog States
+  const [isGroupDialogOpen, setGroupDialogOpen] = React.useState(false);
+  const [isPermissionsDialogOpen, setPermissionsDialogOpen] = React.useState(false);
+  const [isMembersDialogOpen, setMembersDialogOpen] = React.useState(false);
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  
+  const [selectedGroup, setSelectedGroup] = React.useState<UserGroup | null>(null);
+  const [isNewGroup, setIsNewGroup] = React.useState(false);
+  
+  const [editedName, setEditedName] = React.useState('');
+  const [editedDescription, setEditedDescription] = React.useState('');
+  const [editedPermissions, setEditedPermissions] = React.useState<Record<string, boolean>>({});
+  const [editedMemberIds, setEditedMemberIds] = React.useState<string[]>([]);
+
+
+  const fetchData = React.useCallback(async () => {
+    setLoadingData(true);
+    try {
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile));
+      setUsers(usersList.sort((a,b) => (a.fullName || '').localeCompare(b.fullName || '')));
+
+      const groupsSnapshot = await getDocs(collection(db, 'userGroups'));
+      const groupsList = groupsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserGroup));
+      setGroups(groupsList.sort((a,b) => a.name.localeCompare(b.name)));
+
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast({ title: 'Gagal Memuat Data', description: 'Tidak dapat mengambil data pengguna atau grup dari Firestore.', variant: 'destructive'});
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
 
   React.useEffect(() => {
-    if (isLoadingUser || user?.role !== 'Admin') {
-       if(!isLoadingUser) setLoadingData(false);
-      return;
+    if (!isLoadingUser && currentUser?.role === 'Admin') {
+      fetchData();
+    } else if (!isLoadingUser) {
+      setLoadingData(false);
     }
+  }, [isLoadingUser, currentUser, fetchData]);
 
-    const fetchData = async () => {
-      setLoadingData(true);
-      try {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        const usersList = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setUsers(usersList);
-
-        const groupsSnapshot = await getDocs(collection(db, 'userGroups'));
-        const groupsList = groupsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setUserGroups(groupsList);
-
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoadingData(false);
+  const openDialog = (group: UserGroup | null, type: 'detail' | 'permissions' | 'members') => {
+      if (!group) return;
+      setSelectedGroup(group);
+      if (type === 'detail') {
+          setEditedName(group.name);
+          setEditedDescription(group.description);
+          setGroupDialogOpen(true);
+      } else if (type === 'permissions') {
+          setEditedPermissions(group.menuAccess || {});
+          setPermissionsDialogOpen(true);
+      } else if (type === 'members') {
+          setEditedMemberIds(group.memberIds || []);
+          setMembersDialogOpen(true);
       }
-    };
+  };
 
-    fetchData();
-  }, [isLoadingUser, user]);
-
-  const handleEditGroup = (group: (typeof mockGroups)[0]) => {
-    setSelectedGroup(group);
-    setEditGroupOpen(true);
+  const handleAddNewGroup = () => {
+    setIsNewGroup(true);
+    setSelectedGroup(null);
+    setEditedName('');
+    setEditedDescription('');
+    setGroupDialogOpen(true);
   };
   
-  const handleEditPermissions = (group: (typeof mockGroups)[0]) => {
-    setSelectedGroup(group);
-    setEditPermissionsOpen(true);
+  const handleSaveGroupDetails = async () => {
+      if (!editedName) {
+          toast({ title: 'Nama Grup Wajib Diisi', variant: 'destructive'});
+          return;
+      }
+      setIsProcessing(true);
+      try {
+          if (isNewGroup) {
+              await addDoc(collection(db, 'userGroups'), {
+                  name: editedName,
+                  description: editedDescription,
+                  memberIds: [],
+                  menuAccess: {},
+                  createdAt: serverTimestamp(),
+              });
+              toast({ title: 'Grup Baru Ditambahkan' });
+          } else if (selectedGroup) {
+              const groupDocRef = doc(db, 'userGroups', selectedGroup.id);
+              await updateDoc(groupDocRef, { name: editedName, description: editedDescription });
+              toast({ title: 'Detail Grup Diperbarui' });
+          }
+          fetchData();
+          setGroupDialogOpen(false);
+      } catch (error) {
+          toast({ title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan data grup.', variant: 'destructive' });
+      } finally {
+          setIsProcessing(false);
+      }
   };
   
-  const handleEditMembers = (group: (typeof mockGroups)[0]) => {
+  const handleSavePermissions = async () => {
+    if (!selectedGroup) return;
+    setIsProcessing(true);
+    try {
+        const groupDocRef = doc(db, 'userGroups', selectedGroup.id);
+        await updateDoc(groupDocRef, { menuAccess: editedPermissions });
+        toast({ title: 'Hak Akses Diperbarui' });
+        fetchData();
+        setPermissionsDialogOpen(false);
+    } catch (error) {
+        toast({ title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan hak akses.', variant: 'destructive' });
+    } finally {
+        setIsProcessing(false);
+    }
+  }
+  
+  const handleSaveMembers = async () => {
+    if (!selectedGroup) return;
+    setIsProcessing(true);
+    try {
+        const groupDocRef = doc(db, 'userGroups', selectedGroup.id);
+        await updateDoc(groupDocRef, { memberIds: editedMemberIds });
+        toast({ title: 'Anggota Grup Diperbarui' });
+        fetchData();
+        setMembersDialogOpen(false);
+    } catch (error) {
+        toast({ title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan anggota grup.', variant: 'destructive' });
+    } finally {
+        setIsProcessing(false);
+    }
+  }
+
+  const handleDeleteGroup = (group: UserGroup) => {
     setSelectedGroup(group);
-    setEditMembersOpen(true);
+    setDeleteDialogOpen(true);
   };
+  
+  const confirmDeleteGroup = async () => {
+      if (!selectedGroup) return;
+      setIsProcessing(true);
+      try {
+          await deleteDoc(doc(db, 'userGroups', selectedGroup.id));
+          toast({ title: 'Grup Dihapus' });
+          fetchData();
+          setDeleteDialogOpen(false);
+      } catch (error) {
+          toast({ title: 'Gagal Menghapus', description: 'Terjadi kesalahan saat menghapus grup.', variant: 'destructive' });
+      } finally {
+          setIsProcessing(false);
+      }
+  }
   
   const isLoading = isLoadingUser || loadingData;
+
+  const appMenuItems = menuItems.filter(item => item.access !== 'admin');
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Pengaturan Grup Default</CardTitle>
-          <CardDescription>
-            Pilih grup yang akan secara otomatis ditetapkan untuk pengguna baru saat mereka mendaftar.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <Label htmlFor="default-group" className="whitespace-nowrap">Grup Default</Label>
-            <Select value={defaultGroup} onValueChange={setDefaultGroup} disabled={isLoading}>
-              <SelectTrigger id="default-group" className="w-full max-w-xs">
-                <SelectValue placeholder="Pilih grup default" />
-              </SelectTrigger>
-              <SelectContent>
-                {groups.map(group => (
-                  <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-    
-      <Card>
-        <CardHeader>
           <div className="flex justify-between items-center">
             <div>
                 <CardTitle>Daftar Grup Pengguna</CardTitle>
-                <CardDescription>Kelompokkan pengguna berdasarkan peran dan hak akses mereka.</CardDescription>
+                <CardDescription>Kelompokkan pengguna berdasarkan peran dan hak akses menu mereka.</CardDescription>
             </div>
-            <Button disabled={isLoading}>
+            <Button onClick={handleAddNewGroup} disabled={isLoading}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Tambah Grup
             </Button>
@@ -167,13 +234,19 @@ export function UserGroupManagement() {
                             <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                         </TableCell>
                     </TableRow>
+                ) : groups.length === 0 ? (
+                    <TableRow>
+                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                            Belum ada grup yang dibuat.
+                        </TableCell>
+                    </TableRow>
                 ) : groups.map(group => (
                   <TableRow key={group.id}>
                     <TableCell>
                       <p className="font-medium">{group.name}</p>
                       <p className="text-xs text-muted-foreground">{group.description}</p>
                     </TableCell>
-                    <TableCell>{group.memberIds.length} Pengguna</TableCell>
+                    <TableCell>{group.memberIds?.length || 0} Pengguna</TableCell>
                     <TableCell className="text-right">
                        <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -183,20 +256,20 @@ export function UserGroupManagement() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditGroup(group)}>
+                          <DropdownMenuItem onClick={() => openDialog(group, 'detail')}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Detail Grup
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditMembers(group)}>
+                          <DropdownMenuItem onClick={() => openDialog(group, 'members')}>
                             <Users className="mr-2 h-4 w-4" />
                             Kelola Anggota
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditPermissions(group)}>
+                          <DropdownMenuItem onClick={() => openDialog(group, 'permissions')}>
                             <Settings className="mr-2 h-4 w-4" />
                             Atur Hak Akses
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteGroup(group)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Hapus Grup
                           </DropdownMenuItem>
@@ -211,8 +284,37 @@ export function UserGroupManagement() {
         </CardContent>
       </Card>
       
+      {/* Dialog for Group Details */}
+      <Dialog open={isGroupDialogOpen} onOpenChange={setGroupDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{isNewGroup ? 'Buat Grup Baru' : `Edit Grup: ${selectedGroup?.name}`}</DialogTitle>
+            <DialogDescription>
+             {isNewGroup ? 'Buat grup baru untuk mengelola pengguna.' : 'Ubah nama dan deskripsi untuk grup ini.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                  <Label htmlFor='group-name'>Nama Grup</Label>
+                  <Input id="group-name" value={editedName} onChange={(e) => setEditedName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                  <Label htmlFor='group-desc'>Deskripsi</Label>
+                  <Input id="group-desc" value={editedDescription} onChange={(e) => setEditedDescription(e.target.value)} />
+              </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGroupDialogOpen(false)} disabled={isProcessing}>Batal</Button>
+            <Button onClick={handleSaveGroupDetails} disabled={isProcessing}>
+                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       {/* Dialog for Permissions */}
-      <Dialog open={isEditPermissionsOpen} onOpenChange={setEditPermissionsOpen}>
+      <Dialog open={isPermissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Atur Hak Akses untuk: {selectedGroup?.name}</DialogTitle>
@@ -222,23 +324,30 @@ export function UserGroupManagement() {
           </DialogHeader>
            <ScrollArea className="max-h-[60vh] my-4">
             <div className="space-y-4 pr-6">
-                {mockMenuItems.map(item => (
+                {appMenuItems.map(item => (
                     <div key={item.id} className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <Label htmlFor={`access-${item.id}`} className="font-medium">{item.title}</Label>
-                        <Switch id={`access-${item.id}`} />
+                        <Switch 
+                            id={`access-${item.id}`} 
+                            checked={editedPermissions[item.id] || false}
+                            onCheckedChange={(checked) => setEditedPermissions(prev => ({ ...prev, [item.id]: checked }))}
+                        />
                     </div>
                 ))}
             </div>
            </ScrollArea>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditPermissionsOpen(false)}>Batal</Button>
-            <Button>Simpan Hak Akses</Button>
+            <Button variant="outline" onClick={() => setPermissionsDialogOpen(false)} disabled={isProcessing}>Batal</Button>
+            <Button onClick={handleSavePermissions} disabled={isProcessing}>
+                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Hak Akses
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
     {/* Dialog for Members */}
-      <Dialog open={isEditMembersOpen} onOpenChange={setEditMembersOpen}>
+      <Dialog open={isMembersDialogOpen} onOpenChange={setMembersDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Kelola Anggota: {selectedGroup?.name}</DialogTitle>
@@ -248,23 +357,51 @@ export function UserGroupManagement() {
           </DialogHeader>
            <ScrollArea className="max-h-[60vh] my-4">
             <div className="space-y-4 pr-6">
-                {mockUsers.map(user => (
+                {users.filter(u => u.role !== 'Admin').map(user => (
                     <div key={user.id} className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div>
-                            <p className="font-medium">{user.name}</p>
+                            <p className="font-medium">{user.fullName}</p>
                             <p className="text-xs text-muted-foreground">{user.email}</p>
                         </div>
-                        <Switch id={`user-${user.id}`} />
+                        <Switch 
+                            id={`user-${user.id}`}
+                            checked={editedMemberIds.includes(user.id)}
+                            onCheckedChange={(checked) => {
+                                setEditedMemberIds(prev => checked ? [...prev, user.id] : prev.filter(id => id !== user.id));
+                            }}
+                        />
                     </div>
                 ))}
             </div>
            </ScrollArea>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditMembersOpen(false)}>Batal</Button>
-            <Button>Simpan Anggota</Button>
+            <Button variant="outline" onClick={() => setMembersDialogOpen(false)} disabled={isProcessing}>Batal</Button>
+            <Button onClick={handleSaveMembers} disabled={isProcessing}>
+                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Anggota
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Dialog for Delete Confirmation */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Hapus Grup: {selectedGroup?.name}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Tindakan ini tidak dapat dibatalkan. Grup akan dihapus secara permanen. Pengguna di dalamnya tidak akan terhapus.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isProcessing}>Batal</AlertDialogCancel>
+                  <AlertDialogAction onClick={confirmDeleteGroup} disabled={isProcessing}>
+                      {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Ya, Hapus
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
