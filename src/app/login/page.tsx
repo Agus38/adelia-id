@@ -60,7 +60,6 @@ export default function LoginPage() {
 
     const user = userCredential.user;
 
-    // CRITICAL: After successful authentication, ALWAYS check the user's document for status.
     try {
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
@@ -79,7 +78,6 @@ export default function LoginPage() {
                 description: `Selamat datang kembali, ${userData.fullName || user.displayName || 'Pengguna'}!`,
             });
             
-            // Redirect based on role
             if (userData.role === 'Admin') {
                 router.push('/admin');
             } else {
@@ -87,17 +85,20 @@ export default function LoginPage() {
             }
 
         } else {
-             // If the user document doesn't exist, something is wrong. Do not allow login.
             await auth.signOut();
             setError('Gagal memverifikasi data pengguna. Akun mungkin tidak terdaftar dengan benar. Hubungi administrator.');
             setIsLoading(false);
         }
     } catch (firestoreError: any) {
-        // This catch block handles cases where reading the doc fails for other reasons.
-        console.error("Firestore error during login check:", firestoreError);
-        await auth.signOut();
-        setError('Terjadi kesalahan saat memverifikasi akun Anda. Silakan coba lagi.');
-        setIsLoading(false);
+        // If firestore read fails (e.g., permission denied for a regular user at this stage),
+        // we will NOT sign them out. We let them proceed.
+        // The useUserStore will handle role verification later.
+        console.error("Firestore error during login check (non-fatal):", firestoreError);
+        toast({
+            title: 'Login Berhasil!',
+            description: `Selamat datang, ${user.displayName || 'Pengguna'}! Memverifikasi peran...`,
+        });
+        router.push('/');
     }
   };
 

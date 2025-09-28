@@ -69,7 +69,8 @@ export const useUserStore = create<UserState>((set) => ({
             });
           } else {
             // User exists in Auth but not in Firestore. This is an invalid state.
-            // Force sign out.
+            // This might happen if the document is deleted manually.
+            // We sign the user out to prevent them from being in a broken state.
             toast({
               title: "Kesalahan Akun",
               description: "Data profil Anda tidak ditemukan. Silakan hubungi administrator.",
@@ -78,10 +79,11 @@ export const useUserStore = create<UserState>((set) => ({
             signOut(auth);
           }
         }, (error) => {
-            console.error("Firestore error listening to user document:", error);
-            // This can happen if a regular user doesn't have permission to read their own doc.
-            // For now, we will treat them as a standard user, but this indicates a potential rules issue.
-             set({
+            console.error("Firestore onSnapshot error:", error);
+            // This can happen if a regular user doesn't have permission to read their own doc initially.
+            // We now treat this as non-fatal. We'll use the authUser data as a fallback.
+            // The user will appear as a 'Pengguna' until permissions are resolved or if they are indeed a regular user.
+            set({
               user: {
                 ...authUser,
                 fullName: authUser.displayName,
