@@ -13,26 +13,27 @@ const firestoreRules = `rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Helper function to check for Admin role by reading the user's document.
-    function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-    }
-    
+    // Helper function to check if the user is an Admin via Custom Claims.
+    // This is much more secure and efficient.
     function isAdmin() {
-        return getUserRole() == 'Admin';
+      return request.auth.token.admin == true;
     }
 
     // Rules for user profiles
     match /users/{userId} {
-      // Admin can read any user profile and list all users.
+      // Admin can read any user profile.
+      allow get, list: if isAdmin();
+
       // A regular user can only read their own profile.
-      allow get, list: if isAdmin() || request.auth.uid == userId;
+      allow get: if request.auth.uid == userId;
       
-      // Admin can write to any user profile
+      // Admin can write to any user profile.
       allow write: if isAdmin();
       
-      // A regular user can only update their own profile, but cannot change their role.
-      allow create, update: if request.auth.uid == userId && request.resource.data.role == resource.data.role;
+      // A regular user can only update their own profile, but CANNOT change their role.
+      // This is a critical security rule.
+      allow create, update: if request.auth.uid == userId 
+                            && request.resource.data.role == resource.data.role;
     }
     
     // Rules for user groups
@@ -133,15 +134,15 @@ export default function FirestoreRulesPage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>PENTING: Segera Perbarui Aturan Anda!</AlertTitle>
           <AlertDescription>
-            Aturan keamanan telah diubah untuk memperbaiki masalah akses data. Anda **WAJIB** menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong>.
+            Aturan keamanan telah diubah untuk memperbaiki masalah izin akses dan fitur blokir. Anda **WAJIB** menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong>.
           </AlertDescription>
        </Alert>
        
        <Alert>
           <Info className="h-4 w-4" />
-          <AlertTitle>Logika Verifikasi Admin</AlertTitle>
+          <AlertTitle>Logika Verifikasi Admin Berubah!</AlertTitle>
           <AlertDescription>
-            Sistem verifikasi Admin sekarang membaca peran langsung dari dokumen pengguna di database (koleksi 'users'), bukan lagi menggunakan Custom Claims. Pastikan akun admin Anda memiliki `role: "Admin"` di databasenya.
+            Sistem verifikasi Admin sekarang menggunakan **Custom Claims**. Ini lebih aman dan efisien. Anda perlu mengatur *custom claim* `&#123;"admin": true&#125;` untuk akun admin Anda melalui server-side script (misalnya, Firebase Cloud Function) agar hak akses Admin berfungsi.
           </AlertDescription>
        </Alert>
 
