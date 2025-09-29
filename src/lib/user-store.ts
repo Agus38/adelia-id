@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { toast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/app/main-layout';
@@ -15,35 +15,19 @@ interface UserState {
   clearUser: () => void;
 }
 
-// Keep a global reference to the Firestore listener to avoid multiple listeners.
-let firestoreUnsubscribe: (() => void) | null = null;
-
 export const useUserStore = create<UserState>((set) => ({
   user: null,
   loading: true,
   initializeUserListener: () => {
-    const authUnsubscribe = onAuthStateChanged(auth, (authUser) => {
-      // If a user logs out, clean up existing Firestore listener.
-      if (!authUser && firestoreUnsubscribe) {
-        firestoreUnsubscribe();
-        firestoreUnsubscribe = null;
-      }
-
+    const authUnsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
-        // If there's already a listener for a different user, unsubscribe first.
-        if (firestoreUnsubscribe) {
-          firestoreUnsubscribe();
-          firestoreUnsubscribe = null;
-        }
+        try {
+          const userDocRef = doc(db, 'users', authUser.uid);
+          const docSnap = await getDoc(userDocRef);
 
-        const userDocRef = doc(db, 'users', authUser.uid);
-        
-        firestoreUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const userData = docSnap.data();
 
-            // CRITICAL: Real-time check for blocked status.
-            // This will trigger whenever the user document changes.
             if (userData.status === 'Diblokir') {
               toast({
                 title: "Akses Ditolak",
@@ -51,8 +35,8 @@ export const useUserStore = create<UserState>((set) => ({
                 variant: "destructive",
                 duration: 5000,
               });
-              signOut(auth);
-              // State will be cleared by the auth listener when signOut completes.
+              await signOut(auth);
+              set({ user: null, loading: false });
               return;
             }
 
@@ -61,47 +45,48 @@ export const useUserStore = create<UserState>((set) => ({
                 ...authUser,
                 id: docSnap.id,
                 fullName: userData.fullName || authUser.displayName,
-                role: userData.role,
+                role: userData.role || 'Pengguna',
                 avatarUrl: userData.avatarUrl || authUser.photoURL,
                 status: userData.status || 'Aktif',
               },
               loading: false,
             });
           } else {
-            // User exists in Auth but not in Firestore. This is an invalid state.
-            // This might happen if the document is deleted manually.
-            // We sign the user out to prevent them from being in a broken state.
-            toast({
-              title: "Kesalahan Akun",
-              description: "Data profil Anda tidak ditemukan. Silakan hubungi administrator.",
-              variant: "destructive",
-            });
-            signOut(auth);
-          }
-        }, (error) => {
-            console.error("Firestore onSnapshot error:", error);
-            // This can happen if a regular user doesn't have permission to read their own doc initially.
-            // We now treat this as non-fatal. We'll use the authUser data as a fallback.
-            // The user will appear as a 'Pengguna' until permissions are resolved or if they are indeed a regular user.
-            set({
+            // User exists in Auth but not in Firestore. Fallback to auth data.
+             set({
               user: {
                 ...authUser,
+                id: authUser.uid,
                 fullName: authUser.displayName,
-                role: 'Pengguna', // Fallback to a non-privileged role
+                role: 'Pengguna',
+                avatarUrl: authUser.photoURL,
                 status: 'Aktif',
               },
               loading: false,
             });
-        });
+          }
+        } catch (error) {
+          console.error("Error fetching user document:", error);
+          // Fallback to authUser data if there's an error (e.g., transient permission issue)
+          set({
+            user: {
+              ...authUser,
+              id: authUser.uid,
+              fullName: authUser.displayName,
+              role: 'Pengguna',
+              avatarUrl: authUser.photoURL,
+              status: 'Aktif',
+            },
+            loading: false,
+          });
+        }
       } else {
-        // No user is signed in, clear user data and ensure loading is false.
+        // No user is signed in.
         set({ user: null, loading: false });
       }
     });
 
-    // The returned function is the cleanup function for useEffect.
-    // It will unsubscribe from the auth state listener when the app unmounts.
-    return authUnsubscribe; 
+    return authUnsubscribe;
   },
   clearUser: () => set({ user: null, loading: false }),
 }));
