@@ -21,14 +21,26 @@ export const useUserStore = create<UserState>((set, get) => ({
   user: null,
   loading: true,
   initializeUserListener: () => {
-    const authUnsubscribe = onAuthStateChanged(auth, (authUser) => {
-      // Clean up previous Firestore listener if it exists
+    const authUnsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (firestoreUnsubscribe) {
         firestoreUnsubscribe();
         firestoreUnsubscribe = null;
       }
 
       if (authUser) {
+        // Initially set user data from auth object. This is fast and reliable.
+        const basicUserProfile: UserProfile = {
+          uid: authUser.uid,
+          email: authUser.email,
+          fullName: authUser.displayName,
+          photoURL: authUser.photoURL,
+          // Initialize other fields as undefined or default
+          role: undefined, 
+          status: 'Aktif', 
+        };
+        set({ user: basicUserProfile, loading: false });
+
+        // Now, set up a real-time listener for the user's document.
         const userDocRef = doc(db, 'users', authUser.uid);
         
         firestoreUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
@@ -46,9 +58,11 @@ export const useUserStore = create<UserState>((set, get) => ({
               return; 
             }
 
-            set({
+            // Merge Firestore data with existing auth data
+            set(state => ({
               user: {
-                uid: authUser.uid,
+                ...state.user, // Keep basic data
+                uid: authUser.uid, // Ensure uid is from authUser
                 email: authUser.email,
                 id: docSnap.id,
                 role: userData.role,
@@ -57,36 +71,22 @@ export const useUserStore = create<UserState>((set, get) => ({
                 fullName: userData.fullName || authUser.displayName,
               },
               loading: false,
-            });
+            }));
           } else {
-             // Fallback for when the document might not exist yet or there's a permission issue initially
-             // We still set a basic user object to prevent UI breakage
-             set({
-              user: {
-                uid: authUser.uid,
-                email: authUser.email,
-                fullName: authUser.displayName,
-                photoURL: authUser.photoURL,
-              },
-              loading: false,
-            });
+             // Document doesn't exist, but user is authenticated. 
+             // This might happen on first registration before doc is created.
+             // We'll rely on the basic profile.
+             console.warn(`User document for UID ${authUser.uid} not found. Sticking with basic auth data.`);
+             set({ user: basicUserProfile, loading: false });
           }
         }, (error) => {
           console.error("Firestore listener error:", error.message);
-          // CRITICAL FIX: DO NOT sign out the user here.
-          // This prevents the logout loop if there's a temporary permission issue on first load.
-          // Instead, fallback to the basic authUser data.
-          set({
-            user: {
-              uid: authUser.uid,
-              email: authUser.email,
-              fullName: authUser.displayName,
-              photoURL: authUser.photoURL,
-            },
-            loading: false,
-          });
+          // Fallback to basic data if listener fails for any reason
+          set({ user: basicUserProfile, loading: false });
         });
+
       } else {
+        // User is logged out
         set({ user: null, loading: false });
       }
     });
