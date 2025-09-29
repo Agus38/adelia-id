@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { toast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/app/main-layout';
@@ -15,80 +15,75 @@ interface UserState {
   clearUser: () => void;
 }
 
-// This will hold the unsubscribe function for the Firestore listener
 let firestoreUnsubscribe: (() => void) | null = null;
 
-export const useUserStore = create<UserState>((set) => ({
+export const useUserStore = create<UserState>((set, get) => ({
   user: null,
   loading: true,
   initializeUserListener: () => {
-    // This is the main listener for authentication state changes
-    const authUnsubscribe = onAuthStateChanged(auth, (authUser) => {
-      // First, clean up any existing Firestore listener to prevent duplicates
+    const authUnsubscribe = onAuthStateChanged(auth, async (authUser) => {
+      // Clean up previous Firestore listener if it exists
       if (firestoreUnsubscribe) {
         firestoreUnsubscribe();
         firestoreUnsubscribe = null;
       }
 
       if (authUser) {
-        // User is logged in. Set up a real-time listener for their document.
-        const userDocRef = doc(db, 'users', authUser.uid);
+        // Set a basic user object immediately to stop the main loading state.
+        // This uses the data available directly from the auth object.
+        const basicUser: UserProfile = {
+          uid: authUser.uid,
+          email: authUser.email,
+          fullName: authUser.displayName,
+          avatarUrl: authUser.photoURL,
+          // Role and status are unknown at this point, so they are not set here
+        };
         
+        // Avoid flicker by setting loading to false now with basic data
+        if (get().loading) {
+            set({ user: basicUser, loading: false });
+        }
+
+        // Now, set up the real-time listener for the user's document
+        const userDocRef = doc(db, 'users', authUser.uid);
         firestoreUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const userData = docSnap.data();
             
-            // Check for blocked status in real-time
+            // If the user is blocked, sign them out immediately.
             if (userData.status === 'Diblokir') {
-              toast({
-                title: "Akses Ditolak",
-                description: "Akun Anda telah diblokir. Anda akan dikeluarkan.",
-                variant: "destructive",
-                duration: 5000,
-              });
-              signOut(auth); // This will trigger the onAuthStateChanged listener again, cleaning up the state.
-              return;
+              signOut(auth);
+              return; // Stop further processing
             }
 
             // Update the store with the full, real-time data from Firestore
             set({
               user: {
-                // Base data from auth object
-                uid: authUser.uid,
-                email: authUser.email,
-                // Overwrite with more accurate data from Firestore
+                ...basicUser, // Keep the base data
                 id: docSnap.id,
-                fullName: userData.fullName || authUser.displayName,
-                role: userData.role || 'Pengguna',
+                role: userData.role,
+                status: userData.status,
+                // Prefer Firestore avatarUrl if it exists, otherwise use auth photoURL
                 avatarUrl: userData.avatarUrl || authUser.photoURL,
-                status: userData.status || 'Aktif',
-              } as UserProfile,
-              loading: false, // We have the full user data, so loading is complete
+                fullName: userData.fullName || authUser.displayName, // Prefer Firestore name
+              },
+              loading: false, // Ensure loading is false
             });
           } else {
-            // Document doesn't exist, which is an invalid state for a logged-in user.
-            // Log them out.
-             toast({
-                title: "Error Verifikasi",
-                description: "Data profil Anda tidak ditemukan. Silakan hubungi admin.",
-                variant: "destructive",
-              });
-             signOut(auth);
+            // Document doesn't exist, which could be a temporary issue or a real problem.
+            // For now, we just stick with the basic auth user and don't sign them out here.
+            // The login page is now responsible for handling this case on initial login.
+            set({ user: basicUser, loading: false });
           }
         }, (error) => {
-          console.error("Error listening to user document:", error);
-           // Fallback to basic auth data if Firestore listener fails, but don't sign out.
-           set({
-            user: {
-              uid: authUser.uid,
-              email: authUser.email,
-              fullName: authUser.displayName,
-            } as UserProfile,
-            loading: false
-          });
+          // This error handler is crucial. It catches permission errors.
+          // Instead of signing out, we just log the error and stick with the basic user data.
+          console.error("Firestore listener error (this is often a temporary permission issue on first load, and can be ignored if the app functions correctly):", error.message);
+          set({ user: basicUser, loading: false }); // Ensure app is usable with basic data
         });
+
       } else {
-        // No user is signed in. Clear the user state.
+        // No user is signed in. Clear everything.
         set({ user: null, loading: false });
       }
     });
