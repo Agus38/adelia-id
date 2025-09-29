@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -28,43 +29,10 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
+    let userCredential;
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // After successful authentication, check the user's status and role from Firestore.
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData.status === 'Diblokir') {
-              await signOut(auth);
-              setError('Akun Anda telah diblokir. Silakan hubungi administrator.');
-              setIsLoading(false);
-              return;
-          }
-
-          toast({
-              title: 'Login Berhasil!',
-              description: `Selamat datang kembali, ${userData.fullName || user.displayName || 'Pengguna'}!`,
-          });
-          
-          if (userData.role === 'Admin') {
-              router.push('/admin');
-          } else {
-              router.push('/');
-          }
-
-      } else {
-          // Document doesn't exist, this is an invalid state.
-          await signOut(auth);
-          setError('Gagal memverifikasi data pengguna. Akun mungkin tidak terdaftar dengan benar. Hubungi administrator.');
-          setIsLoading(false);
-      }
-
+      userCredential = await signInWithEmailAndPassword(auth, email, password);
     } catch (authError: any) {
-      // This catch block is for authentication errors or Firestore errors during getDoc
       let description = 'Terjadi kesalahan. Silakan coba lagi.';
       switch (authError.code) {
         case 'auth/user-not-found':
@@ -81,13 +49,51 @@ export default function LoginPage() {
         case 'auth/invalid-email':
           description = 'Format email yang Anda masukkan tidak valid.';
           break;
-        case 'permission-denied':
-            description = 'Terjadi kesalahan izin saat memverifikasi akun Anda. Silakan coba lagi.'
-            break;
         default:
-          description = `Terjadi kesalahan yang tidak diketahui. Silakan coba lagi. (${authError.code})`;
+          description = `Terjadi kesalahan autentikasi. Silakan coba lagi. (${authError.code})`;
       }
       setError(description);
+      setIsLoading(false);
+      return;
+    }
+
+    const user = userCredential.user;
+
+    // After successful authentication, check the user's status and role from Firestore.
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.status === 'Diblokir') {
+          await signOut(auth);
+          setError('Akun Anda telah diblokir. Silakan hubungi administrator.');
+          setIsLoading(false);
+          return;
+        }
+
+        toast({
+            title: 'Login Berhasil!',
+            description: `Selamat datang kembali, ${userData.fullName || user.displayName || 'Pengguna'}!`,
+        });
+
+        if (userData.role === 'Admin') {
+            router.push('/admin');
+        } else {
+            router.push('/');
+        }
+      } else {
+        // Document doesn't exist, this is an invalid state.
+        await signOut(auth);
+        setError('Gagal memverifikasi data pengguna. Akun mungkin tidak terdaftar dengan benar. Hubungi administrator.');
+        setIsLoading(false);
+      }
+    } catch (firestoreError: any) {
+      // This catch block is for Firestore errors during getDoc
+      console.error("Firestore verification error:", firestoreError);
+      await signOut(auth);
+      setError(`Terjadi kesalahan saat memverifikasi akun Anda. Silakan coba lagi.`);
       setIsLoading(false);
     }
   };
