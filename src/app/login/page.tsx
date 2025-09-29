@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { signInWithEmailAndPassword, type User } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
@@ -29,45 +29,19 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
-    let userCredential;
     try {
-      userCredential = await signInWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      let description = 'Terjadi kesalahan. Silakan coba lagi.';
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-      switch (error.code) {
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-        case 'auth/invalid-credential':
-          description = 'Email atau kata sandi yang Anda masukkan salah.';
-          break;
-        case 'auth/user-disabled':
-          description = 'Akun ini telah diblokir. Silakan hubungi administrator.';
-          break;
-        case 'auth/too-many-requests':
-          description = 'Akses ke akun ini telah dinonaktifkan sementara karena terlalu banyak percobaan login yang gagal. Silakan coba lagi nanti.';
-          break;
-        case 'auth/invalid-email':
-          description = 'Format email yang Anda masukkan tidak valid.';
-          break;
-        default:
-          description = 'Terjadi kesalahan yang tidak diketahui. Silakan coba lagi.';
-      }
-      setError(description);
-      setIsLoading(false);
-      return;
-    }
-
-    const user = userCredential.user;
-
-    try {
+      // After successful authentication, check the user's status and role from Firestore.
+      try {
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
             const userData = userDoc.data();
             if (userData.status === 'Diblokir') {
-                await auth.signOut();
+                await signOut(auth);
                 setError('Akun Anda telah diblokir. Silakan hubungi administrator.');
                 setIsLoading(false);
                 return;
@@ -85,20 +59,43 @@ export default function LoginPage() {
             }
 
         } else {
-            await auth.signOut();
+            // Document doesn't exist, this is an invalid state.
+            await signOut(auth);
             setError('Gagal memverifikasi data pengguna. Akun mungkin tidak terdaftar dengan benar. Hubungi administrator.');
             setIsLoading(false);
         }
-    } catch (firestoreError: any) {
-        // If firestore read fails (e.g., permission denied for a regular user at this stage),
-        // we will NOT sign them out. We let them proceed.
-        // The useUserStore will handle role verification later.
-        console.error("Firestore error during login check (non-fatal):", firestoreError);
-        toast({
-            title: 'Login Berhasil!',
-            description: `Selamat datang, ${user.displayName || 'Pengguna'}! Memverifikasi peran...`,
-        });
-        router.push('/');
+      } catch (firestoreError: any) {
+        // This catch block is for errors during the getDoc call.
+        // It could be a permission issue for a non-admin trying to read other docs (which shouldn't happen here)
+        // or a network error. We sign the user out to be safe.
+        await signOut(auth);
+        setError(`Terjadi kesalahan saat memverifikasi akun Anda. Silakan coba lagi.`);
+        setIsLoading(false);
+      }
+
+    } catch (authError: any) {
+      // This catch block is for authentication errors (wrong password, user not found, etc.)
+      let description = 'Terjadi kesalahan. Silakan coba lagi.';
+      switch (authError.code) {
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          description = 'Email atau kata sandi yang Anda masukkan salah.';
+          break;
+        case 'auth/user-disabled':
+          description = 'Akun ini telah dinonaktifkan sementara. Silakan hubungi administrator.';
+          break;
+        case 'auth/too-many-requests':
+          description = 'Akses ke akun ini telah dinonaktifkan sementara karena terlalu banyak percobaan login yang gagal. Silakan coba lagi nanti.';
+          break;
+        case 'auth/invalid-email':
+          description = 'Format email yang Anda masukkan tidak valid.';
+          break;
+        default:
+          description = 'Terjadi kesalahan yang tidak diketahui saat login. Silakan coba lagi.';
+      }
+      setError(description);
+      setIsLoading(false);
     }
   };
 

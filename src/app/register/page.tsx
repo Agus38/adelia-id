@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -51,6 +51,12 @@ export default function RegisterPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+
+      // CRITICAL: Update the user's profile in Firebase Authentication as well
+      await updateProfile(user, {
+        displayName: name,
+        photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+      });
 
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
