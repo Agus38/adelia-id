@@ -14,7 +14,6 @@ service cloud.firestore {
   match /databases/{database}/documents {
   
     // Helper function to check if the user is an Admin via Custom Claims.
-    // This is much more secure and efficient.
     function isAdmin() {
       return request.auth.token.admin == true;
     }
@@ -22,16 +21,16 @@ service cloud.firestore {
     // Rules for user profiles
     match /users/{userId} {
       // Admin can read any user profile.
-      allow get, list: if isAdmin();
+      allow read, list: if isAdmin();
 
       // A regular user can only read their own profile.
-      allow get: if request.auth.uid == userId;
+      // Using 'read' allows for real-time updates with onSnapshot.
+      allow read: if request.auth.uid == userId;
       
       // Admin can write to any user profile.
       allow write: if isAdmin();
       
       // A regular user can only update their own profile, but CANNOT change their role.
-      // This is a critical security rule.
       allow create, update: if request.auth.uid == userId 
                             && request.resource.data.role == resource.data.role;
     }
