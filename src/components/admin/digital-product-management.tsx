@@ -55,7 +55,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
-import { collection, doc, getDocs, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDocs, updateDoc, writeBatch, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { MoreHorizontal, Loader2, Trash2, Edit, Ban, CheckCircle, ChevronDown, TrendingUp, Percent, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';

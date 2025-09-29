@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -20,19 +21,19 @@ service cloud.firestore {
 
     // Rules for user profiles
     match /users/{userId} {
-      // Admin can read any user profile.
-      allow read, list: if isAdmin();
-
-      // A regular user can only read their own profile.
-      // Using 'read' allows for real-time updates with onSnapshot.
-      allow read: if request.auth.uid == userId;
+      // Admin can list any user profile.
+      allow list: if isAdmin();
       
+      // Admin can read any user profile. Authenticated users can read their own.
+      allow read: if isAdmin() || request.auth.uid == userId;
+
       // Admin can write to any user profile.
       allow write: if isAdmin();
       
-      // A regular user can only update their own profile, but CANNOT change their role.
+      // A regular user can only create/update their own profile, but CANNOT change their role or status.
       allow create, update: if request.auth.uid == userId 
-                            && request.resource.data.role == resource.data.role;
+                            && request.resource.data.role == resource.data.role
+                            && request.resource.data.status == resource.data.status;
     }
     
     // Rules for user groups
@@ -91,7 +92,7 @@ service cloud.firestore {
     // Rules for digital products synced from Digiflazz
     match /products/{productId} {
       // Anyone can read the product list.
-      allow read: if true;
+      allow read, list: if true;
       // ONLY Admin can write/update/delete products. This is secure.
       allow write: if isAdmin();
     }

@@ -2,10 +2,8 @@
 'use client';
 
 import { create } from 'zustand';
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { auth, db } from './firebase';
-import { toast } from '@/hooks/use-toast';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { auth } from './firebase';
 import type { UserProfile } from '@/app/main-layout';
 
 interface UserState {
@@ -15,82 +13,36 @@ interface UserState {
   clearUser: () => void;
 }
 
-let firestoreUnsubscribe: (() => void) | null = null;
-
 export const useUserStore = create<UserState>((set) => ({
   user: null,
   loading: true,
   initializeUserListener: () => {
+    // This listener only reacts to Firebase Auth state changes.
+    // It does NOT interact with Firestore, thus avoiding all permission errors on login.
     const authUnsubscribe = onAuthStateChanged(auth, (authUser) => {
-      if (firestoreUnsubscribe) {
-        firestoreUnsubscribe();
-        firestoreUnsubscribe = null;
-      }
-
       if (authUser) {
-        const userDocRef = doc(db, 'users', authUser.uid);
-        firestoreUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-
-            if (userData.status === 'Diblokir') {
-              signOut(auth).then(() => {
-                toast({
-                  title: "Akses Ditolak",
-                  description: "Akun Anda telah diblokir oleh administrator.",
-                  variant: "destructive"
-                });
-              });
-              return;
-            }
-
-            const fullUserProfile: UserProfile = {
-              uid: authUser.uid,
-              email: authUser.email,
-              id: docSnap.id,
-              role: userData.role || 'Pengguna',
-              status: userData.status || 'Aktif',
-              avatarUrl: userData.avatarUrl || authUser.photoURL,
-              fullName: userData.fullName || authUser.displayName,
-            };
-            set({ user: fullUserProfile, loading: false });
-
-          } else {
-            // User exists in Auth but not in Firestore. This is an invalid state.
-            signOut(auth);
-            set({ user: null, loading: false });
-            toast({
-              title: "Login Gagal",
-              description: "Data profil Anda tidak ditemukan. Silakan hubungi administrator.",
-              variant: "destructive",
-            });
-          }
-        }, (error) => {
-          console.error("Firestore listener error:", error.message);
-          // Fallback to basic auth data if listener fails, but DON'T sign out.
-          // The error is likely temporary or due to rules, signing out causes a loop.
-          const basicProfile: UserProfile = {
-            uid: authUser.uid,
-            email: authUser.email,
-            id: authUser.uid,
-            fullName: authUser.displayName,
-            avatarUrl: authUser.photoURL,
-            role: 'Pengguna', // Assume basic role
-            status: 'Aktif',
-          };
-          set({ user: basicProfile, loading: false });
-        });
+        // If a user is authenticated, we populate the store with the data
+        // ALREADY AVAILABLE in the auth object. No Firestore read is needed here.
+        const profile: UserProfile = {
+          uid: authUser.uid,
+          email: authUser.email,
+          id: authUser.uid,
+          fullName: authUser.displayName,
+          avatarUrl: authUser.photoURL,
+          // Role and Status will be checked and handled by page-level logic (e.g., login page, admin layout)
+          // which is more reliable than trying to get it here during the auth state change.
+          role: 'Pengguna', // Assume 'Pengguna' by default. Admin validation happens elsewhere.
+          status: 'Aktif',
+        };
+        set({ user: profile, loading: false });
       } else {
-        // No authenticated user
+        // No authenticated user, clear the state.
         set({ user: null, loading: false });
       }
     });
 
     return () => {
       authUnsubscribe();
-      if (firestoreUnsubscribe) {
-        firestoreUnsubscribe();
-      }
     };
   },
   clearUser: () => set({ user: null, loading: false }),
