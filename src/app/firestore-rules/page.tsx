@@ -25,11 +25,14 @@ service cloud.firestore {
     // Rules for user profiles
     match /users/{userId} {
       // Admin can read any user profile and list all users.
-      allow get, list, write: if isAdmin();
+      // A regular user can only read their own profile.
+      allow get, list: if isAdmin() || request.auth.uid == userId;
       
-      // A regular user can only read/update their own profile.
-      // Crucially, an existing user cannot change their own role.
-      allow get, create, update: if request.auth.uid == userId && request.resource.data.role == resource.data.role;
+      // Admin can write to any user profile
+      allow write: if isAdmin();
+      
+      // A regular user can only update their own profile, but cannot change their role.
+      allow create, update: if request.auth.uid == userId && request.resource.data.role == resource.data.role;
     }
     
     // Rules for user groups
