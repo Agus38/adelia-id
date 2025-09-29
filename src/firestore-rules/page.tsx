@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -20,10 +21,9 @@ service cloud.firestore {
 
     // Rules for user profiles
     match /users/{userId} {
-      // Allow any authenticated user to read any user profile.
-      // This is necessary for the login flow to verify user status and role.
-      // The user document itself should not contain highly sensitive data.
-      allow read: if request.auth != null;
+      // Allow read access if the user is the owner OR if the requesting user is an Admin.
+      // This allows the admin to manage users and the user-store listener to work.
+      allow read: if request.auth.uid == userId || isAdmin();
       
       // Admin can write to any user profile.
       allow write: if isAdmin();

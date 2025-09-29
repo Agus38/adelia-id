@@ -28,14 +28,26 @@ export const useUserStore = create<UserState>((set, get) => ({
       }
 
       if (authUser) {
-        const userDocRef = doc(db, 'users', authUser.uid);
+        // Set basic user data immediately from auth object
+        const basicProfile: UserProfile = {
+          uid: authUser.uid,
+          email: authUser.email,
+          id: authUser.uid, // Use uid as a fallback id
+          // These will be updated by the listener if available
+          role: 'Pengguna', 
+          status: 'Aktif',
+          avatarUrl: authUser.photoURL,
+          fullName: authUser.displayName,
+        };
+        set({ user: basicProfile, loading: false });
 
+        // Now, set up the real-time listener for the user's document
+        const userDocRef = doc(db, 'users', authUser.uid);
         firestoreUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const userData = docSnap.data();
 
             if (userData.status === 'Diblokir') {
-              // Sign out if user becomes blocked during an active session
               signOut(auth).then(() => {
                 toast({
                   title: "Akses Ditolak",
@@ -50,36 +62,27 @@ export const useUserStore = create<UserState>((set, get) => ({
               uid: authUser.uid,
               email: authUser.email,
               id: docSnap.id,
-              role: userData.role,
-              status: userData.status,
+              role: userData.role || 'Pengguna',
+              status: userData.status || 'Aktif',
               avatarUrl: userData.avatarUrl || authUser.photoURL,
               fullName: userData.fullName || authUser.displayName,
             };
             set({ user: fullUserProfile, loading: false });
 
           } else {
-            // This case might happen if the user's Firestore document is deleted
-            // while they are still authenticated.
-            signOut(auth);
-            set({ user: null, loading: false });
+            // Document might not exist yet, or was deleted. Fallback to basic auth data.
+            // The login page is responsible for blocking users whose document doesn't exist.
+            set({ user: basicProfile, loading: false });
           }
         }, (error) => {
           console.error("Firestore listener error:", error.message);
-          // Fallback to basic data but don't sign out.
-          // This prevents logout loops due to temporary permission issues.
-          const basicProfile: UserProfile = {
-              uid: authUser.uid,
-              email: authUser.email,
-              id: authUser.uid,
-              role: 'Pengguna', // Assume basic role on error
-              status: 'Aktif',
-              avatarUrl: authUser.photoURL,
-              fullName: authUser.displayName,
-          }
+          // CRITICAL FIX: DO NOT sign out the user here.
+          // This prevents the logout loop if there's a temporary permission issue on first load.
+          // Instead, fallback to the basic authUser data.
           set({ user: basicProfile, loading: false });
         });
-
       } else {
+        // No authenticated user
         set({ user: null, loading: false });
       }
     });
