@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, onSnapshot, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { toast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/app/main-layout';
@@ -17,31 +17,17 @@ interface UserState {
 
 let firestoreUnsubscribe: (() => void) | null = null;
 
-export const useUserStore = create<UserState>((set, get) => ({
+export const useUserStore = create<UserState>((set) => ({
   user: null,
   loading: true,
   initializeUserListener: () => {
-    const authUnsubscribe = onAuthStateChanged(auth, async (authUser) => {
+    const authUnsubscribe = onAuthStateChanged(auth, (authUser) => {
       if (firestoreUnsubscribe) {
         firestoreUnsubscribe();
         firestoreUnsubscribe = null;
       }
 
       if (authUser) {
-        // Set basic user data immediately from auth object
-        const basicProfile: UserProfile = {
-          uid: authUser.uid,
-          email: authUser.email,
-          id: authUser.uid, // Use uid as a fallback id
-          // These will be updated by the listener if available
-          role: 'Pengguna', 
-          status: 'Aktif',
-          avatarUrl: authUser.photoURL,
-          fullName: authUser.displayName,
-        };
-        set({ user: basicProfile, loading: false });
-
-        // Now, set up the real-time listener for the user's document
         const userDocRef = doc(db, 'users', authUser.uid);
         firestoreUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
@@ -70,15 +56,28 @@ export const useUserStore = create<UserState>((set, get) => ({
             set({ user: fullUserProfile, loading: false });
 
           } else {
-            // Document might not exist yet, or was deleted. Fallback to basic auth data.
-            // The login page is responsible for blocking users whose document doesn't exist.
-            set({ user: basicProfile, loading: false });
+            // User exists in Auth but not in Firestore. This is an invalid state.
+            signOut(auth);
+            set({ user: null, loading: false });
+            toast({
+              title: "Login Gagal",
+              description: "Data profil Anda tidak ditemukan. Silakan hubungi administrator.",
+              variant: "destructive",
+            });
           }
         }, (error) => {
           console.error("Firestore listener error:", error.message);
-          // CRITICAL FIX: DO NOT sign out the user here.
-          // This prevents the logout loop if there's a temporary permission issue on first load.
-          // Instead, fallback to the basic authUser data.
+          // Fallback to basic auth data if listener fails, but DON'T sign out.
+          // The error is likely temporary or due to rules, signing out causes a loop.
+          const basicProfile: UserProfile = {
+            uid: authUser.uid,
+            email: authUser.email,
+            id: authUser.uid,
+            fullName: authUser.displayName,
+            avatarUrl: authUser.photoURL,
+            role: 'Pengguna', // Assume basic role
+            status: 'Aktif',
+          };
           set({ user: basicProfile, loading: false });
         });
       } else {

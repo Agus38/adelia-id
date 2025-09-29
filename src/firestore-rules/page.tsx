@@ -21,14 +21,17 @@ service cloud.firestore {
 
     // Rules for user profiles
     match /users/{userId} {
-      // Allow read access if the user is the owner OR if the requesting user is an Admin.
-      // This allows the admin to manage users and the user-store listener to work.
-      allow read: if request.auth.uid == userId || isAdmin();
+      // Admin can read and list any user profile.
+      allow read, list: if isAdmin();
+
+      // A regular user can only read their own profile.
+      // Using 'read' allows for real-time updates with onSnapshot.
+      allow read: if request.auth.uid == userId;
       
       // Admin can write to any user profile.
       allow write: if isAdmin();
       
-      // A regular user can only update their own profile, but CANNOT change their role or status.
+      // A regular user can only create/update their own profile, but CANNOT change their role or status.
       allow create, update: if request.auth.uid == userId 
                             && request.resource.data.role == resource.data.role
                             && request.resource.data.status == resource.data.status;
