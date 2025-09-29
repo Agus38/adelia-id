@@ -24,7 +24,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
-  const { initializeUserListener } = useUserStore();
+  const { setUserProfile } = useUserStore();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -61,7 +61,6 @@ export default function LoginPage() {
 
     const user = userCredential.user;
 
-    // After successful authentication, check the user's status and role from Firestore.
     try {
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
@@ -75,8 +74,14 @@ export default function LoginPage() {
           return;
         }
 
-        // Initialize the user store with basic auth data
-        initializeUserListener();
+        const fullUserProfile = {
+            id: userDoc.id,
+            uid: user.uid,
+            ...userData,
+        };
+        
+        // Explicitly set the full user profile in the store
+        setUserProfile(fullUserProfile as any);
 
         toast({
             title: 'Login Berhasil!',
@@ -89,13 +94,11 @@ export default function LoginPage() {
             router.push('/');
         }
       } else {
-        // Document doesn't exist, this is an invalid state.
         await signOut(auth);
         setError('Gagal memverifikasi data pengguna. Akun mungkin tidak terdaftar dengan benar. Hubungi administrator.');
         setIsLoading(false);
       }
     } catch (firestoreError: any) {
-      // This catch block is for Firestore errors during getDoc
       console.error("Firestore verification error:", firestoreError);
       await signOut(auth);
       setError(`Terjadi kesalahan saat memverifikasi akun Anda. Silakan coba lagi.`);
