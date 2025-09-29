@@ -14,6 +14,7 @@ import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
+import { useUserStore } from '@/lib/user-store';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const { initializeUserListener } = useUserStore();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -72,6 +74,9 @@ export default function LoginPage() {
           setIsLoading(false);
           return;
         }
+
+        // Initialize the user store with basic auth data
+        initializeUserListener();
 
         toast({
             title: 'Login Berhasil!',

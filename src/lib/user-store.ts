@@ -1,8 +1,9 @@
+
 'use client';
 
 import { create } from 'zustand';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { toast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/app/main-layout';
@@ -27,17 +28,6 @@ export const useUserStore = create<UserState>((set, get) => ({
       }
 
       if (authUser) {
-        // Set basic user info immediately to avoid UI flickering
-        set({
-          user: {
-            ...authUser,
-            id: authUser.uid,
-            fullName: authUser.displayName,
-            avatarUrl: authUser.photoURL,
-          },
-          loading: true,
-        });
-
         const userDocRef = doc(db, 'users', authUser.uid);
 
         firestoreUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
@@ -45,6 +35,7 @@ export const useUserStore = create<UserState>((set, get) => ({
             const userData = docSnap.data();
 
             if (userData.status === 'Diblokir') {
+              // Sign out if user becomes blocked during an active session
               signOut(auth).then(() => {
                 toast({
                   title: "Akses Ditolak",
@@ -56,7 +47,6 @@ export const useUserStore = create<UserState>((set, get) => ({
             }
 
             const fullUserProfile: UserProfile = {
-              ...get().user, // Keep basic data
               uid: authUser.uid,
               email: authUser.email,
               id: docSnap.id,
@@ -68,19 +58,25 @@ export const useUserStore = create<UserState>((set, get) => ({
             set({ user: fullUserProfile, loading: false });
 
           } else {
-            console.error(`User document for UID ${authUser.uid} not found. The user might not have a profile record.`);
-            // Fallback to authUser data if Firestore doc doesn't exist
-            set({ user: { ...get().user, role: 'Pengguna', status: 'Aktif' }, loading: false });
+            // This case might happen if the user's Firestore document is deleted
+            // while they are still authenticated.
+            signOut(auth);
+            set({ user: null, loading: false });
           }
         }, (error) => {
           console.error("Firestore listener error:", error.message);
-          // CRITICAL FIX: DO NOT sign out the user here.
-          // This prevents the logout loop if there's a temporary permission issue on first load.
-          // Instead, fallback to the basic authUser data.
-          set({
-            user: { ...get().user, role: 'Pengguna', status: 'Aktif' },
-            loading: false
-          });
+          // Fallback to basic data but don't sign out.
+          // This prevents logout loops due to temporary permission issues.
+          const basicProfile: UserProfile = {
+              uid: authUser.uid,
+              email: authUser.email,
+              id: authUser.uid,
+              role: 'Pengguna', // Assume basic role on error
+              status: 'Aktif',
+              avatarUrl: authUser.photoURL,
+              fullName: authUser.displayName,
+          }
+          set({ user: basicProfile, loading: false });
         });
 
       } else {
