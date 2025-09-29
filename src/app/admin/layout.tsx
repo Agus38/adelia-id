@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/lib/user-store';
 import { Loader2 } from 'lucide-react';
+import UnauthorizedPage from '../unauthorized/page';
 
 export default function AdminLayout({
   children,
@@ -14,18 +15,7 @@ export default function AdminLayout({
   const router = useRouter();
   const { user, loading } = useUserStore();
 
-  React.useEffect(() => {
-    // This effect runs whenever loading or user state changes.
-    // If loading is finished, we make a decision.
-    if (!loading) {
-      if (!user || user.role !== 'Admin') {
-        router.push('/unauthorized');
-      }
-    }
-  }, [user, loading, router]);
-
-  // While checking authorization, show a loading spinner.
-  // This is the crucial part: we do not render children until loading is false AND the user is verified.
+  // While loading, show a full-screen spinner.
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -34,17 +24,13 @@ export default function AdminLayout({
     );
   }
 
-  // If loading is complete and we have a user with the Admin role, render the admin page content.
-  // The useEffect above will handle redirection for unauthorized users.
+  // After loading, check for user and role.
+  // If authorized, render the children.
   if (user && user.role === 'Admin') {
     return <>{children}</>;
   }
 
-  // In the brief moment between the user state being non-admin and the redirect effect kicking in,
-  // or if the user data is somehow invalid, render a loading screen to prevent any flash of content.
-  return (
-    <div className="flex h-screen w-full items-center justify-center bg-background">
-      <Loader2 className="h-8 w-8 animate-spin" />
-    </div>
-  );
+  // If not authorized, render the Unauthorized page content directly.
+  // This prevents flickering and race conditions with router.push.
+  return <UnauthorizedPage />;
 }

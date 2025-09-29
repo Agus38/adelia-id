@@ -19,30 +19,35 @@ export const useUserStore = create<UserState>((set, get) => ({
   user: null,
   loading: true,
   initializeUserListener: () => {
-    const authUnsubscribe = onAuthStateChanged(auth, async (authUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
-        // Just set the basic auth user, the full profile will be set on login page
-         const basicProfile: UserProfile = {
+        // When auth state changes, fetch the full profile from Firestore
+        const userDocRef = doc(db, 'users', authUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const fullUserProfile = {
+            id: userDoc.id,
             uid: authUser.uid,
-            email: authUser.email,
-            id: authUser.uid,
-            fullName: authUser.displayName,
-            avatarUrl: authUser.photoURL,
-        };
-        // Avoid overwriting a full profile with a basic one if it's already there
-        if (!get().user || get().user?.uid !== authUser.uid) {
-             set({ user: basicProfile, loading: false });
+            ...userDoc.data(),
+          } as UserProfile;
+          set({ user: fullUserProfile, loading: false });
         } else {
-             set({ loading: false });
+           // Fallback to basic auth info if Firestore doc doesn't exist
+           const basicProfile: UserProfile = {
+              uid: authUser.uid,
+              email: authUser.email,
+              id: authUser.uid,
+              fullName: authUser.displayName,
+              avatarUrl: authUser.photoURL,
+          };
+          set({ user: basicProfile, loading: false });
         }
       } else {
         set({ user: null, loading: false });
       }
     });
 
-    return () => {
-      authUnsubscribe();
-    };
+    return unsubscribe;
   },
   setUserProfile: (profile) => {
     set({ user: profile, loading: false });
