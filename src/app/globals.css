@@ -35,6 +35,10 @@
 
     --radius: 0.75rem;
 
+    /* Neumorphic shadow variables */
+    --shadow-light: 220 20% 100%; /* Lighter shade */
+    --shadow-dark: 220 20% 83%;  /* Darker shade */
+
     /* Sidebar specific colors */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 10% 3.9%;
@@ -47,7 +51,7 @@
   }
 
   .dark {
-    --background: 222 24% 18%; /* Adjusted for better shadow contrast */
+    --background: 222 24% 18%; /* #252A36 */
     --foreground: 0 0% 98%;
 
     --card: 222 24% 18%; /* Same as background */
@@ -74,6 +78,10 @@
     --border: 222 24% 22%;
     --input: 222 24% 22%;
     --ring: 226 83% 60%;
+
+    /* Neumorphic shadow variables */
+    --shadow-light: 222 24% 22%; /* Lighter shade */
+    --shadow-dark: 222 24% 14%;  /* Darker shade */
 
     /* Sidebar specific colors */
     --sidebar-background: 240 10% 3.9%;

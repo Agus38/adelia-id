@@ -95,8 +95,8 @@ export default {
         'accordion-up': 'accordion-up 0.2s ease-out',
       },
       boxShadow: {
-        'neumorphic-light': '5px 5px 10px #d1d9e6, -5px -5px 10px #ffffff',
-        'neumorphic-light-inset': 'inset 5px 5px 10px #d1d9e6, inset -5px -5px 10px #ffffff',
+        'neumorphic-light': '5px 5px 10px hsl(var(--shadow-dark)), -5px -5px 10px hsl(var(--shadow-light))',
+        'neumorphic-light-inset': 'inset 5px 5px 10px hsl(var(--shadow-dark)), inset -5px -5px 10px hsl(var(--shadow-light))',
       },
     },
   },
