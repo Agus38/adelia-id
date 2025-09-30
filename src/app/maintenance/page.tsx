@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function MaintenancePage() {
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-20rem)]">
+    <div className="flex flex-1 items-center justify-center p-4">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
