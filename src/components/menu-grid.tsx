@@ -47,12 +47,12 @@ export function MenuGrid() {
         
         return (
             <Link href={href} key={item.id} className={cn(isClickDisabled && "pointer-events-none")}>
-              <Card className="hover:bg-primary/20 transition-colors duration-200 aspect-square flex flex-col items-center justify-center p-2 sm:p-4 border-2 border-transparent hover:border-primary/50 dark:border-gray-800 dark:hover:border-primary/70 shadow-lg rounded-2xl relative">
+              <Card className="bg-background transition-all duration-200 aspect-square flex flex-col items-center justify-center p-2 sm:p-4 rounded-2xl relative shadow-[8px_8px_16px_#d1d1d1,-8px_-8px_16px_#ffffff] dark:shadow-[8px_8px_16px_#1f1f1f,-8px_-8px_16px_#2d2d2d] active:shadow-[inset_8px_8px_16px_#d1d1d1,inset_-8px_-8px_16px_#ffffff] dark:active:shadow-[inset_8px_8px_16px_#1f1f1f,inset_-8px_-8px_16px_#2d2d2d] hover:text-primary">
                 <CardContent className="p-0 flex flex-col items-center justify-center gap-2">
-                  <div className="p-3 bg-primary/10 rounded-full">
-                    <item.icon className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                  <div className="p-3 bg-background rounded-full shadow-[4px_4px_8px_#d1d1d1,-4px_-4px_8px_#ffffff] dark:shadow-[4px_4px_8px_#1f1f1f,-4px_-4px_8px_#2d2d2d]">
+                    <item.icon className="h-6 w-6 sm:h-8 sm:w-8" />
                   </div>
-                  <p className="text-[11px] leading-tight sm:text-sm text-center font-semibold text-foreground">
+                  <p className="text-[11px] leading-tight sm:text-sm text-center font-semibold">
                     {item.title}
                   </p>
                   {item.isUnderMaintenance && (
