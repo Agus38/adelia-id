@@ -277,5 +277,3 @@ export function DeveloperSettings() {
     </Card>
   );
 }
-
-    
