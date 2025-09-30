@@ -10,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { TriangleAlert, Gift, Calendar, Sparkles, Scale, PawPrint, Hourglass, RefreshCw, CheckCircle2, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { useUserStore } from '@/lib/user-store';
 
 interface Age {
   years: number;
@@ -55,6 +56,7 @@ export function AgeCalculator() {
   const [chineseZodiacElement, setChineseZodiacElement] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useUserStore();
 
   const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>, maxLength: number, maxValue?: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
@@ -144,11 +146,21 @@ export function AgeCalculator() {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 3);
 
-      await addDoc(collection(db, 'ageCalculations'), {
+      const logData: any = {
         dateOfBirth: birthDate,
         calculatedAt: serverTimestamp(),
         expiresAt: Timestamp.fromDate(expiresAt),
-      });
+      };
+
+      if (user) {
+        logData.userId = user.uid;
+        logData.userName = user.fullName || user.displayName;
+        logData.userAvatar = user.avatarUrl || user.photoURL;
+      } else {
+        logData.userName = 'Anonim';
+      }
+
+      await addDoc(collection(db, 'ageCalculations'), logData);
 
     } catch (dbError) {
       console.error("Error saving age calculation to Firestore:", dbError);
@@ -401,5 +413,3 @@ export function AgeCalculator() {
     </div>
   );
 }
-
-    

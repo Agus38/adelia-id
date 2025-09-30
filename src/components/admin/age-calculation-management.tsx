@@ -20,7 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, Info, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Loader2, Info, MoreHorizontal, Trash2, User } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
@@ -31,12 +31,16 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Separator } from '../ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 type AgeCalculation = {
   id: string;
   dateOfBirth: Date;
   calculatedAt: Date;
   expiresAt: Date;
+  userId?: string;
+  userName?: string;
+  userAvatar?: string;
 };
 
 export function AgeCalculationManagement() {
@@ -61,6 +65,9 @@ export function AgeCalculationManagement() {
           dateOfBirth: docData.dateOfBirth.toDate(),
           calculatedAt: docData.calculatedAt.toDate(),
           expiresAt: docData.expiresAt.toDate(),
+          userId: docData.userId,
+          userName: docData.userName,
+          userAvatar: docData.userAvatar,
         });
       });
       setData(calculations);
@@ -108,7 +115,28 @@ export function AgeCalculationManagement() {
     }
   };
 
+  const getAvatarFallback = (name?: string) => {
+    if (name && name !== 'Anonim') {
+      return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
+    return <User className="h-4 w-4" />;
+  }
+
+
   const columns: ColumnDef<AgeCalculation>[] = [
+    {
+      accessorKey: 'userName',
+      header: 'Pengguna',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+            <Avatar className="h-8 w-8">
+                <AvatarImage src={row.original.userAvatar} alt={row.original.userName} data-ai-hint="user avatar" />
+                <AvatarFallback>{getAvatarFallback(row.original.userName)}</AvatarFallback>
+            </Avatar>
+            <span>{row.original.userName || 'Anonim'}</span>
+        </div>
+      ),
+    },
     {
       accessorKey: 'dateOfBirth',
       header: 'Tanggal Lahir',
@@ -281,6 +309,16 @@ export function AgeCalculationManagement() {
             </DialogHeader>
             {selectedCalculation && (
                 <div className="space-y-4 pt-4">
+                    <div className="flex items-center gap-4 p-3 rounded-lg bg-muted">
+                        <Avatar className="h-12 w-12">
+                            <AvatarImage src={selectedCalculation.userAvatar} alt={selectedCalculation.userName} data-ai-hint="user avatar" />
+                            <AvatarFallback>{getAvatarFallback(selectedCalculation.userName)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-semibold">{selectedCalculation.userName || 'Anonim'}</p>
+                            <p className="text-xs text-muted-foreground">{selectedCalculation.userId || 'Tidak ada ID pengguna'}</p>
+                        </div>
+                    </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">
                         <p className="text-muted-foreground col-span-1">Tanggal Lahir:</p>
                         <p className="font-semibold col-span-2">{format(selectedCalculation.dateOfBirth, "eeee, d MMMM yyyy", { locale: id })}</p>
