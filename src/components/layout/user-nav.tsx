@@ -74,7 +74,7 @@ export function UserNav() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
             <Avatar className="h-9 w-9">
-              <AvatarImage src={user.avatarUrl || user.photoURL || ''} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
+              <AvatarImage src={user.avatarUrl || user.photoURL || undefined} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
               <AvatarFallback>{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
             </Avatar>
           </Button>
@@ -160,7 +160,7 @@ export function UserNav() {
       <DialogContent className="sm:max-w-xs">
           <DialogHeader className="items-center text-center">
              <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={user.avatarUrl || user.photoURL || ''} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
+                <AvatarImage src={user.avatarUrl || user.photoURL || undefined} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
                 <AvatarFallback className="text-4xl">{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
             </Avatar>
             <DialogTitle className="text-2xl">{user.fullName || 'Pengguna'}</DialogTitle>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { nexusAIAssistant } from '@/ai/flows/nexus-ai-assistant';
@@ -5,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useUserStore } from '@/lib/user-store';
 import { Bot, Send, User } from 'lucide-react';
 import { useRef, useState, useTransition } from 'react';
 
@@ -18,6 +20,7 @@ export function ChatInterface() {
   const [input, setInput] = useState('');
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const { user } = useUserStore();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -56,7 +59,7 @@ export function ChatInterface() {
             </div>
             {msg.role === 'user' && (
               <Avatar>
-                 <AvatarImage src="https://placehold.co/100x100.png" alt="@adelia" data-ai-hint="user avatar" />
+                 <AvatarImage src={user?.avatarUrl || user?.photoURL || undefined} alt={user?.fullName || "User"} data-ai-hint="user avatar" />
                  <AvatarFallback><User /></AvatarFallback>
               </Avatar>
             )}

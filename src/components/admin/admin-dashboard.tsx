@@ -290,7 +290,7 @@ export function AdminDashboard() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={activity.userAvatar} alt={activity.userName} data-ai-hint="user avatar" />
+                            <AvatarImage src={activity.userAvatar || undefined} alt={activity.userName} data-ai-hint="user avatar" />
                             <AvatarFallback>{activity.userName.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <span className="font-medium">{activity.userName}</span>

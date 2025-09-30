@@ -178,7 +178,7 @@ export function ProfileForm() {
                     <div className="flex items-center space-x-4">
                         <div className="relative">
                             <Avatar className="h-20 w-20">
-                                <AvatarImage src={form.watch('photoURL') ?? undefined} alt={user?.fullName || "User Avatar"} data-ai-hint="user avatar" />
+                                <AvatarImage src={form.watch('photoURL') || undefined} alt={user?.fullName || "User Avatar"} data-ai-hint="user avatar" />
                                 <AvatarFallback>{getAvatarFallback(user?.fullName, user?.email)}</AvatarFallback>
                                  {isUploading && (
                                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
