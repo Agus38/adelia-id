@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -189,7 +190,7 @@ export default function RegisterPage() {
                 .
               </Label>
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitDisabled}>
+            <Button type="submit" className="w-full" disabled={isSubmitDisabled} variant="neumorphic">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Buat Akun
             </Button>
