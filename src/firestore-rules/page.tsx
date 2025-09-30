@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -20,19 +21,17 @@ service cloud.firestore {
 
     // Rules for user profiles
     match /users/{userId} {
-      // Admin can list any user profile.
-      allow list: if isAdmin();
+      // Admin can manage any user profile.
+      allow read, write, list: if isAdmin();
       
-      // Admin can read any user profile. Authenticated users can read their own.
-      allow read: if isAdmin() || request.auth.uid == userId;
-
-      // Admin can write to any user profile.
-      allow write: if isAdmin();
+      // An authenticated user can create their own document.
+      allow create: if request.auth.uid == userId;
       
-      // A regular user can only create/update their own profile, but CANNOT change their role or status.
-      allow create, update: if request.auth.uid == userId 
-                            && request.resource.data.role == resource.data.role
-                            && request.resource.data.status == resource.data.status;
+      // An authenticated user can read or update their own profile,
+      // but CANNOT change their role or status.
+      allow update, read: if request.auth.uid == userId
+                         && request.resource.data.role == resource.data.role
+                         && request.resource.data.status == resource.data.status;
     }
     
     // Rules for user groups
