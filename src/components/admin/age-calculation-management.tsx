@@ -20,13 +20,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, Info } from 'lucide-react';
+import { Loader2, Info, MoreHorizontal, Trash2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 
 type AgeCalculation = {
   id: string;
@@ -42,6 +44,8 @@ export function AgeCalculationManagement() {
     { id: 'calculatedAt', desc: true }
   ]);
   const { toast } = useToast();
+  const [isDeleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [selectedCalculation, setSelectedCalculation] = React.useState<AgeCalculation | null>(null);
 
   React.useEffect(() => {
     const q = query(collection(db, "ageCalculations"), orderBy("calculatedAt", "desc"));
@@ -71,6 +75,31 @@ export function AgeCalculationManagement() {
     return () => unsubscribe();
   }, [toast]);
   
+  const handleDelete = (calculation: AgeCalculation) => {
+    setSelectedCalculation(calculation);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedCalculation) return;
+    try {
+      await deleteDoc(doc(db, "ageCalculations", selectedCalculation.id));
+      toast({
+        title: "Log Dihapus",
+        description: "Log kalkulasi usia telah berhasil dihapus.",
+      });
+    } catch (error) {
+      toast({
+        title: "Gagal Menghapus",
+        description: "Terjadi kesalahan saat menghapus log.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setSelectedCalculation(null);
+    }
+  };
+
   const columns: ColumnDef<AgeCalculation>[] = [
     {
       accessorKey: 'dateOfBirth',
@@ -86,6 +115,34 @@ export function AgeCalculationManagement() {
       accessorKey: 'expiresAt',
       header: 'Waktu Hapus',
        cell: ({ row }) => format(row.original.expiresAt, 'd MMM yyyy, HH:mm', { locale: id }),
+    },
+    {
+      id: 'actions',
+      header: () => <div className="text-right">Aksi</div>,
+      cell: ({ row }) => {
+        const calculation = row.original;
+        return (
+          <div className="text-right">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Buka menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() => handleDelete(calculation)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Hapus
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
     },
   ];
 
@@ -185,8 +242,21 @@ export function AgeCalculationManagement() {
             Selanjutnya
           </Button>
       </div>
+
+       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anda yakin ingin menghapus log ini?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Data log akan dihapus secara permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Lanjutkan</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
-
-    
