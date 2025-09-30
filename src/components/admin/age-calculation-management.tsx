@@ -29,6 +29,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Separator } from '../ui/separator';
 
 type AgeCalculation = {
   id: string;
@@ -45,6 +47,7 @@ export function AgeCalculationManagement() {
   ]);
   const { toast } = useToast();
   const [isDeleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [isDetailDialogOpen, setDetailDialogOpen] = React.useState(false);
   const [selectedCalculation, setSelectedCalculation] = React.useState<AgeCalculation | null>(null);
 
   React.useEffect(() => {
@@ -78,6 +81,11 @@ export function AgeCalculationManagement() {
   const handleDelete = (calculation: AgeCalculation) => {
     setSelectedCalculation(calculation);
     setDeleteDialogOpen(true);
+  };
+  
+  const handleViewDetails = (calculation: AgeCalculation) => {
+    setSelectedCalculation(calculation);
+    setDetailDialogOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -133,7 +141,10 @@ export function AgeCalculationManagement() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   className="text-destructive"
-                  onClick={() => handleDelete(calculation)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(calculation);
+                  }}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Hapus
@@ -200,6 +211,8 @@ export function AgeCalculationManagement() {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
+                  onClick={() => handleViewDetails(row.original)}
+                  className="cursor-pointer"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -257,6 +270,36 @@ export function AgeCalculationManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isDetailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Detail Log Kalkulasi Usia</DialogTitle>
+                <DialogDescription>
+                    ID Log: {selectedCalculation?.id}
+                </DialogDescription>
+            </DialogHeader>
+            {selectedCalculation && (
+                <div className="space-y-4 pt-4">
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                        <p className="text-muted-foreground col-span-1">Tanggal Lahir:</p>
+                        <p className="font-semibold col-span-2">{format(selectedCalculation.dateOfBirth, "eeee, d MMMM yyyy", { locale: id })}</p>
+
+                        <p className="text-muted-foreground col-span-1">Waktu Kalkulasi:</p>
+                        <p className="font-semibold col-span-2">{format(selectedCalculation.calculatedAt, "eeee, d MMMM yyyy, HH:mm:ss", { locale: id })}</p>
+                        
+                        <p className="text-muted-foreground col-span-1">Waktu Hapus:</p>
+                        <p className="font-semibold col-span-2">{format(selectedCalculation.expiresAt, "eeee, d MMMM yyyy, HH:mm:ss", { locale: id })}</p>
+                    </div>
+                </div>
+            )}
+            <DialogFooter className="pt-4 border-t">
+                <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>
+                    Tutup
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
