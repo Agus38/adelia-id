@@ -51,12 +51,13 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // CRITICAL: Update the user's profile in Firebase Authentication as well
       await updateProfile(user, {
         displayName: name,
         photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
       });
 
+      // Use setDoc with { merge: true } to prevent errors on re-registration attempts.
+      // This acts as an "upsert": create if it doesn't exist, update if it does.
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         email: user.email,
@@ -65,9 +66,8 @@ export default function RegisterPage() {
         status: 'Aktif',
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         createdAt: serverTimestamp(),
-      });
+      }, { merge: true });
       
-      // If we reach here, everything was successful.
       toast({
         title: 'Pendaftaran Berhasil!',
         description: 'Akun Anda telah dibuat. Anda akan diarahkan ke halaman login.',
@@ -77,14 +77,16 @@ export default function RegisterPage() {
     } catch (error: any) {
         let errorMessage = 'Terjadi kesalahan saat pendaftaran.';
         if (error.code === 'auth/email-already-in-use') {
-            errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain.';
+            errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.';
+        } else {
+            console.error("Registration error:", error);
         }
         toast({
             title: 'Pendaftaran Gagal',
             description: errorMessage,
             variant: 'destructive',
         });
-        setIsLoading(false); // Stop loading on error
+        setIsLoading(false);
     }
   };
 
