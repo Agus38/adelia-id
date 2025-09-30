@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth, db } from './firebase';
 import type { UserProfile } from '@/app/main-layout';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
 interface UserState {
@@ -20,16 +20,23 @@ export const useUserStore = create<UserState>((set) => ({
   user: null,
   loading: true,
   initializeUserListener: () => {
-    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+    let firestoreUnsubscribe: (() => void) | null = null;
+
+    const authUnsubscribe = onAuthStateChanged(auth, (authUser) => {
+      // Unsubscribe from any previous Firestore listener
+      if (firestoreUnsubscribe) {
+        firestoreUnsubscribe();
+        firestoreUnsubscribe = null;
+      }
+
       if (authUser) {
-        try {
-          // Attempt to fetch the full user profile from Firestore
-          const userDocRef = doc(db, 'users', authUser.uid);
-          const userDoc = await getDoc(userDocRef);
+        const userDocRef = doc(db, 'users', authUser.uid);
+        
+        // Listen for real-time updates on the user's document
+        firestoreUnsubscribe = onSnapshot(userDocRef, (userDoc) => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
 
-            // **SECURITY FEATURE**: Check if user is blocked
             if (userData.status === 'Diblokir') {
               toast({
                 title: 'Akses Diblokir',
@@ -37,9 +44,7 @@ export const useUserStore = create<UserState>((set) => ({
                 variant: 'destructive',
                 duration: 5000,
               });
-              // Sign out the user immediately
-              await signOut(auth);
-              // The onAuthStateChanged will trigger again with a null user, cleaning up the state.
+              signOut(auth);
               return; 
             }
 
@@ -50,19 +55,19 @@ export const useUserStore = create<UserState>((set) => ({
             };
             set({ user: fullUserProfile, loading: false });
           } else {
-             // Fallback to basic auth info if Firestore doc doesn't exist
+            // User exists in Auth but not in Firestore. Fallback to basic info.
             const basicProfile: UserProfile = {
                 uid: authUser.uid,
                 email: authUser.email,
                 id: authUser.uid,
                 fullName: authUser.displayName,
                 avatarUrl: authUser.photoURL,
-                role: undefined, // Explicitly set role as undefined
+                role: undefined,
             };
             set({ user: basicProfile, loading: false });
           }
-        } catch (error) {
-           console.error("Error fetching user profile:", error);
+        }, (error) => {
+           console.error("Error with onSnapshot:", error);
            const basicProfile: UserProfile = {
               uid: authUser.uid,
               email: authUser.email,
@@ -72,16 +77,22 @@ export const useUserStore = create<UserState>((set) => ({
               role: undefined,
            };
            set({ user: basicProfile, loading: false });
-        }
+        });
       } else {
         // No authenticated user
         set({ user: null, loading: false });
       }
     });
-    return unsubscribe;
+
+    // Return a function that cleans up both listeners
+    return () => {
+      authUnsubscribe();
+      if (firestoreUnsubscribe) {
+        firestoreUnsubscribe();
+      }
+    };
   },
   setUserProfile: (profile) => {
-    // This is still useful for immediate updates after login
     set({ user: profile, loading: false });
   },
   clearUser: () => set({ user: null, loading: false }),
