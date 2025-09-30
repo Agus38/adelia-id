@@ -5,10 +5,10 @@
 
 @layer base {
   :root {
-    --background: 0 0% 96%; /* #F5F5F5 */
+    --background: 220 20% 96%; /* #F0F2F5 */
     --foreground: 240 10% 3.9%;
 
-    --card: 0 0% 100%;
+    --card: 220 20% 96%; /* Same as background */
     --card-foreground: 240 10% 3.9%;
 
     --popover: 0 0% 100%;
@@ -17,10 +17,10 @@
     --primary: 226 83% 60%; /* #4560EC */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 92%;
+    --secondary: 220 10% 90%;
     --secondary-foreground: 240 10% 3.9%;
 
-    --muted: 0 0% 92%;
+    --muted: 220 10% 90%;
     --muted-foreground: 240 4% 46%;
 
     --accent: 325 66% 53%; /* #d73899 */
@@ -29,28 +29,28 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
+    --border: 220 20% 88%;
+    --input: 220 20% 88%;
     --ring: 226 83% 60%;
 
-    --radius: 0.75rem; /* iOS like rounded corners */
+    --radius: 0.75rem;
 
     /* Sidebar specific colors */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 10% 3.9%;
     --sidebar-primary: 226 83% 60%; 
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 96%; /* background */
+    --sidebar-accent: 0 0% 96%;
     --sidebar-accent-foreground: 240 10% 3.9%;
     --sidebar-border: 0 0% 89.8%;
     --sidebar-ring: 226 83% 60%;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 222 24% 14%; /* #1D2028 */
     --foreground: 0 0% 98%;
 
-    --card: 240 10% 3.9%;
+    --card: 222 24% 14%; /* Same as background */
     --card-foreground: 0 0% 98%;
 
     --popover: 240 10% 3.9%;
@@ -59,10 +59,10 @@
     --primary: 226 83% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 4% 16%;
+    --secondary: 222 24% 20%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 4% 16%;
+    --muted: 222 24% 20%;
     --muted-foreground: 240 5% 65%;
 
     --accent: 325 66% 53%;
@@ -71,8 +71,8 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
+    --border: 222 24% 22%;
+    --input: 222 24% 22%;
     --ring: 226 83% 60%;
 
     /* Sidebar specific colors */
