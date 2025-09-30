@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -127,6 +126,9 @@ export default function FirestoreRulesPage() {
       </div>
       <p className="text-muted-foreground">
         Gunakan aturan ini untuk mengamankan database Firestore Anda. Salin dan tempelkan di Firebase Console.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        Terakhir diperbarui: 26 Juli 2024, 10:30 WIB
       </p>
       
        <Alert variant="destructive">
