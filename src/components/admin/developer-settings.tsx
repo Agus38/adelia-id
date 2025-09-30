@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,12 +15,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Loader2, PlusCircle, Globe } from 'lucide-react';
+import { Trash2, Loader2, PlusCircle, Globe, UploadCloud } from 'lucide-react';
 import Image from 'next/image';
 import { useDeveloperInfoConfig, saveDeveloperInfoConfig, type DeveloperInfo, type SocialLink } from '@/lib/menu-store';
 import { toast } from '@/hooks/use-toast';
 import { allIcons } from '@/lib/menu-items-v2';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const iconMap: { [key: string]: React.ElementType } = allIcons;
 
@@ -28,6 +30,8 @@ export function DeveloperSettings() {
   const { developerInfo, isLoading } = useDeveloperInfoConfig();
   const [localInfo, setLocalInfo] = useState<DeveloperInfo | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (developerInfo) {
@@ -94,6 +98,41 @@ export function DeveloperSettings() {
     setLocalInfo({ ...localInfo, socialLinks: newLinks });
   }
 
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      toast({
+        title: "Ukuran File Terlalu Besar",
+        description: "Ukuran file avatar tidak boleh melebihi 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    const storageRef = ref(storage, `branding/avatars/${file.name}_${Date.now()}`);
+
+    try {
+      await uploadBytes(storageRef, file);
+      const avatarUrl = await getDownloadURL(storageRef);
+      setLocalInfo(prev => prev ? { ...prev, avatarUrl } : null);
+      toast({
+        title: "Unggah Berhasil",
+        description: "Avatar developer berhasil diunggah. Jangan lupa simpan perubahan.",
+      });
+    } catch (error) {
+      toast({
+        title: "Unggah Gagal",
+        description: "Terjadi kesalahan saat mengunggah avatar.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSaveChanges = async () => {
     if (!localInfo) return;
     setIsSaving(true);
@@ -113,6 +152,8 @@ export function DeveloperSettings() {
         setIsSaving(false);
     }
   };
+  
+  const isSaveDisabled = isSaving || isUploading;
 
   return (
     <Card>
@@ -133,12 +174,26 @@ export function DeveloperSettings() {
                 className="rounded-full object-cover"
               />
             <div className="w-full space-y-2">
-                <Label htmlFor="avatarUrl">URL Avatar</Label>
-                <Input
-                    id="avatarUrl"
-                    value={localInfo.avatarUrl}
-                    onChange={(e) => handleInfoChange('avatarUrl', e.target.value)}
-                />
+                <Label htmlFor="avatarUrl">URL atau Unggah Avatar</Label>
+                 <div className="flex gap-2">
+                    <Input
+                        id="avatarUrl"
+                        value={localInfo.avatarUrl}
+                        onChange={(e) => handleInfoChange('avatarUrl', e.target.value)}
+                    />
+                    <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+                        <span className="sr-only">Unggah Avatar</span>
+                    </Button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                        accept="image/png, image/jpeg, image/webp"
+                        disabled={isUploading}
+                    />
+                </div>
             </div>
         </div>
 
@@ -214,11 +269,13 @@ export function DeveloperSettings() {
         </div>
       </CardContent>
       <CardFooter>
-        <Button onClick={handleSaveChanges} disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Button onClick={handleSaveChanges} disabled={isSaveDisabled}>
+            {(isSaving || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Simpan Perubahan
         </Button>
       </CardFooter>
     </Card>
   );
 }
+
+    
