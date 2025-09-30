@@ -15,39 +15,54 @@ interface UserState {
   clearUser: () => void;
 }
 
-export const useUserStore = create<UserState>((set, get) => ({
+export const useUserStore = create<UserState>((set) => ({
   user: null,
   loading: true,
   initializeUserListener: () => {
-    // This listener now ONLY handles Firebase Auth state, not Firestore.
-    // This prevents the race condition causing permission errors.
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
-        // Just set the basic user profile from auth, no firestore call here.
-        // The full profile will be fetched and set upon login.
-        const basicProfile: UserProfile = {
-            uid: authUser.uid,
-            email: authUser.email,
-            id: authUser.uid,
-            fullName: authUser.displayName,
-            avatarUrl: authUser.photoURL,
-        };
-        // Check if the store already has a full user profile to avoid overwriting it
-        if (!get().user || get().user?.uid !== authUser.uid) {
+        try {
+          // Attempt to fetch the full user profile from Firestore
+          const userDocRef = doc(db, 'users', authUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const fullUserProfile: UserProfile = {
+              id: userDoc.id,
+              uid: authUser.uid,
+              ...userDoc.data(),
+            };
+            set({ user: fullUserProfile, loading: false });
+          } else {
+             // Fallback to basic auth info if Firestore doc doesn't exist
+            const basicProfile: UserProfile = {
+                uid: authUser.uid,
+                email: authUser.email,
+                id: authUser.uid,
+                fullName: authUser.displayName,
+                avatarUrl: authUser.photoURL,
+            };
             set({ user: basicProfile, loading: false });
-        } else {
-            // If a full profile is already there, just update loading state
-            set({ loading: false });
+          }
+        } catch (error) {
+           console.error("Error fetching user profile:", error);
+           const basicProfile: UserProfile = {
+              uid: authUser.uid,
+              email: authUser.email,
+              id: authUser.uid,
+              fullName: authUser.displayName,
+              avatarUrl: authUser.photoURL,
+           };
+           set({ user: basicProfile, loading: false });
         }
       } else {
+        // No authenticated user
         set({ user: null, loading: false });
       }
     });
-
     return unsubscribe;
   },
   setUserProfile: (profile) => {
-    // This function allows the login page to explicitly set the full profile.
+    // This is still useful for immediate updates after login
     set({ user: profile, loading: false });
   },
   clearUser: () => set({ user: null, loading: false }),

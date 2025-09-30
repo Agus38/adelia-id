@@ -22,12 +22,11 @@ service cloud.firestore {
     // Rules for user profiles
     match /users/{userId} {
       // Admin can read and list any user profile.
-      allow read, list: if isAdmin();
-
-      // A regular user can only read their own profile.
-      // Using 'read' allows for real-time updates with onSnapshot.
-      allow read: if request.auth.uid == userId;
+      allow list: if isAdmin();
       
+      // Admin can read any user profile. Authenticated users can read their own.
+      allow read: if isAdmin() || request.auth.uid == userId;
+
       // Admin can write to any user profile.
       allow write: if isAdmin();
       
@@ -93,7 +92,7 @@ service cloud.firestore {
     // Rules for digital products synced from Digiflazz
     match /products/{productId} {
       // Anyone can read the product list.
-      allow read: if true;
+      allow read, list: if true;
       // ONLY Admin can write/update/delete products. This is secure.
       allow write: if isAdmin();
     }
