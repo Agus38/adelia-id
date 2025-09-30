@@ -146,7 +146,7 @@ export const menuItems: MenuItem[] = [
   },
    {
     id: 'firestore-rules',
-    title: 'Aturan Firestore',
+    title: 'Update kembali halaman ini',
     href: '/firestore-rules',
     icon: ShieldCheck,
     access: 'all',
@@ -482,7 +482,6 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Mail,
   MapPin,
   Menu,
-  MessageSquare,
   Moon,
   Package,
   Palette,
@@ -510,5 +509,7 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Wallet,
   Wand2,
 };
+
+    
 
     
