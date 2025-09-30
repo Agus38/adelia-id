@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -77,8 +78,7 @@ export default function RegisterPage() {
             description: errorMessage,
             variant: 'destructive',
         });
-    } finally {
-        setIsLoading(false);
+        setIsLoading(false); // Stop loading on error
     }
 
     if (isSuccess) {
