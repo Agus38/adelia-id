@@ -86,6 +86,7 @@ export default function RegisterPage() {
             description: errorMessage,
             variant: 'destructive',
         });
+    } finally {
         setIsLoading(false);
     }
   };
