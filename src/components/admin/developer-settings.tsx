@@ -123,6 +123,7 @@ export function DeveloperSettings() {
         description: "Avatar developer berhasil diunggah. Jangan lupa simpan perubahan.",
       });
     } catch (error) {
+      console.error("Avatar upload error:", error);
       toast({
         title: "Unggah Gagal",
         description: "Terjadi kesalahan saat mengunggah avatar.",
@@ -130,6 +131,10 @@ export function DeveloperSettings() {
       });
     } finally {
       setIsUploading(false);
+      // Reset file input to allow re-uploading the same file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
