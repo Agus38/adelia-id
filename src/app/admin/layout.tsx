@@ -16,17 +16,17 @@ export default function AdminLayout({
   const { user, loading } = useUserStore();
 
   React.useEffect(() => {
-    // Wait until loading is complete before checking for role.
+    // This effect will run whenever `loading` or `user` changes.
     if (!loading) {
       if (!user || user.role !== 'Admin') {
-        // If user is not an admin, redirect them to the unauthorized page.
+        // If loading is complete and the user is not an admin, redirect them.
         router.push('/unauthorized');
       }
     }
   }, [user, loading, router]);
-  
+
   // While loading, or if the user is not yet confirmed as an admin, show a loading screen.
-  // This prevents a flash of the unauthorized page or admin content.
+  // This prevents a flash of admin content to non-admin users.
   if (loading || !user || user.role !== 'Admin') {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -35,6 +35,6 @@ export default function AdminLayout({
     );
   }
 
-  // If loading is finished and the user is an admin, render the children.
+  // If loading is finished and the user is confirmed as an admin, render the children.
   return <>{children}</>;
 }
