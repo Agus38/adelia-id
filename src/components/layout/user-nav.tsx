@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,6 +28,8 @@ import Link from 'next/link';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/lib/user-store';
+import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
 
 export function UserNav() {
   const router = useRouter();
@@ -67,6 +70,12 @@ export function UserNav() {
     }
     return 'U';
   }
+
+  const roleBadgeVariant: { [key: string]: 'destructive' | 'secondary' | 'default' } = {
+      'Admin': 'destructive',
+      'Editor': 'default',
+      'Pengguna': 'secondary',
+  };
 
   return (
     <Dialog>
@@ -164,7 +173,12 @@ export function UserNav() {
                 <AvatarFallback className="text-4xl">{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
             </Avatar>
             <DialogTitle className="text-2xl">{user.fullName || 'Pengguna'}</DialogTitle>
-            <DialogDescription>{user.email}</DialogDescription>
+             {user.role && (
+                <Badge variant={roleBadgeVariant[user.role] || 'secondary'} className="w-fit mx-auto">
+                    {user.role}
+                </Badge>
+            )}
+            <DialogDescription className="pt-2">{user.email}</DialogDescription>
           </DialogHeader>
           <DialogFooter className="grid grid-cols-2 gap-2 pt-4">
              <DialogClose asChild>
