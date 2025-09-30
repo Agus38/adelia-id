@@ -80,7 +80,7 @@ export default function LoginPage() {
             ...userData,
         };
         
-        // Explicitly set the full user profile in the store
+        // **CRITICAL FIX**: Explicitly set the full user profile in the store BEFORE navigating.
         setUserProfile(fullUserProfile as any);
 
         toast({
@@ -88,6 +88,7 @@ export default function LoginPage() {
             description: `Selamat datang kembali, ${userData.fullName || user.displayName || 'Pengguna'}!`,
         });
 
+        // Now that the store is updated, proceed with navigation.
         if (userData.role === 'Admin') {
             router.push('/admin');
         } else {
