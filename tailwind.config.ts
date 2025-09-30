@@ -95,10 +95,8 @@ export default {
         'accordion-up': 'accordion-up 0.2s ease-out',
       },
       boxShadow: {
-        'neumorphic-light': '8px 8px 16px #d1d1d1, -8px -8px 16px #ffffff',
-        'neumorphic-light-inset': 'inset 8px 8px 16px #d1d1d1, inset -8px -8px 16px #ffffff',
-        'neumorphic-dark': '8px 8px 16px #1f1f1f, -8px -8px 16px #2d2d2d',
-        'neumorphic-dark-inset': 'inset 8px 8px 16px #1f1f1f, inset -8px -8px 16px #2d2d2d',
+        'neumorphic-light': '5px 5px 10px #d1d9e6, -5px -5px 10px #ffffff',
+        'neumorphic-light-inset': 'inset 5px 5px 10px #d1d9e6, inset -5px -5px 10px #ffffff',
       },
     },
   },

@@ -47,10 +47,10 @@
   }
 
   .dark {
-    --background: 222 24% 14%; /* #1D2028 */
+    --background: 222 24% 18%; /* Adjusted for better shadow contrast */
     --foreground: 0 0% 98%;
 
-    --card: 222 24% 14%; /* Same as background */
+    --card: 222 24% 18%; /* Same as background */
     --card-foreground: 0 0% 98%;
 
     --popover: 240 10% 3.9%;
