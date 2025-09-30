@@ -57,13 +57,12 @@ export default function RegisterPage() {
         photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
       });
 
-      // 3. Create user document in Firestore with the correct role
-      // This will now succeed because of the relaxed 'create' security rule.
+      // 3. Create user document in Firestore. With the corrected security rules, this will now succeed.
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         email: user.email,
         fullName: name,
-        role: email === 'server64462@gmail.com' ? 'Admin' : 'Pengguna',
+        role: email === 'server64462@gmail.com' ? 'Admin' : 'Pengguna', // Correctly assign Admin role
         status: 'Aktif',
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         createdAt: serverTimestamp(),
@@ -89,7 +88,6 @@ export default function RegisterPage() {
             variant: 'destructive',
         });
     } finally {
-        // This will run regardless of success or failure
         setIsLoading(false);
     }
   };

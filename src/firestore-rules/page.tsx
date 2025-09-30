@@ -21,22 +21,23 @@ service cloud.firestore {
     // Rules for user profiles
     match /users/{userId} {
       // Admin can read and list any user profile.
-      allow list: if isAdmin();
+      allow list, read: if isAdmin();
       
-      // Authenticated users can read their own profile. Admin can read any profile.
-      allow read: if request.auth.uid == userId || isAdmin();
+      // An authenticated user can read their own profile.
+      allow read: if request.auth.uid == userId;
       
       // Admin can write to any user profile.
       allow write: if isAdmin();
-
-      // Allow a user to be created if the request is authenticated.
-      // This prevents race conditions during sign-up where the UID isn't immediately available.
-      allow create: if request.auth != null;
       
-      // An existing user can only update their own profile, but CANNOT change their role or status.
+      // A regular user can only update their own profile, but CANNOT change their role or status.
       allow update: if request.auth.uid == userId 
-                    && request.resource.data.role == resource.data.role
-                    && request.resource.data.status == resource.data.status;
+                            && request.resource.data.role == resource.data.role
+                            && request.resource.data.status == resource.data.status;
+                            
+      // Allow a user document to be created as long as the request is authenticated.
+      // This prevents a race condition during sign-up where Firestore rules are
+      // evaluated before the auth context is fully propagated.
+      allow create: if request.auth != null;
     }
     
     // Rules for user groups
