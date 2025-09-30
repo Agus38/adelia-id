@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Copy, ShieldCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
 const firestoreRules = `rules_version = '2';
 
@@ -107,8 +108,24 @@ service cloud.firestore {
 `;
 
 export default function FirestoreRulesPage() {
-  
   const { toast } = useToast();
+  const [lastUpdated, setLastUpdated] = useState('');
+
+  useEffect(() => {
+    // This runs on the client-side, ensuring the date is current for the user.
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+    });
+    const formattedTime = now.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    });
+    setLastUpdated(`${formattedDate}, ${formattedTime} WIB`);
+  }, []);
   
   const handleCopyRules = () => {
     navigator.clipboard.writeText(firestoreRules.trim());
@@ -118,6 +135,8 @@ export default function FirestoreRulesPage() {
     });
   };
 
+  const characterCount = firestoreRules.trim().length;
+
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex items-center space-x-2">
@@ -126,9 +145,6 @@ export default function FirestoreRulesPage() {
       </div>
       <p className="text-muted-foreground">
         Gunakan aturan ini untuk mengamankan database Firestore Anda. Salin dan tempelkan di Firebase Console.
-      </p>
-      <p className="text-sm text-muted-foreground">
-        Terakhir diperbarui: 26 Juli 2024, 10:30 WIB
       </p>
       
        <Alert variant="destructive">
@@ -151,7 +167,9 @@ export default function FirestoreRulesPage() {
         <CardHeader>
           <CardTitle>Konten file firestore.rules</CardTitle>
           <CardDescription>
-            Klik tombol di bawah untuk menyalin seluruh konten aturan keamanan yang baru.
+            Klik tombol di bawah untuk menyalin seluruh konten aturan. Total karakter: <strong>{characterCount}</strong>.
+            <br />
+            {lastUpdated ? `Terakhir diperbarui (real-time): ${lastUpdated}` : ''}
           </CardDescription>
         </CardHeader>
         <CardContent>
