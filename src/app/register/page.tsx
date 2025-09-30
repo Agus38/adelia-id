@@ -47,7 +47,6 @@ export default function RegisterPage() {
     }
     setIsLoading(true);
 
-    let isSuccess = false;
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -67,7 +66,14 @@ export default function RegisterPage() {
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         createdAt: serverTimestamp(),
       });
-      isSuccess = true;
+      
+      // If we reach here, everything was successful.
+      toast({
+        title: 'Pendaftaran Berhasil!',
+        description: 'Akun Anda telah dibuat. Anda akan diarahkan ke halaman login.',
+      });
+      router.push('/login');
+
     } catch (error: any) {
         let errorMessage = 'Terjadi kesalahan saat pendaftaran.';
         if (error.code === 'auth/email-already-in-use') {
@@ -79,14 +85,6 @@ export default function RegisterPage() {
             variant: 'destructive',
         });
         setIsLoading(false); // Stop loading on error
-    }
-
-    if (isSuccess) {
-       toast({
-        title: 'Pendaftaran Berhasil!',
-        description: 'Akun Anda telah dibuat. Anda akan diarahkan ke halaman login.',
-      });
-      router.push('/login');
     }
   };
 
