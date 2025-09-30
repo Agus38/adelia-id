@@ -1,10 +1,12 @@
+
 'use client';
 
 import { create } from 'zustand';
-import { onAuthStateChanged, type User } from 'firebase/auth';
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth, db } from './firebase';
 import type { UserProfile } from '@/app/main-layout';
 import { doc, getDoc } from 'firebase/firestore';
+import { toast } from '@/hooks/use-toast';
 
 interface UserState {
   user: UserProfile | null;
@@ -25,10 +27,26 @@ export const useUserStore = create<UserState>((set) => ({
           const userDocRef = doc(db, 'users', authUser.uid);
           const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
+            const userData = userDoc.data();
+
+            // **SECURITY FEATURE**: Check if user is blocked
+            if (userData.status === 'Diblokir') {
+              toast({
+                title: 'Akses Diblokir',
+                description: 'Akun Anda telah diblokir oleh administrator. Anda akan dikeluarkan secara otomatis.',
+                variant: 'destructive',
+                duration: 5000,
+              });
+              // Sign out the user immediately
+              await signOut(auth);
+              // The onAuthStateChanged will trigger again with a null user, cleaning up the state.
+              return; 
+            }
+
             const fullUserProfile: UserProfile = {
               id: userDoc.id,
               uid: authUser.uid,
-              ...userDoc.data(),
+              ...userData,
             };
             set({ user: fullUserProfile, loading: false });
           } else {
