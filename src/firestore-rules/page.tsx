@@ -20,24 +20,19 @@ service cloud.firestore {
 
     // Rules for user profiles
     match /users/{userId} {
-      // Admin can read and list any user profile.
-      allow list, read: if isAdmin();
+      // Admin can list any user profile.
+      allow list: if isAdmin();
       
-      // An authenticated user can read their own profile.
-      allow read: if request.auth.uid == userId;
-      
+      // Admin can read any user profile. Authenticated users can read their own.
+      allow read: if isAdmin() || request.auth.uid == userId;
+
       // Admin can write to any user profile.
       allow write: if isAdmin();
-
-      // A regular user can only update their own profile, but CANNOT change their role or status.
-      // This rule only applies to UPDATES.
-      allow update: if request.auth.uid == userId 
+      
+      // A regular user can only create/update their own profile, but CANNOT change their role or status.
+      allow create, update: if request.auth.uid == userId 
                             && request.resource.data.role == resource.data.role
                             && request.resource.data.status == resource.data.status;
-                            
-      // Allow a user document to be created as long as the creating user's UID
-      // matches the document's UID. This prevents users from creating documents for others.
-      allow create: if request.auth.uid == userId;
     }
     
     // Rules for user groups
@@ -109,4 +104,68 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
   }
+}
+`;
+
+export default function FirestoreRulesPage() {
+  
+  const { toast } = useToast();
+  
+  const handleCopyRules = () => {
+    navigator.clipboard.writeText(firestoreRules.trim());
+    toast({
+      title: 'Aturan Disalin!',
+      description: 'Aturan keamanan Firestore telah disalin ke clipboard.',
+    });
+  };
+
+  return (
+    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+      <div className="flex items-center space-x-2">
+        <ShieldCheck className="h-8 w-8" />
+        <h2 className="text-3xl font-bold tracking-tight">Aturan Keamanan Firestore</h2>
+      </div>
+      <p className="text-muted-foreground">
+        Gunakan aturan ini untuk mengamankan database Firestore Anda. Salin dan tempelkan di Firebase Console.
+      </p>
+      
+       <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>PENTING: Segera Perbarui Aturan Anda!</AlertTitle>
+          <AlertDescription>
+            Aturan keamanan telah diubah untuk memperbaiki masalah izin akses dan fitur blokir. Anda **WAJIB** menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong>.
+          </AlertDescription>
+       </Alert>
+       
+       <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>Logika Verifikasi Admin Berubah!</AlertTitle>
+          <AlertDescription>
+            Sistem verifikasi Admin sekarang menggunakan **Custom Claims**. Ini lebih aman dan efisien. Anda perlu mengatur *custom claim* `&#123;"admin": true&#125;` untuk akun admin Anda melalui server-side script (misalnya, Firebase Cloud Function) agar hak akses Admin berfungsi.
+          </AlertDescription>
+       </Alert>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Konten file firestore.rules</CardTitle>
+          <CardDescription>
+            Klik tombol di bawah untuk menyalin seluruh konten aturan keamanan yang baru.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+           <Textarea
+            readOnly
+            value={firestoreRules.trim()}
+            className="font-mono text-xs h-96"
+          />
+        </CardContent>
+         <CardFooter>
+            <Button onClick={handleCopyRules}>
+              <Copy className="mr-2 h-4 w-4" />
+              Salin Aturan
+            </Button>
+          </CardFooter>
+      </Card>
+    </div>
+  );
 }
