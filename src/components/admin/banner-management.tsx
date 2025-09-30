@@ -98,19 +98,20 @@ export function BannerManagement() {
     setIsUploading(true);
 
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = (error) => reject(error);
+        });
+
         setSelectedSlide(prev => prev ? { ...prev, image: dataUrl } : null);
+
         toast({
           title: "Gambar Diproses",
           description: "Gambar berhasil diproses. Jangan lupa simpan perubahan.",
         });
-      };
-      reader.onerror = () => {
-        throw new Error("Gagal membaca file gambar.");
-      };
+
     } catch (error) {
       toast({
         title: "Gagal Memproses Gambar",
