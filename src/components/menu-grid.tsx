@@ -49,7 +49,7 @@ export function MenuGrid() {
             <Link href={href} key={item.id} className={cn(isClickDisabled && "pointer-events-none")}>
               <Card className="shadow-neumorphic-light dark:shadow-neumorphic-dark active:shadow-neumorphic-light-inset dark:active:shadow-neumorphic-dark-inset transition-all duration-200 aspect-square flex flex-col items-center justify-center p-2 sm:p-4 rounded-2xl relative bg-background hover:text-primary">
                 <CardContent className="p-0 flex flex-col items-center justify-center gap-2">
-                  <div className="p-3 bg-background rounded-full shadow-neumorphic-light dark:shadow-neumorphic-dark">
+                  <div className="p-3 bg-background rounded-full">
                     <item.icon className="h-6 w-6 sm:h-8 sm:w-8" />
                   </div>
                   <p className="text-[11px] leading-tight sm:text-sm text-center font-semibold">
