@@ -24,8 +24,6 @@ import { toast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import Image from 'next/image';
 import { useBrandingConfig, saveBrandingConfig, type BrandingConfig } from '@/lib/menu-store';
-import { storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 
 const iconList = Object.entries(allIcons).map(([name, component]) => ({ name, component })).sort((a,b) => a.name.localeCompare(b.name));
@@ -68,24 +66,34 @@ export function BrandingSettings() {
     }
 
     setIsUploading(true);
-    const storageRef = ref(storage, `branding/logo/${file.name}_${Date.now()}`);
 
     try {
-      await uploadBytes(storageRef, file);
-      const logoUrl = await getDownloadURL(storageRef);
-      setLocalConfig(prev => prev ? { ...prev, imageUrl: logoUrl } : null);
-      toast({
-        title: "Unggah Berhasil",
-        description: "Logo berhasil diunggah. Jangan lupa simpan perubahan.",
-      });
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = (error) => reject(error);
+        });
+
+        setLocalConfig(prev => prev ? { ...prev, imageUrl: dataUrl } : null);
+        
+        toast({
+          title: "Gambar Diproses",
+          description: "Logo berhasil diproses. Jangan lupa simpan perubahan.",
+        });
+
     } catch (error) {
+      console.error("Logo processing error:", error);
       toast({
-        title: "Unggah Gagal",
-        description: "Terjadi kesalahan saat mengunggah logo.",
+        title: "Gagal Memproses Gambar",
+        description: "Terjadi kesalahan saat memproses gambar.",
         variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
+        setIsUploading(false);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     }
   };
 
@@ -194,7 +202,7 @@ export function BrandingSettings() {
                         onChange={(e) => setLocalConfig({...localConfig, imageUrl: e.target.value})}
                         placeholder="https://example.com/logo.png"
                     />
-                    <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                    <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
                        <span className="sr-only">Unggah Logo</span>
                     </Button>

@@ -21,8 +21,6 @@ import { useDeveloperInfoConfig, saveDeveloperInfoConfig, type DeveloperInfo, ty
 import { toast } from '@/hooks/use-toast';
 import { allIcons } from '@/lib/menu-items-v2';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const iconMap: { [key: string]: React.ElementType } = allIcons;
 
@@ -112,29 +110,35 @@ export function DeveloperSettings() {
     }
 
     setIsUploading(true);
-    const storageRef = ref(storage, `branding/avatars/${file.name}_${Date.now()}`);
 
     try {
-      await uploadBytes(storageRef, file);
-      const avatarUrl = await getDownloadURL(storageRef);
-      setLocalInfo(prev => prev ? { ...prev, avatarUrl } : null);
-      toast({
-        title: "Unggah Berhasil",
-        description: "Avatar developer berhasil diunggah. Jangan lupa simpan perubahan.",
-      });
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = (error) => reject(error);
+        });
+
+        setLocalInfo(prev => prev ? { ...prev, avatarUrl: dataUrl } : null);
+        
+        toast({
+          title: "Gambar Diproses",
+          description: "Avatar berhasil diproses. Jangan lupa simpan perubahan.",
+        });
+
     } catch (error) {
-      console.error("Avatar upload error:", error);
+      console.error("Avatar processing error:", error);
       toast({
-        title: "Unggah Gagal",
-        description: "Terjadi kesalahan saat mengunggah avatar.",
+        title: "Gagal Memproses Gambar",
+        description: "Terjadi kesalahan saat memproses gambar.",
         variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
-      // Reset file input to allow re-uploading the same file
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+        setIsUploading(false);
+        // Reset file input to allow re-uploading the same file
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     }
   };
 
