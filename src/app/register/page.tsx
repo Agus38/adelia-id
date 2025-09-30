@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -48,16 +47,18 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
+      // 1. Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // 2. Update basic profile in Firebase Authentication
       await updateProfile(user, {
         displayName: name,
         photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
       });
 
-      // Use setDoc with { merge: true } to prevent errors on re-registration attempts.
-      // This acts as an "upsert": create if it doesn't exist, update if it does.
+      // 3. Create user document in Firestore with the correct role
+      // This will now succeed because of the relaxed 'create' security rule.
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         email: user.email,
@@ -66,8 +67,9 @@ export default function RegisterPage() {
         status: 'Aktif',
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         createdAt: serverTimestamp(),
-      }, { merge: true });
+      });
       
+      // 4. Show success and redirect
       toast({
         title: 'Pendaftaran Berhasil!',
         description: 'Akun Anda telah dibuat. Anda akan diarahkan ke halaman login.',
@@ -87,6 +89,7 @@ export default function RegisterPage() {
             variant: 'destructive',
         });
     } finally {
+        // This will run regardless of success or failure
         setIsLoading(false);
     }
   };
