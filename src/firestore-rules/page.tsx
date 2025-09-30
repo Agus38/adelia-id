@@ -28,16 +28,16 @@ service cloud.firestore {
       
       // Admin can write to any user profile.
       allow write: if isAdmin();
-      
+
       // A regular user can only update their own profile, but CANNOT change their role or status.
+      // This rule only applies to UPDATES.
       allow update: if request.auth.uid == userId 
                             && request.resource.data.role == resource.data.role
                             && request.resource.data.status == resource.data.status;
                             
-      // Allow a user document to be created as long as the request is authenticated.
-      // This prevents a race condition during sign-up where Firestore rules are
-      // evaluated before the auth context is fully propagated.
-      allow create: if request.auth != null;
+      // Allow a user document to be created as long as the creating user's UID
+      // matches the document's UID. This prevents users from creating documents for others.
+      allow create: if request.auth.uid == userId;
     }
     
     // Rules for user groups

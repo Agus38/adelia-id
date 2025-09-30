@@ -51,7 +51,7 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Update basic profile in Firebase Authentication
+      // 2. Update basic profile in Firebase Authentication. This is quick.
       await updateProfile(user, {
         displayName: name,
         photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
