@@ -174,7 +174,7 @@ export function UserNav() {
             </Avatar>
             <DialogTitle className="text-2xl">{user.fullName || 'Pengguna'}</DialogTitle>
              {user.role && (
-                <Badge variant={roleBadgeVariant[user.role] || 'secondary'} className="w-fit mx-auto">
+                <Badge key={user.role} variant={roleBadgeVariant[user.role] || 'secondary'} className="w-fit mx-auto">
                     {user.role}
                 </Badge>
             )}
