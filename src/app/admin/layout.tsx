@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -14,9 +13,19 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const { user, loading } = useUserStore();
+  const [isAuthorized, setIsAuthorized] = React.useState(false);
 
-  // While loading, show a full-screen spinner.
-  if (loading) {
+  React.useEffect(() => {
+    if (!loading) {
+      if (user && user.role === 'Admin') {
+        setIsAuthorized(true);
+      } else {
+        router.push('/unauthorized');
+      }
+    }
+  }, [user, loading, router]);
+
+  if (loading || !isAuthorized) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -24,13 +33,5 @@ export default function AdminLayout({
     );
   }
 
-  // After loading, check for user and role.
-  // If authorized, render the children.
-  if (user && user.role === 'Admin') {
-    return <>{children}</>;
-  }
-
-  // If not authorized, render the Unauthorized page content directly.
-  // This prevents flickering and race conditions with router.push.
-  return <UnauthorizedPage />;
+  return <>{children}</>;
 }
