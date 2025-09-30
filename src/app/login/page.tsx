@@ -167,7 +167,7 @@ export default function LoginPage() {
                 </Button>
               </div>
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading} variant="neumorphic">
+            <Button type="submit" className="w-full" disabled={isLoading} variant="default">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Masuk
             </Button>

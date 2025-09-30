@@ -190,7 +190,7 @@ export default function RegisterPage() {
                 .
               </Label>
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitDisabled} variant="neumorphic">
+            <Button type="submit" className="w-full" disabled={isSubmitDisabled} variant="default">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Buat Akun
             </Button>
