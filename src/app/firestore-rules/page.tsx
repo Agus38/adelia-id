@@ -13,32 +13,31 @@ const firestoreRules = `rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Helper function to check if the user is an Admin via Custom Claims.
-    function isAdmin() {
-      return request.auth.token.admin == true;
+    // Helper function to check if the user is an Admin by reading their user document.
+    function isDbAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
     }
 
     // Rules for user profiles
     match /users/{userId} {
-      // Admin can list any user profile.
-      allow list: if isAdmin();
+      // Admin can manage any user profile.
+      allow read, write, list: if isDbAdmin();
       
-      // Admin can read any user profile. Authenticated users can read their own.
-      allow read: if isAdmin() || request.auth.uid == userId;
-
-      // Admin can write to any user profile.
-      allow write: if isAdmin();
+      // An authenticated user can create their own document.
+      allow create: if request.auth.uid == userId;
       
-      // A regular user can only create/update their own profile, but CANNOT change their role or status.
-      allow create, update: if request.auth.uid == userId 
-                            && request.resource.data.role == resource.data.role
-                            && request.resource.data.status == resource.data.status;
+      // An authenticated user can read or update their own profile,
+      // but CANNOT change their role or status.
+      allow read: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId
+                    && request.resource.data.role == resource.data.role
+                    && request.resource.data.status == resource.data.status;
     }
     
     // Rules for user groups
     match /userGroups/{groupId} {
         // Only Admin can manage user groups
-        allow read, write, delete, list: if isAdmin();
+        allow read, write, delete, list: if isDbAdmin();
     }
 
     // Rules for daily financial reports
@@ -46,19 +45,19 @@ service cloud.firestore {
       // Allow authenticated users to create a report if the userId in the report data matches their own uid.
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       // Allow users to read/update their own reports, and Admin to read/update any report.
-      allow read, update: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow read, update: if isDbAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       // Only Admin can delete or list all reports.
-      allow delete, list: if isAdmin();
+      allow delete, list: if isDbAdmin();
     }
 
     // Rules for stock reports
     match /stockReports/{reportId} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       // Admin can read any report. Regular users can only read their own.
-      allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
-      allow update: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow read: if isDbAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow update: if isDbAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       // Only Admin can list/delete reports
-      allow delete, list: if isAdmin();
+      allow delete, list: if isDbAdmin();
     }
 
     // Rules for SMW Manyar reports
@@ -67,9 +66,9 @@ service cloud.firestore {
       allow create, update: if request.auth != null && request.resource.data.userId == request.auth.uid;
       
       // Admin can read any report. Regular users can only read their own.
-      allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow read: if isDbAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       // Only Admin can list/delete reports
-      allow delete, list: if isAdmin();
+      allow delete, list: if isDbAdmin();
     }
 
     // Rules for activity logs
@@ -77,7 +76,7 @@ service cloud.firestore {
       // Allow any authenticated user to create a log entry.
       allow create: if request.auth != null;
       // Only Admin can read, update, or delete logs.
-      allow read, update, delete, list: if isAdmin();
+      allow read, update, delete, list: if isDbAdmin();
     }
     
     // Rules for age calculation logs
@@ -85,7 +84,7 @@ service cloud.firestore {
       // Allow anyone to create an entry (public feature)
       allow create: if true;
       // Only Admin can read or list entries
-      allow read, list, delete: if isAdmin();
+      allow read, list, delete: if isDbAdmin();
     }
 
     // Rules for digital products synced from Digiflazz
@@ -93,7 +92,7 @@ service cloud.firestore {
       // Anyone can read the product list.
       allow read, list: if true;
       // ONLY Admin can write/update/delete products. This is secure.
-      allow write: if isAdmin();
+      allow write: if isDbAdmin();
     }
 
     // Rules for general app settings
@@ -101,7 +100,7 @@ service cloud.firestore {
       // Anyone can read app settings (e.g., menu configuration).
       allow read: if true;
       // ONLY Admin can write/update app settings. This is secure.
-      allow write: if isAdmin();
+      allow write: if isDbAdmin();
     }
   }
 }
@@ -141,7 +140,7 @@ export default function FirestoreRulesPage() {
           <Info className="h-4 w-4" />
           <AlertTitle>Logika Verifikasi Admin Berubah!</AlertTitle>
           <AlertDescription>
-            Sistem verifikasi Admin sekarang menggunakan **Custom Claims**. Ini lebih aman dan efisien. Anda perlu mengatur *custom claim* `&#123;"admin": true&#125;` untuk akun admin Anda melalui server-side script (misalnya, Firebase Cloud Function) agar hak akses Admin berfungsi.
+            Sistem verifikasi Admin sekarang menggunakan pembacaan langsung ke dokumen pengguna di Firestore, bukan lagi custom claims. Ini lebih andal dan mudah dikelola.
           </AlertDescription>
        </Alert>
 
