@@ -1,4 +1,3 @@
-
 'use client';
 
 import { create } from 'zustand';
@@ -40,6 +39,7 @@ export const useUserStore = create<UserState>((set) => ({
                 id: authUser.uid,
                 fullName: authUser.displayName,
                 avatarUrl: authUser.photoURL,
+                role: undefined, // Explicitly set role as undefined
             };
             set({ user: basicProfile, loading: false });
           }
@@ -51,6 +51,7 @@ export const useUserStore = create<UserState>((set) => ({
               id: authUser.uid,
               fullName: authUser.displayName,
               avatarUrl: authUser.photoURL,
+              role: undefined,
            };
            set({ user: basicProfile, loading: false });
         }
