@@ -153,46 +153,48 @@ export function TransactionsView() {
           className="max-w-sm"
         />
       </div>
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-                <TableRow><TableCell colSpan={columns.length} className="h-24 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin"/></TableCell></TableRow>
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+      <div className="rounded-md border">
+        <div className="overflow-x-auto">
+            <Table>
+            <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                        {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                            )}
+                    </TableHead>
+                    ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  Tidak ada hasil.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                ))}
+            </TableHeader>
+            <TableBody>
+                {loading ? (
+                    <TableRow><TableCell colSpan={columns.length} className="h-24 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin"/></TableCell></TableRow>
+                ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                    <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                    ))}
+                    </TableRow>
+                ))
+                ) : (
+                <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                    Tidak ada hasil.
+                    </TableCell>
+                </TableRow>
+                )}
+            </TableBody>
+            </Table>
+        </div>
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
         <Button
@@ -232,8 +234,7 @@ export function TransactionsView() {
                 onOpenChange={setEditDialogOpen}
                 transactionToEdit={transactionToEdit}
             >
-                {/* This is a dummy trigger, the dialog is controlled by state */}
-                <div/>
+              <div />
             </AddTransactionDialog>
         )}
     </div>

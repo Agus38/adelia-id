@@ -147,7 +147,7 @@ export function ReportsView() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="w-full overflow-x-auto">
+          <div className="overflow-x-auto">
             {monthlyData.chartData.length > 0 ? (
                  <ChartContainer config={chartConfig} className="min-w-[300px] w-full h-[400px]">
                     <BarChart data={monthlyData.chartData} layout="vertical" margin={{ left: 20 }}>

@@ -53,16 +53,24 @@ export default function BudgetFlowPage() {
           </div>
           
           <TabsContent value="dashboard" className="space-y-4">
-            <BudgetFlowDashboard />
+            <div className="overflow-x-auto">
+                <BudgetFlowDashboard />
+            </div>
           </TabsContent>
           <TabsContent value="transactions" className="space-y-4">
-            <TransactionsView />
+             <div className="overflow-x-auto">
+                <TransactionsView />
+            </div>
           </TabsContent>
           <TabsContent value="budgets" className="space-y-4">
-            <BudgetsView />
+            <div className="overflow-x-auto">
+                <BudgetsView />
+            </div>
           </TabsContent>
           <TabsContent value="reports" className="space-y-4">
-            <ReportsView />
+             <div className="overflow-x-auto">
+                <ReportsView />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
