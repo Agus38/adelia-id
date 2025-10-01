@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUserStore } from '@/lib/user-store';
 import { addTransaction, updateTransaction, type Transaction, type TransactionType } from '@/lib/budgetflow-store';
 import { incomeCategories, expenseCategories } from '@/lib/budgetflow-store';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface TransactionFormProps {
   type: TransactionType;
@@ -229,10 +230,17 @@ export function AddTransactionDialog({ children, transactionToEdit, open, onOpen
 export function AddTransactionButton() {
     return (
         <AddTransactionDialog>
-            <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Tambah Transaksi
-            </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+                <Button size="icon" className="h-14 w-14 rounded-full shadow-lg">
+                    <PlusCircle className="h-6 w-6" />
+                    <span className="sr-only">Tambah Transaksi</span>
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Tambah Transaksi</p>
+            </TooltipContent>
+          </Tooltip>
         </AddTransactionDialog>
     )
 }
