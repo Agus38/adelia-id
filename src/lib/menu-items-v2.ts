@@ -159,7 +159,7 @@ export const menuItems: MenuItem[] = [
     title: 'Kalkulator',
     href: '/kalkulator',
     icon: Calculator,
-    comingSoon: true,
+    comingSoon: false,
     requiresAuth: false,
   },
   {
