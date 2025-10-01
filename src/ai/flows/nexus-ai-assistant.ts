@@ -9,7 +9,6 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {generate} from 'genkit';
 import {z} from 'genkit';
 import {
   defaultDeveloperInfo,
@@ -59,7 +58,7 @@ Your persona is professional, but approachable. Answer concisely and clearly.
 Do not make up features that don't exist. If you don't know an answer, say that you don't have that information.
 The user's conversation history is provided. Use it to understand the context of their latest query.`;
   
-  const response = await generate({
+  const response = await ai.generate({
     model: 'googleai/gemini-2.0-flash',
     system: systemPrompt,
     history: history.map(h => ({ role: h.role, content: [{ text: h.content }] })),
