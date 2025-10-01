@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -11,6 +10,7 @@ import { useBrandingConfig } from '@/lib/menu-store';
 import { Skeleton } from '../ui/skeleton';
 import Image from 'next/image';
 import { useUserStore } from '@/lib/user-store';
+import { Clock } from '../clock';
 
 export function Header() {
   const { user } = useUserStore();
@@ -50,14 +50,19 @@ export function Header() {
           </Link>
       </div>
       
-      {/* Centered Logo for Mobile */}
-      <div className="flex-1 flex justify-center md:hidden">
-         <Link href="/" className="items-center gap-2 font-semibold flex">
+      {/* Centered element for both mobile and desktop */}
+      <div className="flex-1 flex justify-center">
+         {/* Mobile Logo */}
+         <Link href="/" className="items-center gap-2 font-semibold flex md:hidden">
             {renderLogo()}
-          </Link>
+         </Link>
+          {/* Desktop/Tablet Clock */}
+         <div className="hidden md:flex">
+           {user && <Clock />}
+         </div>
       </div>
 
-      <div className="flex items-center gap-4 md:flex-1 md:justify-end">
+      <div className="flex items-center gap-4 md:min-w-[150px] md:justify-end">
         {user && <ThemeToggle />}
         <UserNav />
       </div>
