@@ -15,12 +15,16 @@ export function CalculatorUI() {
   const [waitingForSecondOperand, setWaitingForSecondOperand] = useState(false);
   const [history, setHistory] = useState('');
 
+  const formatNumber = (num: number) => {
+      return num.toLocaleString('id-ID', { maximumFractionDigits: 10 });
+  };
+
   const inputDigit = (digit: string) => {
     if (waitingForSecondOperand) {
       setDisplayValue(digit);
       setWaitingForSecondOperand(false);
     } else {
-      if (displayValue.length >= MAX_DIGITS) return;
+      if (displayValue.replace(/[\.-]/g, '').length >= MAX_DIGITS) return;
       setDisplayValue(displayValue === '0' ? digit : displayValue + digit);
     }
   };
@@ -36,42 +40,38 @@ export function CalculatorUI() {
 
     if (operator && waitingForSecondOperand) {
       setOperator(nextOperator);
-       if (firstOperand !== null) {
-          setHistory(`${firstOperand.toLocaleString('id-ID')} ${nextOperator}`);
+      if (firstOperand !== null) {
+        setHistory(`${formatNumber(firstOperand)} ${nextOperator}`);
       }
       return;
     }
 
     if (firstOperand === null) {
       setFirstOperand(inputValue);
+      setHistory(`${formatNumber(inputValue)} ${nextOperator}`);
     } else if (operator) {
       const result = calculate(firstOperand, inputValue, operator);
       const resultString = String(parseFloat(result.toPrecision(15)));
       setDisplayValue(resultString);
       setFirstOperand(result);
+      if (nextOperator === '=') {
+          setHistory(`${formatNumber(firstOperand)} ${operator} ${formatNumber(inputValue)} =`);
+      } else {
+          setHistory(`${formatNumber(result)} ${nextOperator}`);
+      }
     }
     
     setWaitingForSecondOperand(true);
     setOperator(nextOperator);
-    if(nextOperator !== '=') {
-        setHistory(`${parseFloat(displayValue).toLocaleString('id-ID')} ${nextOperator}`);
-    } else {
-        setHistory('');
-    }
   };
-
+  
   const calculate = (first: number, second: number, op: string): number => {
     switch (op) {
-      case '+':
-        return first + second;
-      case '-':
-        return first - second;
-      case '×':
-        return first * second;
-      case '÷':
-        return first / second;
-      default:
-        return second;
+      case '+': return first + second;
+      case '-': return first - second;
+      case '×': return first * second;
+      case '÷': return second === 0 ? NaN : first / second; // Handle division by zero
+      default: return second;
     }
   };
 
@@ -85,7 +85,7 @@ export function CalculatorUI() {
   
   const clearEntry = () => {
     setDisplayValue('0');
-  }
+  };
 
   const toggleSign = () => {
     setDisplayValue(String(parseFloat(displayValue) * -1));
@@ -96,15 +96,23 @@ export function CalculatorUI() {
      if (operator && firstOperand !== null) {
          // Calculate percentage of the first operand
          const percentageValue = (firstOperand * currentValue) / 100;
-         setDisplayValue(String(percentageValue));
+         const result = calculate(firstOperand, percentageValue, operator);
+         const resultString = String(parseFloat(result.toPrecision(15)));
+         
+         setHistory(`${formatNumber(firstOperand)} ${operator} ${currentValue}% =`);
+         setDisplayValue(resultString);
+         setFirstOperand(result);
+         setOperator(null);
+         setWaitingForSecondOperand(true);
      } else {
-        // Just calculate percentage of the current value (e.g. for display)
+        // Just calculate percentage of the current value
         setDisplayValue(String(currentValue / 100));
+        setHistory(`${currentValue}%`);
      }
   }
 
   const buttons = [
-    { label: waitingForSecondOperand ? 'C' : 'AC', className: 'bg-muted hover:bg-muted/80', action: waitingForSecondOperand ? clearEntry : resetCalculator },
+    { label: waitingForSecondOperand ? 'C' : 'AC', className: 'bg-red-500/20 hover:bg-red-500/30 text-red-700 dark:text-red-400', action: waitingForSecondOperand ? clearEntry : resetCalculator },
     { label: '±', className: 'bg-muted hover:bg-muted/80', action: toggleSign },
     { label: '%', className: 'bg-muted hover:bg-muted/80', action: inputPercent },
     { label: '÷', className: 'bg-primary/80 hover:bg-primary text-primary-foreground', action: () => handleOperator('÷') },
@@ -137,14 +145,14 @@ export function CalculatorUI() {
     <Card className="p-4 bg-background shadow-neumorphic-light rounded-3xl">
       <CardContent className="p-0">
         <div className="h-28 flex flex-col items-end justify-end p-4 rounded-2xl bg-muted shadow-neumorphic-light-inset mb-4">
-           <p className="font-sans font-medium text-xl text-muted-foreground h-7 truncate">
+           <p className="font-sans font-medium text-lg text-muted-foreground h-7 truncate">
              {history}
            </p>
           <p className={cn(
-              "font-sans font-bold text-right break-all",
+              "font-sans font-bold text-right break-all w-full",
               getFontSize()
           )}>
-            {parseFloat(displayValue).toLocaleString('id-ID', {maximumFractionDigits: 8})}
+            {parseFloat(displayValue).toLocaleString('id-ID', {maximumFractionDigits: 10})}
           </p>
         </div>
         <div className="grid grid-cols-4 gap-3">
