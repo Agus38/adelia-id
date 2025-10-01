@@ -93,8 +93,8 @@ export function ChartsView({ dateRange }: ChartsViewProps) {
   );
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-      <Card className="lg:col-span-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <Card className="lg:col-span-1">
         <CardHeader>
           <CardTitle>Komposisi Pengeluaran</CardTitle>
           <CardDescription>Berdasarkan rentang waktu yang dipilih.</CardDescription>
@@ -123,7 +123,7 @@ export function ChartsView({ dateRange }: ChartsViewProps) {
         </CardContent>
       </Card>
 
-      <Card className="lg:col-span-3">
+      <Card className="lg:col-span-1">
         <CardHeader>
           <CardTitle>Ringkasan Bulanan</CardTitle>
           <CardDescription>Pemasukan vs. Pengeluaran per bulan.</CardDescription>

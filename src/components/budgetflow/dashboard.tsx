@@ -46,13 +46,13 @@ export function BudgetFlowDashboard() {
               </p>
             </div>
           </div>
-           <div className="flex flex-col-reverse items-stretch gap-4 sm:flex-row sm:items-center">
+           <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center">
              <div className="flex items-center gap-2">
-                <Button variant={viewMode === 'chart' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('chart')}>
+                <Button variant={viewMode === 'chart' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('chart')} className="flex-1">
                     <BarChart2 className="mr-2 h-4 w-4" />
                     Grafik
                 </Button>
-                <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('table')}>
+                <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('table')} className="flex-1">
                     <Table className="mr-2 h-4 w-4" />
                     Tabel
                 </Button>
