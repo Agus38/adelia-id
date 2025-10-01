@@ -75,6 +75,7 @@ import {
   Linkedin,
   UsersRound,
   LogIn,
+  Megaphone,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -305,6 +306,15 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
+   {
+    id: 'promo-popup-management',
+    title: 'Manajemen Popup',
+    href: '/admin/promo-popup',
+    icon: Megaphone,
+    description: 'Kelola popup promosi di halaman utama.',
+    access: 'admin',
+    requiresAuth: true,
+  },
   {
     id: 'branding-settings',
     title: 'Pengaturan Tampilan',
@@ -493,6 +503,7 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Mail,
   MapPin,
   Menu,
+  Megaphone,
   Moon,
   Package,
   Palette,

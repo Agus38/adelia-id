@@ -15,6 +15,7 @@ import Autoplay from "embla-carousel-autoplay"
 import * as React from "react"
 import { useBannerConfig } from "@/lib/menu-store";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PromoPopup } from "@/components/promo-popup";
 
 
 export default function Home() {
@@ -47,6 +48,8 @@ export default function Home() {
 
 
   return (
+    <>
+    <PromoPopup />
     <div className="flex-1 flex flex-col p-4 md:p-6">
     {/* Top Banner Carousel */}
     <div className="mb-4">
@@ -104,5 +107,6 @@ export default function Home() {
         <MenuGrid />
     </div>
     </div>
+    </>
   );
 }

@@ -90,6 +90,15 @@ interface AboutInfoDTO {
   features: string[];
 }
 
+interface PromoPopupConfigDTO {
+  enabled: boolean;
+  imageUrl: string;
+  title: string;
+  description: string;
+  buttonText: string;
+  buttonLink: string;
+}
+
 
 // --- Type Definitions ---
 export interface BannerSlide {
@@ -145,6 +154,15 @@ export interface AboutInfo {
   features: string[];
 }
 
+export interface PromoPopupConfig {
+  enabled: boolean;
+  imageUrl: string;
+  title: string;
+  description: string;
+  buttonText: string;
+  buttonLink: string;
+}
+
 
 // --- Firestore Document References ---
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
@@ -157,6 +175,7 @@ const registerPageConfigDocRef = doc(db, 'app-settings', 'register-page');
 const developerInfoDocRef = doc(db, 'app-settings', 'developer-info');
 const sessionConfigDocRef = doc(db, 'app-settings', 'sessionConfig');
 const aboutInfoDocRef = doc(db, 'app-settings', 'aboutInfo');
+const promoPopupConfigDocRef = doc(db, 'app-settings', 'promo-popup');
 
 
 // --- Default Data ---
@@ -234,6 +253,15 @@ const defaultAboutInfo: AboutInfo = {
     'Asisten AI Cerdas',
     'Utilitas Bermanfaat'
   ]
+};
+
+const defaultPromoPopupConfig: PromoPopupConfig = {
+  enabled: false,
+  imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1974&auto=format&fit=crop',
+  title: 'Promo Spesial!',
+  description: 'Dapatkan diskon 20% untuk semua pembelian produk digital hari ini. Jangan lewatkan kesempatan ini!',
+  buttonText: 'Lihat Promo',
+  buttonLink: '/digital-products'
 };
 
 
@@ -747,4 +775,51 @@ export const useAboutInfoConfig = () => {
 
 export const saveAboutInfoConfig = async (info: AboutInfo) => {
   await setDoc(aboutInfoDocRef, info);
+};
+
+// --- Promo Popup Config Store ---
+interface PromoPopupState {
+  promoPopupConfig: PromoPopupConfig;
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const usePromoPopupStore = create<PromoPopupState>((set) => ({
+  promoPopupConfig: defaultPromoPopupConfig,
+  isLoading: true,
+  error: null,
+  initializeListener: () => {
+    const unsubscribe = onSnapshot(
+      promoPopupConfigDocRef,
+      (docSnap) => {
+        if (docSnap.exists() && docSnap.data()) {
+          set({ promoPopupConfig: docSnap.data() as PromoPopupConfig, isLoading: false, error: null });
+        } else {
+          set({ promoPopupConfig: defaultPromoPopupConfig, isLoading: false, error: null });
+        }
+      },
+      (error) => {
+        console.error("Error fetching promo popup config: ", error);
+        set({ promoPopupConfig: defaultPromoPopupConfig, isLoading: false, error });
+      }
+    );
+    return unsubscribe;
+  },
+}));
+
+export const usePromoPopupConfig = () => {
+  const { promoPopupConfig, isLoading, initializeListener } = usePromoPopupStore();
+  React.useEffect(() => {
+    const unsubscribe = initializeListener();
+    return () => unsubscribe();
+  }, [initializeListener]);
+  return { promoPopupConfig, isLoading };
+};
+
+export const savePromoPopupConfig = async (config: PromoPopupConfig) => {
+  const configToStore: PromoPopupConfigDTO = {
+    ...config,
+  };
+  await setDoc(promoPopupConfigDocRef, configToStore);
 };
