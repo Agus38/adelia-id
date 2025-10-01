@@ -114,7 +114,7 @@ export function BudgetsView() {
               <DialogTrigger asChild>
                 <Button onClick={() => handleOpenDialog()}>
                   <PlusCircle className="mr-2 h-4 w-4" />
-                  Buat Anggaran
+                  Buat<span className="hidden sm:inline">&nbsp;Anggaran</span>
                 </Button>
               </DialogTrigger>
               <DialogContent>
