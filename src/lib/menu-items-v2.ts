@@ -74,6 +74,7 @@ import {
   Github,
   Linkedin,
   UsersRound,
+  LogIn,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -313,6 +314,15 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
+   {
+    id: 'login-page-settings',
+    title: 'Pengaturan Halaman Login',
+    href: '/admin/login-page',
+    icon: LogIn,
+    description: 'Kelola gambar di halaman login.',
+    access: 'admin',
+    requiresAuth: true,
+  },
   {
     id: 'developer-settings',
     title: 'Pengaturan Developer',
@@ -479,6 +489,7 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Link,
   Linkedin,
   Lock,
+  LogIn,
   Mail,
   MapPin,
   Menu,
@@ -509,7 +520,3 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Wallet,
   Wand2,
 };
-
-    
-
-    

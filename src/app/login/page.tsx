@@ -15,6 +15,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 import { useUserStore } from '@/lib/user-store';
+import { useLoginPageConfig } from '@/lib/menu-store';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -25,6 +27,8 @@ export default function LoginPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { setUserProfile } = useUserStore();
+  const { loginPageConfig, isLoading: isLoadingConfig } = useLoginPageConfig();
+
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -181,14 +185,19 @@ export default function LoginPage() {
         </div>
       </div>
       <div className="hidden bg-muted lg:block">
-        <Image
-          src="https://images.unsplash.com/photo-1599050751855-c4208a38dda8?q=80&w=1887&auto=format&fit=crop"
-          alt="Image"
-          width="1887"
-          height="2830"
-          data-ai-hint="business teamwork"
-          className="h-full w-full object-cover dark:brightness-[0.3]"
-        />
+        {isLoadingConfig ? (
+            <Skeleton className="h-full w-full" />
+        ) : (
+             <Image
+                src={loginPageConfig.imageUrl}
+                alt="Image"
+                width="1887"
+                height="2830"
+                data-ai-hint={loginPageConfig.aiHint}
+                className="h-full w-full object-cover dark:brightness-[0.3]"
+                priority
+            />
+        )}
       </div>
     </div>
   );
