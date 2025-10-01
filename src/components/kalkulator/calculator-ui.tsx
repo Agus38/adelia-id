@@ -6,17 +6,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
+const MAX_DIGITS = 15;
+
 export function CalculatorUI() {
   const [displayValue, setDisplayValue] = useState('0');
   const [firstOperand, setFirstOperand] = useState<number | null>(null);
   const [operator, setOperator] = useState<string | null>(null);
   const [waitingForSecondOperand, setWaitingForSecondOperand] = useState(false);
+  const [history, setHistory] = useState('');
 
   const inputDigit = (digit: string) => {
     if (waitingForSecondOperand) {
       setDisplayValue(digit);
       setWaitingForSecondOperand(false);
     } else {
+      if (displayValue.length >= MAX_DIGITS) return;
       setDisplayValue(displayValue === '0' ? digit : displayValue + digit);
     }
   };
@@ -32,6 +36,9 @@ export function CalculatorUI() {
 
     if (operator && waitingForSecondOperand) {
       setOperator(nextOperator);
+       if (firstOperand !== null) {
+          setHistory(`${firstOperand.toLocaleString('id-ID')} ${nextOperator}`);
+      }
       return;
     }
 
@@ -39,13 +46,18 @@ export function CalculatorUI() {
       setFirstOperand(inputValue);
     } else if (operator) {
       const result = calculate(firstOperand, inputValue, operator);
-      const resultString = String(result);
+      const resultString = String(parseFloat(result.toPrecision(15)));
       setDisplayValue(resultString);
       setFirstOperand(result);
     }
-
+    
     setWaitingForSecondOperand(true);
     setOperator(nextOperator);
+    if(nextOperator !== '=') {
+        setHistory(`${parseFloat(displayValue).toLocaleString('id-ID')} ${nextOperator}`);
+    } else {
+        setHistory('');
+    }
   };
 
   const calculate = (first: number, second: number, op: string): number => {
@@ -68,6 +80,7 @@ export function CalculatorUI() {
     setFirstOperand(null);
     setOperator(null);
     setWaitingForSecondOperand(false);
+    setHistory('');
   };
   
   const clearEntry = () => {
@@ -79,11 +92,19 @@ export function CalculatorUI() {
   };
   
   const inputPercent = () => {
-     setDisplayValue(String(parseFloat(displayValue) / 100));
+     const currentValue = parseFloat(displayValue);
+     if (operator && firstOperand !== null) {
+         // Calculate percentage of the first operand
+         const percentageValue = (firstOperand * currentValue) / 100;
+         setDisplayValue(String(percentageValue));
+     } else {
+        // Just calculate percentage of the current value (e.g. for display)
+        setDisplayValue(String(currentValue / 100));
+     }
   }
 
   const buttons = [
-    { label: waitingForSecondOperand || displayValue !== '0' ? 'C' : 'AC', className: 'bg-muted hover:bg-muted/80', action: waitingForSecondOperand || displayValue !== '0' ? clearEntry : resetCalculator },
+    { label: waitingForSecondOperand ? 'C' : 'AC', className: 'bg-muted hover:bg-muted/80', action: waitingForSecondOperand ? clearEntry : resetCalculator },
     { label: '±', className: 'bg-muted hover:bg-muted/80', action: toggleSign },
     { label: '%', className: 'bg-muted hover:bg-muted/80', action: inputPercent },
     { label: '÷', className: 'bg-primary/80 hover:bg-primary text-primary-foreground', action: () => handleOperator('÷') },
@@ -115,7 +136,10 @@ export function CalculatorUI() {
   return (
     <Card className="p-4 bg-background shadow-neumorphic-light rounded-3xl">
       <CardContent className="p-0">
-        <div className="h-28 flex items-end justify-end p-4 rounded-2xl bg-muted shadow-neumorphic-light-inset mb-4">
+        <div className="h-28 flex flex-col items-end justify-end p-4 rounded-2xl bg-muted shadow-neumorphic-light-inset mb-4">
+           <p className="font-sans font-medium text-xl text-muted-foreground h-7 truncate">
+             {history}
+           </p>
           <p className={cn(
               "font-sans font-bold text-right break-all",
               getFontSize()
