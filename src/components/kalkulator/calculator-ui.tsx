@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Backspace } from 'lucide-react';
+import { Delete } from 'lucide-react';
 
 const MAX_DIGITS = 15;
 
@@ -45,36 +45,41 @@ export function CalculatorUI() {
   };
 
   const handleOperator = (nextOperator: string) => {
-    const inputValue = parseFloat(displayValue);
+    const inputValue = parseFloat(displayValue.replace(/,/g, '.'));
 
     if (operator && waitingForSecondOperand) {
         setOperator(nextOperator);
-        setHistory(prev => prev.slice(0, -1) + nextOperator);
+        setHistory(prev => prev.slice(0, -2) + ` ${nextOperator} `);
         return;
     }
 
     if (firstOperand === null) {
       setFirstOperand(inputValue);
+      setHistory(formatNumber(displayValue) + ` ${nextOperator} `);
     } else if (operator) {
       const result = calculate(firstOperand, inputValue, operator);
       const resultString = String(parseFloat(result.toPrecision(15)));
       setDisplayValue(resultString);
       setFirstOperand(result);
+      setHistory(prev => prev + formatNumber(displayValue) + ` ${nextOperator} `);
+    } else {
+      // This handles cases like 5 * = 25, then pressing another operator
+      setFirstOperand(inputValue);
+      setHistory(formatNumber(displayValue) + ` ${nextOperator} `);
     }
     
     setWaitingForSecondOperand(true);
     setOperator(nextOperator);
-    setHistory(prev => `${prev} ${formatNumber(displayValue)} ${nextOperator}`);
   };
 
   const handleEquals = () => {
-    if (operator === null || firstOperand === null) return;
+    if (operator === null || firstOperand === null || waitingForSecondOperand) return;
     
-    const secondOperand = parseFloat(displayValue);
+    const secondOperand = parseFloat(displayValue.replace(/,/g, '.'));
     const result = calculate(firstOperand, secondOperand, operator);
     const resultString = String(parseFloat(result.toPrecision(15)));
     
-    setHistory(prev => `${prev} ${formatNumber(displayValue)} =`);
+    setHistory('');
     setDisplayValue(resultString);
     setFirstOperand(null);
     setOperator(null);
@@ -115,20 +120,25 @@ export function CalculatorUI() {
   };
   
   const inputPercent = () => {
-     const currentValue = parseFloat(displayValue);
-     if (firstOperand === null) { // Standalone percentage
+     const currentValue = parseFloat(displayValue.replace(/,/g, '.'));
+     if (firstOperand === null) {
          const result = currentValue / 100;
          setDisplayValue(String(result));
-     } else { // Percentage of the first operand
+     } else if (operator) {
          const percentageValue = (firstOperand * currentValue) / 100;
-         setDisplayValue(String(percentageValue));
+         const result = calculate(firstOperand, percentageValue, operator);
+         const resultString = String(parseFloat(result.toPrecision(15)));
+         setHistory('');
+         setDisplayValue(resultString);
+         setFirstOperand(null);
+         setOperator(null);
      }
      setWaitingForSecondOperand(true);
   }
 
   const buttons = [
     { label: 'AC', className: 'bg-red-500/20 hover:bg-red-500/30 text-red-700 dark:text-red-400', action: resetCalculator },
-    { label: 'C', icon: Backspace, className: 'bg-red-500/20 hover:bg-red-500/30 text-red-700 dark:text-red-400', action: backspace },
+    { label: 'C', icon: Delete, className: 'bg-red-500/20 hover:bg-red-500/30 text-red-700 dark:text-red-400', action: backspace },
     { label: '%', className: 'bg-muted hover:bg-muted/80', action: inputPercent },
     { label: '÷', className: 'bg-primary/80 hover:bg-primary text-primary-foreground', action: () => handleOperator('÷') },
     { label: '7', action: () => inputDigit('7') },
