@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, UploadCloud } from 'lucide-react';
+import { Loader2, UploadCloud, Send } from 'lucide-react';
 import Image from 'next/image';
 import { usePromoPopupConfig, savePromoPopupConfig, type PromoPopupConfig } from '@/lib/menu-store';
 import { Skeleton } from '../ui/skeleton';
@@ -34,7 +34,7 @@ export function PromoPopupSettings() {
     }
   }, [promoPopupConfig]);
 
-  const handleConfigChange = (field: keyof Omit<PromoPopupConfig, 'enabled'>, value: string) => {
+  const handleConfigChange = (field: keyof Omit<PromoPopupConfig, 'enabled' | 'promoVersion'>, value: string) => {
     if (!localConfig) return;
     setLocalConfig({ ...localConfig, [field]: value });
   };
@@ -88,15 +88,30 @@ export function PromoPopupSettings() {
     }
   };
 
-  const handleSaveChanges = async () => {
+  const handleSaveChanges = async (newVersion = false) => {
     if (!localConfig) return;
     setIsSaving(true);
     try {
-      await savePromoPopupConfig(localConfig);
-      toast({
-        title: 'Perubahan Disimpan!',
-        description: 'Konfigurasi popup promosi telah berhasil diperbarui.',
-      });
+      const configToSave = { ...localConfig };
+      if (newVersion) {
+        configToSave.promoVersion = (configToSave.promoVersion || 0) + 1;
+      }
+      
+      await savePromoPopupConfig(configToSave);
+      
+      if (newVersion) {
+        toast({
+          title: 'Notifikasi Terkirim!',
+          description: 'Popup promosi akan ditampilkan kembali kepada semua pengguna.',
+        });
+      } else {
+        toast({
+          title: 'Perubahan Disimpan!',
+          description: 'Konfigurasi popup promosi telah berhasil diperbarui.',
+        });
+      }
+      // Re-sync local state with the newly saved config (especially the version)
+      setLocalConfig(configToSave);
     } catch (error) {
       toast({
         title: 'Gagal Menyimpan',
@@ -207,10 +222,14 @@ export function PromoPopupSettings() {
             </div>
          </div>
       </CardContent>
-      <CardFooter>
-        <Button onClick={handleSaveChanges} disabled={isSaveDisabled}>
+      <CardFooter className="flex justify-between">
+        <Button onClick={() => handleSaveChanges(false)} disabled={isSaveDisabled}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Simpan Perubahan
+        </Button>
+        <Button onClick={() => handleSaveChanges(true)} disabled={isSaveDisabled} variant="secondary">
+          <Send className="mr-2 h-4 w-4" />
+          Push Notifikasi
         </Button>
       </CardFooter>
     </Card>

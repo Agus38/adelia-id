@@ -8,7 +8,7 @@ import { usePromoPopupConfig } from '@/lib/menu-store';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const PROMO_POPUP_SEEN_KEY = 'promoPopupSeen';
+const PROMO_POPUP_SEEN_KEY = 'promoPopupVersionSeen';
 
 export function PromoPopup() {
   const { promoPopupConfig, isLoading } = usePromoPopupConfig();
@@ -19,17 +19,19 @@ export function PromoPopup() {
       return;
     }
 
-    const hasSeenPopup = sessionStorage.getItem(PROMO_POPUP_SEEN_KEY);
-    if (!hasSeenPopup) {
+    const seenVersion = sessionStorage.getItem(PROMO_POPUP_SEEN_KEY);
+    const currentVersion = String(promoPopupConfig.promoVersion || 1);
+
+    if (seenVersion !== currentVersion) {
       // Delay opening popup to allow page to load
       const timer = setTimeout(() => {
         setIsOpen(true);
-        sessionStorage.setItem(PROMO_POPUP_SEEN_KEY, 'true');
+        sessionStorage.setItem(PROMO_POPUP_SEEN_KEY, currentVersion);
       }, 1500);
 
       return () => clearTimeout(timer);
     }
-  }, [isLoading, promoPopupConfig.enabled]);
+  }, [isLoading, promoPopupConfig.enabled, promoPopupConfig.promoVersion]);
 
   if (isLoading || !promoPopupConfig.enabled || !isOpen) {
     return null;

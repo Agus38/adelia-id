@@ -97,6 +97,7 @@ interface PromoPopupConfigDTO {
   description: string;
   buttonText: string;
   buttonLink: string;
+  promoVersion?: number;
 }
 
 
@@ -161,6 +162,7 @@ export interface PromoPopupConfig {
   description: string;
   buttonText: string;
   buttonLink: string;
+  promoVersion?: number;
 }
 
 
@@ -261,7 +263,8 @@ const defaultPromoPopupConfig: PromoPopupConfig = {
   title: 'Promo Spesial!',
   description: 'Dapatkan diskon 20% untuk semua pembelian produk digital hari ini. Jangan lewatkan kesempatan ini!',
   buttonText: 'Lihat Promo',
-  buttonLink: '/digital-products'
+  buttonLink: '/digital-products',
+  promoVersion: 1,
 };
 
 
