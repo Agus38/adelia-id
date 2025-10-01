@@ -2,6 +2,7 @@
 'use client';
 
 import { ProductGrid } from '@/components/digital-products/product-grid';
+import { UserBalanceCard } from '@/components/digital-products/pulsa/user-balance-card';
 import { usePageAccess } from '@/hooks/use-page-access';
 import { Loader2 } from 'lucide-react';
 
@@ -27,6 +28,10 @@ export default function DigitalProductsPage() {
         <p className="text-muted-foreground">
           Pilih layanan produk digital yang Anda butuhkan.
         </p>
+      </div>
+
+      <div className="flex justify-center">
+        <UserBalanceCard />
       </div>
 
       <div className="pt-6">
