@@ -14,20 +14,19 @@ export default function AdminLayout({
   const { user, loading } = useUserStore();
 
   React.useEffect(() => {
-    // Tunggu hingga data selesai dimuat
     if (loading) {
       return;
     }
 
-    // Jika tidak ada pengguna yang login sama sekali, alihkan ke halaman login
     if (!user) {
       router.push('/login');
+    } else if (user.role !== 'Admin') {
+      router.push('/unauthorized');
     }
   }, [user, loading, router]);
 
-
-  // Tampilkan layar pemuatan selama data dimuat atau sebelum pengalihan terjadi
-  if (loading || !user) {
+  // While loading or if user is not an admin (before redirect finishes), show loading.
+  if (loading || !user || user.role !== 'Admin') {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -35,6 +34,6 @@ export default function AdminLayout({
     );
   }
 
-  // Jika sudah login (peran apa pun), izinkan akses
+  // If user is logged in and is an Admin, show the admin content.
   return <>{children}</>;
 }
