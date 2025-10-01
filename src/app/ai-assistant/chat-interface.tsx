@@ -11,6 +11,17 @@ import { useUserStore } from '@/lib/user-store';
 import { Bot, Send, User, Sparkles, Trash2, Loader2, AudioLines } from 'lucide-react';
 import { useRef, useState, useTransition, useEffect } from 'react';
 import { useAboutInfoConfig, useDeveloperInfoConfig, useMenuConfig } from '@/lib/menu-store';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Message {
   role: 'user' | 'model';
@@ -138,10 +149,28 @@ export function ChatInterface() {
       <CardHeader className='flex-row justify-between items-center'>
         <p className="text-muted-foreground">Mulai percakapan dengan Asisten AI Nexus.</p>
         {messages.length > 0 && (
-            <Button variant="outline" size="sm" onClick={handleClearChat} disabled={isPending}>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" disabled={isPending}>
                 <Trash2 className="h-4 w-4 mr-2"/>
                 Bersihkan
-            </Button>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Hapus Riwayat Percakapan?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tindakan ini tidak dapat dibatalkan. Seluruh percakapan Anda dengan Nexus akan dihapus secara permanen.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClearChat}>
+                  Ya, Hapus
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
