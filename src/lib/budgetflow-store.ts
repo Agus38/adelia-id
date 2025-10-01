@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { create } from 'zustand';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, where, serverTimestamp, Timestamp, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
 import { useUserStore } from './user-store';
 
