@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Copy, ShieldCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
 const firestoreRules = `rules_version = '2';
 
@@ -59,6 +60,16 @@ service cloud.firestore {
       // Only Admin can list/delete reports
       allow delete, list: if isDbAdmin();
     }
+    
+    // Rules for BudgetFlow feature
+    match /budgetflow/{userId}/transactions/{transactionId} {
+    	// Users can only access their own transactions
+      allow read, write, delete: if request.auth.uid == userId;
+    }
+    match /budgetflow/{userId}/budgets/{budgetId} {
+    	// Users can only access their own budgets
+      allow read, write, delete: if request.auth.uid == userId;
+    }
 
     // Rules for SMW Manyar reports
     match /smwManyarReports/{reportId} {
@@ -107,8 +118,24 @@ service cloud.firestore {
 `;
 
 export default function FirestoreRulesPage() {
-  
   const { toast } = useToast();
+  const [lastUpdated, setLastUpdated] = useState('');
+
+  useEffect(() => {
+    // This runs on the client-side, ensuring the date is current for the user.
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+    });
+    const formattedTime = now.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    });
+    setLastUpdated(`${formattedDate}, ${formattedTime} WIB`);
+  }, []);
   
   const handleCopyRules = () => {
     navigator.clipboard.writeText(firestoreRules.trim());
@@ -117,6 +144,8 @@ export default function FirestoreRulesPage() {
       description: 'Aturan keamanan Firestore telah disalin ke clipboard.',
     });
   };
+
+  const characterCount = firestoreRules.trim().length;
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -129,10 +158,9 @@ export default function FirestoreRulesPage() {
       </p>
       
        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>PENTING: Segera Perbarui Aturan Anda!</AlertTitle>
           <AlertDescription>
-            Aturan keamanan telah diubah untuk memperbaiki masalah izin akses dan fitur blokir. Anda **WAJIB** menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong>.
+            Aturan keamanan telah diubah untuk mengakomodasi fitur BudgetFlow. Anda **WAJIB** menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan data keuangan Anda aman.
           </AlertDescription>
        </Alert>
        
@@ -148,7 +176,9 @@ export default function FirestoreRulesPage() {
         <CardHeader>
           <CardTitle>Konten file firestore.rules</CardTitle>
           <CardDescription>
-            Klik tombol di bawah untuk menyalin seluruh konten aturan keamanan yang baru.
+            Klik tombol di bawah untuk menyalin seluruh konten aturan. Total karakter: <strong>{characterCount}</strong>.
+            <br />
+            {lastUpdated ? `Terakhir diperbarui (real-time): ${lastUpdated}` : ''}
           </CardDescription>
         </CardHeader>
         <CardContent>

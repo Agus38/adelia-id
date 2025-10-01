@@ -8,6 +8,7 @@ import type { User } from 'firebase/auth';
 import { useSessionManager } from '@/hooks/use-session-manager';
 import { AppSidebar } from '@/components/layout/sidebar';
 import { useUserStore } from '@/lib/user-store';
+import { useBudgetflowData } from '@/lib/budgetflow-store';
 
 export type UserProfile = User & {
   id?: string;
@@ -19,7 +20,9 @@ export type UserProfile = User & {
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { initializeUserListener } = useUserStore();
-
+  
+  // This hook will initialize the BudgetFlow data listeners when a user logs in.
+  useBudgetflowData();
   useSessionManager();
 
   useEffect(() => {
