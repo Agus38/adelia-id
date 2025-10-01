@@ -36,22 +36,43 @@ import { useBudgetflowStore, type Transaction, deleteTransaction } from '@/lib/b
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { AddTransactionDialog } from '../add-transaction-dialog';
+import { AddTransactionDialog } from './add-transaction-dialog';
+import type { DateRange } from 'react-day-picker';
+import { endOfDay } from 'date-fns';
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 };
 
-export function TransactionsView() {
+interface DataTableProps {
+    dateRange?: DateRange;
+}
+
+export function DataTable({ dateRange }: DataTableProps) {
   const { transactions, loading } = useBudgetflowStore();
   const { toast } = useToast();
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'date', desc: true }]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  
   const [isDeleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [transactionToDelete, setTransactionToDelete] = React.useState<Transaction | null>(null);
 
   const [isEditDialogOpen, setEditDialogOpen] = React.useState(false);
   const [transactionToEdit, setTransactionToEdit] = React.useState<Transaction | null>(null);
+
+  const filteredTransactions = React.useMemo(() => {
+    const { from, to } = dateRange || {};
+    return transactions.filter(tx => {
+        if (!from && !to) return true;
+        const txDate = tx.date instanceof Date ? tx.date : tx.date.toDate();
+        const endDate = to ? endOfDay(to) : undefined;
+        if (from && endDate) return txDate >= from && txDate <= endDate;
+        if (from) return txDate >= from;
+        if (endDate) return txDate <= endDate;
+        return true;
+    });
+  }, [transactions, dateRange]);
+
 
   const handleDelete = (transaction: Transaction) => {
     setTransactionToDelete(transaction);
@@ -127,7 +148,7 @@ export function TransactionsView() {
   ];
 
   const table = useReactTable({
-    data: transactions,
+    data: filteredTransactions,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -135,10 +156,7 @@ export function TransactionsView() {
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    state: {
-      sorting,
-      columnFilters,
-    },
+    state: { sorting, columnFilters },
   });
 
   return (
@@ -147,9 +165,7 @@ export function TransactionsView() {
         <Input
           placeholder="Cari deskripsi..."
           value={(table.getColumn('description')?.getFilterValue() as string) ?? ''}
-          onChange={(event) =>
-            table.getColumn('description')?.setFilterValue(event.target.value)
-          }
+          onChange={(event) => table.getColumn('description')?.setFilterValue(event.target.value)}
           className="max-w-sm"
         />
       </div>
@@ -161,12 +177,7 @@ export function TransactionsView() {
                 <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
                     <TableHead key={header.id}>
-                        {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                            )}
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                     ))}
                 </TableRow>
@@ -179,40 +190,20 @@ export function TransactionsView() {
                 table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
+                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                     ))}
                     </TableRow>
                 ))
                 ) : (
-                <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
-                    Tidak ada hasil.
-                    </TableCell>
-                </TableRow>
+                <TableRow><TableCell colSpan={columns.length} className="h-24 text-center">Tidak ada transaksi ditemukan.</TableCell></TableRow>
                 )}
             </TableBody>
             </Table>
         </div>
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Sebelumnya
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Selanjutnya
-        </Button>
+        <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>Sebelumnya</Button>
+        <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Selanjutnya</Button>
       </div>
 
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -228,15 +219,11 @@ export function TransactionsView() {
             </AlertDialogContent>
        </AlertDialog>
 
-        {transactionToEdit && (
-            <AddTransactionDialog
-                open={isEditDialogOpen}
-                onOpenChange={setEditDialogOpen}
-                transactionToEdit={transactionToEdit}
-            >
+       {transactionToEdit && (
+            <AddTransactionDialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen} transactionToEdit={transactionToEdit}>
               <div />
             </AddTransactionDialog>
-        )}
+       )}
     </div>
   );
 }

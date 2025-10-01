@@ -2,108 +2,84 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
-import { RecentTransactionsTable } from "./recent-transactions-table";
-import { SummaryChart } from "./summary-chart";
+import { Button } from '@/components/ui/button';
+import { Loader2, TrendingUp, BarChart2, Table } from 'lucide-react';
 import { useBudgetflowStore } from '@/lib/budgetflow-store';
-import { format } from 'date-fns';
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(value);
-};
+import { SummaryCards } from './summary-cards';
+import { ChartsView } from './charts-view';
+import { DataTable } from './data-table';
+import { AddTransactionButton } from './add-transaction-dialog';
+import { DateRangePicker } from './date-range-picker';
+import type { DateRange } from 'react-day-picker';
+import { subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 
 export function BudgetFlowDashboard() {
-  const { transactions, loading } = useBudgetflowStore();
-
-  const summary = React.useMemo(() => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    let totalIncome = 0;
-    let totalExpenses = 0;
-    let balance = 0;
-
-    transactions.forEach(tx => {
-      balance += tx.type === 'income' ? tx.amount : -tx.amount;
-      const txDate = tx.date instanceof Date ? tx.date : tx.date.toDate();
-      if (txDate >= startOfMonth) {
-        if (tx.type === 'income') {
-          totalIncome += tx.amount;
-        } else {
-          totalExpenses += tx.amount;
-        }
-      }
-    });
-
-    return { balance, totalIncome, totalExpenses };
-  }, [transactions]);
+  const { loading } = useBudgetflowStore();
+  const [viewMode, setViewMode] = React.useState<'chart' | 'table'>('chart');
   
-  if (loading) {
-    return (
-        <div className="flex h-64 w-full items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-    );
-  }
+  const [date, setDate] = React.useState<DateRange | undefined>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
+
+  const presetRanges = [
+    { label: 'Bulan Ini', range: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) } },
+    { label: '7 Hari Terakhir', range: { from: subDays(new Date(), 6), to: new Date() } },
+    { label: '30 Hari Terakhir', range: { from: subDays(new Date(), 29), to: new Date() } },
+    { label: 'Tahun Ini', range: { from: startOfYear(new Date()), to: endOfYear(new Date()) } },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Saldo Saat Ini</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(summary.balance)}</div>
-            <p className="text-xs text-muted-foreground">Total saldo yang Anda miliki</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pemasukan ({format(new Date(), 'MMMM')})</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-500">{formatCurrency(summary.totalIncome)}</div>
-             <p className="text-xs text-muted-foreground">Pemasukan bulan ini</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pengeluaran ({format(new Date(), 'MMMM')})</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-500">{formatCurrency(summary.totalExpenses)}</div>
-             <p className="text-xs text-muted-foreground">Pengeluaran bulan ini</p>
-          </CardContent>
-        </Card>
+    <div className="relative flex flex-1 flex-col">
+      <div className="flex-1 space-y-6 p-4 pt-6 md:p-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="rounded-lg bg-primary/10 p-3">
+              <TrendingUp className="h-7 w-7 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                BudgetFlow
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Dasbor keuangan pribadi Anda.
+              </p>
+            </div>
+          </div>
+           <div className="flex flex-col-reverse items-stretch gap-4 sm:flex-row sm:items-center">
+             <div className="flex items-center gap-2">
+                <Button variant={viewMode === 'chart' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('chart')}>
+                    <BarChart2 className="mr-2 h-4 w-4" />
+                    Grafik
+                </Button>
+                <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('table')}>
+                    <Table className="mr-2 h-4 w-4" />
+                    Tabel
+                </Button>
+             </div>
+              <DateRangePicker date={date} setDate={setDate} presetRanges={presetRanges} />
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex h-64 w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <SummaryCards dateRange={date} />
+            
+            {viewMode === 'chart' ? (
+                <ChartsView dateRange={date} />
+            ) : (
+                <DataTable dateRange={date} />
+            )}
+          </div>
+        )}
       </div>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Transaksi Terbaru</CardTitle>
-            <CardDescription>Daftar 5 transaksi terakhir Anda.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RecentTransactionsTable />
-          </CardContent>
-        </Card>
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Ringkasan Pengeluaran</CardTitle>
-            <CardDescription>Distribusi pengeluaran bulan ini.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SummaryChart />
-          </CardContent>
-        </Card>
+
+      <div className="fixed bottom-6 right-6 z-50 md:bottom-8 md:right-8">
+        <AddTransactionButton />
       </div>
     </div>
   );

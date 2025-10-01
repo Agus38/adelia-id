@@ -28,6 +28,7 @@ import { addTransaction, updateTransaction, type Transaction, type TransactionTy
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Combobox } from '../ui/combobox';
 
+// --- Transaction Form ---
 interface TransactionFormProps {
   type: TransactionType;
   onSaveSuccess: () => void;
@@ -51,14 +52,12 @@ function TransactionForm({ type, onSaveSuccess, transactionToEdit }: Transaction
         setCategory(transactionToEdit.category);
         setDate(transactionToEdit.date instanceof Date ? transactionToEdit.date : transactionToEdit.date.toDate());
     } else {
-        // Reset form if switching tabs or no item to edit
         setDescription('');
         setAmount('');
         setCategory('');
         setDate(new Date());
     }
   }, [transactionToEdit, type]);
-
 
   const handleSave = async () => {
     if (!description || !amount || !category || !date || !user) {
@@ -79,13 +78,12 @@ function TransactionForm({ type, onSaveSuccess, transactionToEdit }: Transaction
 
         if (transactionToEdit) {
             await updateTransaction(user.uid, transactionToEdit.id, transactionData);
-            toast({ title: 'Transaksi Diperbarui', description: 'Transaksi telah berhasil diperbarui.' });
+            toast({ title: 'Transaksi Diperbarui' });
         } else {
             await addTransaction(transactionData);
-            toast({ title: 'Transaksi Disimpan', description: 'Transaksi baru telah berhasil ditambahkan.' });
+            toast({ title: 'Transaksi Disimpan' });
         }
         
-        // Add category if it's new
         const currentCategories = type === 'income' ? incomeCategories : expenseCategories;
         if (!currentCategories.some(c => c.value.toLowerCase() === category.trim().toLowerCase())) {
             await addCategory(user.uid, category.trim(), type);
@@ -93,14 +91,14 @@ function TransactionForm({ type, onSaveSuccess, transactionToEdit }: Transaction
         
         onSaveSuccess();
     } catch (error) {
-        toast({ title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan transaksi.', variant: 'destructive' });
+        toast({ title: 'Gagal Menyimpan', variant: 'destructive' });
     } finally {
         setIsSaving(false);
     }
   };
   
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, ''); // Remove non-digit characters
+    const value = e.target.value.replace(/\D/g, '');
     setAmount(value);
   };
   
@@ -109,11 +107,10 @@ function TransactionForm({ type, onSaveSuccess, transactionToEdit }: Transaction
     return Number(value).toLocaleString('id-ID');
   };
 
-
   const categories = type === 'income' ? incomeCategories : expenseCategories;
   
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pt-2">
       <div className="space-y-2">
         <Label htmlFor={`${type}-description`}>Deskripsi</Label>
         <Input id={`${type}-description`} placeholder={`Contoh: ${type === 'income' ? 'Gaji bulanan' : 'Beli makan siang'}`} value={description} onChange={(e) => setDescription(e.target.value)} />
@@ -121,51 +118,29 @@ function TransactionForm({ type, onSaveSuccess, transactionToEdit }: Transaction
       <div className="space-y-2">
         <Label htmlFor={`${type}-amount`}>Jumlah</Label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-            Rp
-          </span>
-          <Input 
-            id={`${type}-amount`} 
-            type="text" 
-            inputMode="numeric"
-            placeholder="0" 
-            className="pl-8" 
-            value={formatDisplayValue(amount)} 
-            onChange={handleAmountChange} />
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+          <Input id={`${type}-amount`} type="text" inputMode="numeric" placeholder="0" className="pl-8" value={formatDisplayValue(amount)} onChange={handleAmountChange} />
         </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor={`${type}-category`}>Kategori</Label>
-        <Combobox
-            options={categories}
-            value={category}
-            onChange={setCategory}
-            placeholder="Pilih atau buat kategori"
-            searchPlaceholder="Cari kategori..."
-            emptyPlaceholder="Kategori tidak ditemukan."
-        />
-      </div>
-       <div className="space-y-2">
-            <Label htmlFor={`${type}-date`}>Tanggal Transaksi</Label>
+       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+         <div className="space-y-2">
+            <Label htmlFor={`${type}-category`}>Kategori</Label>
+            <Combobox options={categories} value={category} onChange={setCategory} placeholder="Pilih atau buat kategori" searchPlaceholder="Cari kategori..." emptyPlaceholder="Kategori tidak ditemukan." />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${type}-date`}>Tanggal</Label>
              <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  variant={'outline'}
-                  className={cn(
-                    'w-full justify-start text-left font-normal',
-                    !date && 'text-muted-foreground'
-                  )}
-                >
+                <Button variant={'outline'} className={cn('w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {date ? format(date, 'PPP', { locale: id }) : <span>Pilih tanggal</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar mode="single" selected={date} onSelect={setDate} initialFocus locale={id} />
-              </PopoverContent>
+              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={date} onSelect={setDate} initialFocus locale={id} /></PopoverContent>
             </Popover>
         </div>
-      <DialogFooter className="pt-4">
+       </div>
+      <DialogFooter className="pt-6">
         <Button onClick={handleSave} disabled={isSaving} className="w-full">
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {transactionToEdit ? 'Simpan Perubahan' : 'Simpan Transaksi'}
@@ -175,6 +150,7 @@ function TransactionForm({ type, onSaveSuccess, transactionToEdit }: Transaction
   );
 }
 
+// --- Main Dialog Component ---
 interface AddTransactionDialogProps {
     children: React.ReactNode;
     transactionToEdit?: Transaction | null;
@@ -182,82 +158,58 @@ interface AddTransactionDialogProps {
     onOpenChange?: (open: boolean) => void;
 }
 
-
 export function AddTransactionDialog({ children, transactionToEdit, open, onOpenChange }: AddTransactionDialogProps) {
-
   const handleSaveSuccess = () => {
-    if (onOpenChange) {
-        onOpenChange(false);
-    }
+    if (onOpenChange) onOpenChange(false);
   };
   
   const defaultTab = transactionToEdit?.type || 'expense';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        {children}
+      {children}
       <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{transactionToEdit ? 'Edit Transaksi' : 'Tambah Transaksi Baru'}</DialogTitle>
+          <DialogDescription>{transactionToEdit ? 'Ubah detail transaksi Anda.' : 'Pilih jenis transaksi dan isi detail di bawah ini.'}</DialogDescription>
+        </DialogHeader>
         <Tabs defaultValue={defaultTab} className="w-full">
-          <DialogHeader className="mb-4">
-            <DialogTitle>{transactionToEdit ? 'Edit Transaksi' : 'Tambah Transaksi Baru'}</DialogTitle>
-            <DialogDescription>
-              {transactionToEdit ? 'Ubah detail transaksi Anda.' : 'Pilih jenis transaksi dan isi detail di bawah ini.'}
-            </DialogDescription>
-            <TabsList className="grid w-full grid-cols-2 mt-4">
-              <TabsTrigger value="expense">Pengeluaran</TabsTrigger>
-              <TabsTrigger value="income">Pemasukan</TabsTrigger>
-            </TabsList>
-          </DialogHeader>
-          
-          <TabsContent value="expense" className="space-y-4">
-            <TransactionForm type="expense" onSaveSuccess={handleSaveSuccess} transactionToEdit={transactionToEdit} />
-          </TabsContent>
-          <TabsContent value="income" className="space-y-4">
-            <TransactionForm type="income" onSaveSuccess={handleSaveSuccess} transactionToEdit={transactionToEdit} />
-          </TabsContent>
+          <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="expense">Pengeluaran</TabsTrigger><TabsTrigger value="income">Pemasukan</TabsTrigger></TabsList>
+          <TabsContent value="expense"><TransactionForm type="expense" onSaveSuccess={handleSaveSuccess} transactionToEdit={transactionToEdit} /></TabsContent>
+          <TabsContent value="income"><TransactionForm type="income" onSaveSuccess={handleSaveSuccess} transactionToEdit={transactionToEdit} /></TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
   );
 }
 
+// --- Floating Action Button (FAB) ---
 export function AddTransactionButton() {
     return (
       <Dialog>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-                <DialogTrigger asChild>
-                    <Button size="icon" className="h-14 w-14 rounded-full shadow-lg">
-                        <PlusCircle className="h-6 w-6" />
-                        <span className="sr-only">Tambah Transaksi</span>
-                    </Button>
-                </DialogTrigger>
+              <DialogTrigger asChild>
+                <Button size="icon" className="h-14 w-14 rounded-full shadow-lg">
+                  <PlusCircle className="h-6 w-6" />
+                  <span className="sr-only">Tambah Transaksi</span>
+                </Button>
+              </DialogTrigger>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>Tambah Transaksi</p>
-            </TooltipContent>
+            <TooltipContent><p>Tambah Transaksi</p></TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
         <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tambah Transaksi Baru</DialogTitle>
+            <DialogDescription>Pilih jenis transaksi dan isi detail di bawah ini.</DialogDescription>
+          </DialogHeader>
           <Tabs defaultValue="expense" className="w-full">
-            <DialogHeader className="mb-4">
-              <DialogTitle>Tambah Transaksi Baru</DialogTitle>
-              <DialogDescription>
-                Pilih jenis transaksi dan isi detail di bawah ini.
-              </DialogDescription>
-              <TabsList className="grid w-full grid-cols-2 mt-4">
-                <TabsTrigger value="expense">Pengeluaran</TabsTrigger>
-                <TabsTrigger value="income">Pemasukan</TabsTrigger>
-              </TabsList>
-            </DialogHeader>
-            <TabsContent value="expense" className="space-y-4">
-              <TransactionForm type="expense" onSaveSuccess={() => {}} />
-            </TabsContent>
-            <TabsContent value="income" className="space-y-4">
-              <TransactionForm type="income" onSaveSuccess={() => {}} />
-            </TabsContent>
+            <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="expense">Pengeluaran</TabsTrigger><TabsTrigger value="income">Pemasukan</TabsTrigger></TabsList>
+            <TabsContent value="expense"><TransactionForm type="expense" onSaveSuccess={() => {}} /></TabsContent>
+            <TabsContent value="income"><TransactionForm type="income" onSaveSuccess={() => {}} /></TabsContent>
           </Tabs>
         </DialogContent>
       </Dialog>
