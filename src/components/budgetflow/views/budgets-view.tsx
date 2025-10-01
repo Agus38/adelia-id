@@ -7,19 +7,19 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { PlusCircle, Loader2, Target, MoreVertical, Edit, Trash2 } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { useBudgetflowStore, expenseCategories, addBudget, updateBudget, deleteBudget, type Budget } from '@/lib/budgetflow-store';
+import { useBudgetflowStore, addBudget, updateBudget, deleteBudget, type Budget } from '@/lib/budgetflow-store';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Combobox } from '@/components/ui/combobox';
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 };
 
 export function BudgetsView() {
-  const { budgets, transactions, loading } = useBudgetflowStore();
+  const { budgets, transactions, loading, expenseCategories } = useBudgetflowStore();
   const { toast } = useToast();
 
   const [isDialogOpen, setDialogOpen] = React.useState(false);
@@ -95,7 +95,7 @@ export function BudgetsView() {
     return Number(value).toLocaleString('id-ID');
   };
   
-  const availableCategories = expenseCategories.filter(cat => !budgets.some(b => b.category === cat && b.id !== editingBudget?.id));
+  const availableCategories = expenseCategories.filter(cat => !budgets.some(b => b.category === cat.value && b.id !== editingBudget?.id));
 
   return (
     <Card>
@@ -124,15 +124,14 @@ export function BudgetsView() {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="category">Kategori</Label>
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={!!editingBudget}>
-                      <SelectTrigger id="category">
-                        <SelectValue placeholder="Pilih kategori pengeluaran" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {editingBudget && <SelectItem value={editingBudget.category}>{editingBudget.category}</SelectItem>}
-                        {availableCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                     <Combobox
+                        options={availableCategories}
+                        value={selectedCategory}
+                        onChange={setSelectedCategory}
+                        placeholder="Pilih kategori pengeluaran"
+                        searchPlaceholder="Cari kategori..."
+                        emptyPlaceholder="Kategori tidak ditemukan."
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="amount">Jumlah Anggaran</Label>

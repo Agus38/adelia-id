@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useBudgetflowStore, expenseCategories } from '@/lib/budgetflow-store';
+import { useBudgetflowStore } from '@/lib/budgetflow-store';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 
@@ -23,7 +23,7 @@ const chartConfig = {
 
 
 export function ReportsView() {
-  const { transactions } = useBudgetflowStore();
+  const { transactions, expenseCategories } = useBudgetflowStore();
   const [selectedMonth, setSelectedMonth] = React.useState(String(new Date().getMonth()));
   const [selectedYear, setSelectedYear] = React.useState(String(new Date().getFullYear()));
 
@@ -54,8 +54,8 @@ export function ReportsView() {
     let totalIncome = 0;
     let totalExpenses = 0;
     const expensesByCategory: { [key: string]: number } = {};
-
-    expenseCategories.forEach(cat => expensesByCategory[cat] = 0);
+    
+    expenseCategories.forEach(cat => expensesByCategory[cat.value] = 0);
 
     filteredTransactions.forEach(tx => {
       if (tx.type === 'income') {
@@ -64,8 +64,6 @@ export function ReportsView() {
         totalExpenses += tx.amount;
         if(expensesByCategory[tx.category] !== undefined) {
              expensesByCategory[tx.category] += tx.amount;
-        } else {
-             expensesByCategory['Lainnya'] += tx.amount;
         }
       }
     });
@@ -76,7 +74,7 @@ export function ReportsView() {
       .sort((a, b) => b.amount - a.amount);
 
     return { totalIncome, totalExpenses, netSavings: totalIncome - totalExpenses, chartData };
-  }, [transactions, selectedMonth, selectedYear]);
+  }, [transactions, selectedMonth, selectedYear, expenseCategories]);
 
   return (
     <div className="space-y-6">

@@ -14,13 +14,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -31,9 +24,9 @@ import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useUserStore } from '@/lib/user-store';
-import { addTransaction, updateTransaction, type Transaction, type TransactionType } from '@/lib/budgetflow-store';
-import { incomeCategories, expenseCategories } from '@/lib/budgetflow-store';
+import { addTransaction, updateTransaction, type Transaction, type TransactionType, useBudgetflowStore, addCategory } from '@/lib/budgetflow-store';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Combobox } from '../ui/combobox';
 
 interface TransactionFormProps {
   type: TransactionType;
@@ -49,6 +42,7 @@ function TransactionForm({ type, onSaveSuccess, transactionToEdit }: Transaction
   const [isSaving, setIsSaving] = React.useState(false);
   const { user } = useUserStore();
   const { toast } = useToast();
+  const { incomeCategories, expenseCategories } = useBudgetflowStore();
 
   React.useEffect(() => {
     if (transactionToEdit && transactionToEdit.type === type) {
@@ -79,7 +73,7 @@ function TransactionForm({ type, onSaveSuccess, transactionToEdit }: Transaction
             type,
             description,
             amount: parseFloat(amount),
-            category,
+            category: category.trim(),
             date,
         };
 
@@ -89,6 +83,12 @@ function TransactionForm({ type, onSaveSuccess, transactionToEdit }: Transaction
         } else {
             await addTransaction(transactionData);
             toast({ title: 'Transaksi Disimpan', description: 'Transaksi baru telah berhasil ditambahkan.' });
+        }
+        
+        // Add category if it's new
+        const currentCategories = type === 'income' ? incomeCategories : expenseCategories;
+        if (!currentCategories.some(c => c.value.toLowerCase() === category.trim().toLowerCase())) {
+            await addCategory(user.uid, category.trim(), type);
         }
         
         onSaveSuccess();
@@ -136,18 +136,14 @@ function TransactionForm({ type, onSaveSuccess, transactionToEdit }: Transaction
       </div>
       <div className="space-y-2">
         <Label htmlFor={`${type}-category`}>Kategori</Label>
-        <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger id={`${type}-category`}>
-            <SelectValue placeholder="Pilih kategori" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Combobox
+            options={categories}
+            value={category}
+            onChange={setCategory}
+            placeholder="Pilih atau buat kategori"
+            searchPlaceholder="Cari kategori..."
+            emptyPlaceholder="Kategori tidak ditemukan."
+        />
       </div>
        <div className="space-y-2">
             <Label htmlFor={`${type}-date`}>Tanggal Transaksi</Label>
@@ -227,44 +223,43 @@ export function AddTransactionDialog({ children, transactionToEdit, open, onOpen
 
 export function AddTransactionButton() {
     return (
-        <Dialog>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                    <DialogTrigger asChild>
-                        <Button size="icon" className="h-14 w-14 rounded-full shadow-lg">
-                            <PlusCircle className="h-6 w-6" />
-                            <span className="sr-only">Tambah Transaksi</span>
-                        </Button>
-                    </DialogTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Tambah Transaksi</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+      <Dialog>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+                <DialogTrigger asChild>
+                    <Button size="icon" className="h-14 w-14 rounded-full shadow-lg">
+                        <PlusCircle className="h-6 w-6" />
+                        <span className="sr-only">Tambah Transaksi</span>
+                    </Button>
+                </DialogTrigger>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Tambah Transaksi</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-            <DialogContent className="sm:max-w-md">
-                <Tabs defaultValue="expense" className="w-full">
-                <DialogHeader className="mb-4">
-                    <DialogTitle>Tambah Transaksi Baru</DialogTitle>
-                    <DialogDescription>
-                    Pilih jenis transaksi dan isi detail di bawah ini.
-                    </DialogDescription>
-                    <TabsList className="grid w-full grid-cols-2 mt-4">
-                    <TabsTrigger value="expense">Pengeluaran</TabsTrigger>
-                    <TabsTrigger value="income">Pemasukan</TabsTrigger>
-                    </TabsList>
-                </DialogHeader>
-                
-                <TabsContent value="expense" className="space-y-4">
-                    <TransactionForm type="expense" onSaveSuccess={() => {}} />
-                </TabsContent>
-                <TabsContent value="income" className="space-y-4">
-                    <TransactionForm type="income" onSaveSuccess={() => {}} />
-                </TabsContent>
-                </Tabs>
-            </DialogContent>
-        </Dialog>
-    )
+        <DialogContent className="sm:max-w-md">
+          <Tabs defaultValue="expense" className="w-full">
+            <DialogHeader className="mb-4">
+              <DialogTitle>Tambah Transaksi Baru</DialogTitle>
+              <DialogDescription>
+                Pilih jenis transaksi dan isi detail di bawah ini.
+              </DialogDescription>
+              <TabsList className="grid w-full grid-cols-2 mt-4">
+                <TabsTrigger value="expense">Pengeluaran</TabsTrigger>
+                <TabsTrigger value="income">Pemasukan</TabsTrigger>
+              </TabsList>
+            </DialogHeader>
+            <TabsContent value="expense" className="space-y-4">
+              <TransactionForm type="expense" onSaveSuccess={() => {}} />
+            </TabsContent>
+            <TabsContent value="income" className="space-y-4">
+              <TransactionForm type="income" onSaveSuccess={() => {}} />
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+    );
 }
