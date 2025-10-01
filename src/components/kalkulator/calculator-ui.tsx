@@ -63,7 +63,6 @@ export function CalculatorUI() {
       setFirstOperand(result);
       setHistory(prev => prev + formatNumber(displayValue) + ` ${nextOperator} `);
     } else {
-      // This handles cases like 5 * = 25, then pressing another operator
       setFirstOperand(inputValue);
       setHistory(formatNumber(displayValue) + ` ${nextOperator} `);
     }
@@ -171,9 +170,11 @@ export function CalculatorUI() {
     <Card className="p-4 bg-background shadow-neumorphic-light rounded-3xl">
       <CardContent className="p-0">
         <div className="h-28 flex flex-col items-end justify-end p-4 rounded-2xl bg-muted shadow-neumorphic-light-inset mb-4">
-           <p className="font-sans font-medium text-lg text-muted-foreground h-7 truncate w-full text-right">
-             {history || ' '}
-           </p>
+           <div className="flex justify-end w-full h-7 overflow-hidden">
+            <p className="font-sans font-medium text-lg text-muted-foreground whitespace-nowrap shrink min-w-0">
+                {history || ' '}
+            </p>
+           </div>
           <p className={cn(
               "font-sans font-bold text-right break-all w-full",
               getFontSize()
