@@ -15,10 +15,16 @@ export function CalculatorUI() {
   const [waitingForSecondOperand, setWaitingForSecondOperand] = useState(false);
   const [history, setHistory] = useState('');
 
-  const formatNumber = (num: number) => {
-      return num.toLocaleString('id-ID', { maximumFractionDigits: 10 });
+  const formatNumber = (numStr: string) => {
+    const [integerPart, decimalPart] = numStr.split('.');
+    const formattedInteger = parseFloat(integerPart).toLocaleString('id-ID');
+    return decimalPart ? `${formattedInteger},${decimalPart}` : formattedInteger;
   };
 
+  const parseFormattedNumber = (numStr: string) => {
+    return numStr.replace(/\./g, '').replace(',', '.');
+  };
+  
   const inputDigit = (digit: string) => {
     if (waitingForSecondOperand) {
       setDisplayValue(digit);
@@ -30,6 +36,11 @@ export function CalculatorUI() {
   };
 
   const inputDecimal = () => {
+    if (waitingForSecondOperand) {
+      setDisplayValue('0.');
+      setWaitingForSecondOperand(false);
+      return;
+    }
     if (!displayValue.includes('.')) {
       setDisplayValue(displayValue + '.');
     }
@@ -38,31 +49,38 @@ export function CalculatorUI() {
   const handleOperator = (nextOperator: string) => {
     const inputValue = parseFloat(displayValue);
 
-    if (operator && waitingForSecondOperand) {
-      setOperator(nextOperator);
-      if (firstOperand !== null) {
-        setHistory(`${formatNumber(firstOperand)} ${nextOperator}`);
-      }
-      return;
+    // Update history with the number that was just on display
+    if (!waitingForSecondOperand) {
+      setHistory(prev => `${prev} ${formatNumber(displayValue)}`);
     }
 
     if (firstOperand === null) {
       setFirstOperand(inputValue);
-      setHistory(`${formatNumber(inputValue)} ${nextOperator}`);
     } else if (operator) {
       const result = calculate(firstOperand, inputValue, operator);
       const resultString = String(parseFloat(result.toPrecision(15)));
       setDisplayValue(resultString);
       setFirstOperand(result);
-      if (nextOperator === '=') {
-          setHistory(`${formatNumber(firstOperand)} ${operator} ${formatNumber(inputValue)} =`);
-      } else {
-          setHistory(`${formatNumber(result)} ${nextOperator}`);
-      }
     }
     
     setWaitingForSecondOperand(true);
     setOperator(nextOperator);
+
+    if (nextOperator === '=') {
+        if(firstOperand !== null && operator) {
+            const result = calculate(firstOperand, inputValue, operator);
+            const resultString = String(parseFloat(result.toPrecision(15)));
+            setHistory(prev => `${prev} =`);
+            setDisplayValue(resultString);
+            setFirstOperand(null);
+            setOperator(null);
+        } else {
+           // If equals is pressed without a prior operator, just finalize the history
+           setHistory(`${formatNumber(displayValue)} =`);
+        }
+    } else {
+        setHistory(prev => `${prev} ${nextOperator}`);
+    }
   };
   
   const calculate = (first: number, second: number, op: string): number => {
@@ -85,6 +103,9 @@ export function CalculatorUI() {
   
   const clearEntry = () => {
     setDisplayValue('0');
+    if (waitingForSecondOperand) {
+        resetCalculator();
+    }
   };
 
   const toggleSign = () => {
@@ -93,26 +114,26 @@ export function CalculatorUI() {
   
   const inputPercent = () => {
      const currentValue = parseFloat(displayValue);
-     if (operator && firstOperand !== null) {
-         // Calculate percentage of the first operand
+     if (firstOperand !== null && operator) {
          const percentageValue = (firstOperand * currentValue) / 100;
          const result = calculate(firstOperand, percentageValue, operator);
-         const resultString = String(parseFloat(result.toPrecision(15)));
          
-         setHistory(`${formatNumber(firstOperand)} ${operator} ${currentValue}% =`);
-         setDisplayValue(resultString);
-         setFirstOperand(result);
+         setHistory(`${history} ${currentValue}% =`);
+         setDisplayValue(String(result));
+         setFirstOperand(null);
          setOperator(null);
          setWaitingForSecondOperand(true);
      } else {
-        // Just calculate percentage of the current value
-        setDisplayValue(String(currentValue / 100));
-        setHistory(`${currentValue}%`);
+        const result = currentValue / 100;
+        setHistory(`${formatNumber(displayValue)}%`);
+        setDisplayValue(String(result));
+        // Keep waiting for an operator
+        setWaitingForSecondOperand(true);
      }
   }
 
   const buttons = [
-    { label: waitingForSecondOperand ? 'C' : 'AC', className: 'bg-red-500/20 hover:bg-red-500/30 text-red-700 dark:text-red-400', action: waitingForSecondOperand ? clearEntry : resetCalculator },
+    { label: 'AC', className: 'bg-red-500/20 hover:bg-red-500/30 text-red-700 dark:text-red-400', action: resetCalculator },
     { label: '±', className: 'bg-muted hover:bg-muted/80', action: toggleSign },
     { label: '%', className: 'bg-muted hover:bg-muted/80', action: inputPercent },
     { label: '÷', className: 'bg-primary/80 hover:bg-primary text-primary-foreground', action: () => handleOperator('÷') },
@@ -145,14 +166,14 @@ export function CalculatorUI() {
     <Card className="p-4 bg-background shadow-neumorphic-light rounded-3xl">
       <CardContent className="p-0">
         <div className="h-28 flex flex-col items-end justify-end p-4 rounded-2xl bg-muted shadow-neumorphic-light-inset mb-4">
-           <p className="font-sans font-medium text-lg text-muted-foreground h-7 truncate">
+           <p className="font-sans font-medium text-lg text-muted-foreground h-7 truncate w-full text-right">
              {history}
            </p>
           <p className={cn(
               "font-sans font-bold text-right break-all w-full",
               getFontSize()
           )}>
-            {parseFloat(displayValue).toLocaleString('id-ID', {maximumFractionDigits: 10})}
+            {formatNumber(displayValue)}
           </p>
         </div>
         <div className="grid grid-cols-4 gap-3">
