@@ -43,6 +43,7 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
+import type { Timestamp } from 'firebase/firestore';
 
 
 const formatCurrency = (value: number) => {
@@ -52,6 +53,18 @@ const formatCurrency = (value: number) => {
 function DebtRecordPaymentDialog({ open, onOpenChange, debt }: { open: boolean, onOpenChange: (open: boolean) => void, debt: Debt }) {
     const [amount, setAmount] = React.useState('');
     const { toast } = useToast();
+
+    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.replace(/[^0-9]/g, '');
+        if (value.length <= 12) {
+            setAmount(value);
+        }
+    };
+    
+    const formatDisplayValue = (value: string) => {
+        if (!value) return '';
+        return Number(value).toLocaleString('id-ID');
+    };
 
     const handleSave = async () => {
         if (!amount || parseFloat(amount) <= 0) {
@@ -78,7 +91,10 @@ function DebtRecordPaymentDialog({ open, onOpenChange, debt }: { open: boolean, 
                  <div className="space-y-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="payment-amount">Jumlah Pembayaran</Label>
-                        <Input id="payment-amount" type="number" placeholder="0" value={amount} onChange={e => setAmount(e.target.value)} />
+                         <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                            <Input id="payment-amount" type="text" inputMode="numeric" placeholder="0" className="pl-8" value={formatDisplayValue(amount)} onChange={handleAmountChange} />
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>
@@ -111,6 +127,18 @@ function DebtFormDialog({ open, onOpenChange, debtToEdit }: { open: boolean, onO
             setDueDate(undefined);
         }
     }, [debtToEdit, open]);
+
+    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.replace(/[^0-9]/g, '');
+        if (value.length <= 12) {
+            setTotalAmount(value);
+        }
+    };
+    
+    const formatDisplayValue = (value: string) => {
+        if (!value) return '';
+        return Number(value).toLocaleString('id-ID');
+    };
 
     const handleSave = async () => {
         if (!name || !totalAmount) {
@@ -160,7 +188,10 @@ function DebtFormDialog({ open, onOpenChange, debtToEdit }: { open: boolean, onO
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="debt-amount">Jumlah Total</Label>
-                        <Input id="debt-amount" type="number" placeholder="0" value={totalAmount} onChange={e => setTotalAmount(e.target.value)} />
+                         <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                            <Input id="debt-amount" type="text" inputMode="numeric" placeholder="0" className="pl-8" value={formatDisplayValue(totalAmount)} onChange={handleAmountChange} />
+                        </div>
                     </div>
                      <div className="space-y-2">
                         <Label>Jatuh Tempo (Opsional)</Label>

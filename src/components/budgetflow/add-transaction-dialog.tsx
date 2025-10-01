@@ -98,8 +98,10 @@ function TransactionForm({ type, onSaveSuccess, transactionToEdit }: Transaction
   };
   
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '');
-    setAmount(value);
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    if (value.length <= 12) { // Limit to 12 digits (trillions)
+      setAmount(value);
+    }
   };
   
   const formatDisplayValue = (value: string) => {
@@ -185,8 +187,10 @@ export function AddTransactionDialog({ children, transactionToEdit, open, onOpen
 
 // --- Floating Action Button (FAB) ---
 export function AddTransactionButton() {
+    const [open, setOpen] = React.useState(false);
+    
     return (
-      <Dialog>
+      <Dialog open={open} onOpenChange={setOpen}>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -208,8 +212,8 @@ export function AddTransactionButton() {
           </DialogHeader>
           <Tabs defaultValue="expense" className="w-full">
             <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="expense">Pengeluaran</TabsTrigger><TabsTrigger value="income">Pemasukan</TabsTrigger></TabsList>
-            <TabsContent value="expense"><TransactionForm type="expense" onSaveSuccess={() => {}} /></TabsContent>
-            <TabsContent value="income"><TransactionForm type="income" onSaveSuccess={() => {}} /></TabsContent>
+            <TabsContent value="expense"><TransactionForm type="expense" onSaveSuccess={() => setOpen(false)} /></TabsContent>
+            <TabsContent value="income"><TransactionForm type="income" onSaveSuccess={() => setOpen(false)} /></TabsContent>
           </Tabs>
         </DialogContent>
       </Dialog>

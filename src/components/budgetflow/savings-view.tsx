@@ -116,6 +116,18 @@ function GoalFormDialog({ open, onOpenChange, goalToEdit }: { open: boolean, onO
         }
     }, [goalToEdit, open]);
 
+    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.replace(/[^0-9]/g, '');
+        if (value.length <= 12) { // Limit to 12 digits
+            setTargetAmount(value);
+        }
+    };
+    
+    const formatDisplayValue = (value: string) => {
+        if (!value) return '';
+        return Number(value).toLocaleString('id-ID');
+    };
+
     const handleSave = async () => {
         if (!name || !targetAmount) {
             toast({ title: "Data tidak lengkap", variant: "destructive" });
@@ -150,7 +162,10 @@ function GoalFormDialog({ open, onOpenChange, goalToEdit }: { open: boolean, onO
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="goal-amount">Jumlah Target</Label>
-                        <Input id="goal-amount" type="number" placeholder="0" value={targetAmount} onChange={e => setTargetAmount(e.target.value)} />
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                            <Input id="goal-amount" type="text" inputMode="numeric" placeholder="0" className="pl-8" value={formatDisplayValue(targetAmount)} onChange={handleAmountChange} />
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>
@@ -167,6 +182,18 @@ function AdjustGoalDialog({ open, onOpenChange, goal }: { open: boolean, onOpenC
     const [amount, setAmount] = React.useState('');
     const [type, setType] = React.useState<'add' | 'subtract'>('add');
     const { toast } = useToast();
+
+    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.replace(/[^0-9]/g, '');
+        if (value.length <= 12) {
+            setAmount(value);
+        }
+    };
+    
+    const formatDisplayValue = (value: string) => {
+        if (!value) return '';
+        return Number(value).toLocaleString('id-ID');
+    };
 
     const handleAdjust = async () => {
         if (!amount) {
@@ -199,7 +226,10 @@ function AdjustGoalDialog({ open, onOpenChange, goal }: { open: boolean, onOpenC
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="adjust-amount">Jumlah</Label>
-                        <Input id="adjust-amount" type="number" placeholder="0" value={amount} onChange={e => setAmount(e.target.value)} />
+                         <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                            <Input id="adjust-amount" type="text" inputMode="numeric" placeholder="0" className="pl-8" value={formatDisplayValue(amount)} onChange={handleAmountChange} />
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>
