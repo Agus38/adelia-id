@@ -147,8 +147,9 @@ export function ReportsView() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="w-full overflow-x-auto">
             {monthlyData.chartData.length > 0 ? (
-                 <ChartContainer config={chartConfig} className="w-full h-[400px]">
+                 <ChartContainer config={chartConfig} className="min-w-[300px] w-full h-[400px]">
                     <BarChart data={monthlyData.chartData} layout="vertical" margin={{ left: 20 }}>
                         <XAxis type="number" hide />
                         <YAxis dataKey="category" type="category" tickLine={false} axisLine={false} tickMargin={10} width={120} />
@@ -161,6 +162,7 @@ export function ReportsView() {
                     <p className="text-muted-foreground">Tidak ada data pengeluaran untuk periode ini.</p>
                 </div>
             )}
+          </div>
         </CardContent>
       </Card>
 

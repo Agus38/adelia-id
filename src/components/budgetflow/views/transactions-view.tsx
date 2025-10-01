@@ -153,7 +153,7 @@ export function TransactionsView() {
           className="max-w-sm"
         />
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -232,8 +232,8 @@ export function TransactionsView() {
                 onOpenChange={setEditDialogOpen}
                 transactionToEdit={transactionToEdit}
             >
-                {/* This is a dummy trigger, the dialog is controlled by state. The child is required but not used as a trigger. */}
-                <div />
+                {/* This is a dummy trigger, the dialog is controlled by state */}
+                <div/>
             </AddTransactionDialog>
         )}
     </div>
