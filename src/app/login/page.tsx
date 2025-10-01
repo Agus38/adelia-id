@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, LogIn, Loader2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -26,8 +26,14 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
-  const { setUserProfile } = useUserStore();
+  const { user, loading: userLoading, setUserProfile } = useUserStore();
   const { loginPageConfig, isLoading: isLoadingConfig } = useLoginPageConfig();
+  
+  useEffect(() => {
+    if (!userLoading && user) {
+      router.push('/');
+    }
+  }, [user, userLoading, router]);
 
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -110,6 +116,14 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+  
+  if (userLoading || user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full lg:grid lg:min-h-[calc(100vh-8rem)] lg:grid-cols-2">

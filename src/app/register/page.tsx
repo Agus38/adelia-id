@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
@@ -16,6 +16,7 @@ import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRegisterPageConfig } from '@/lib/menu-store';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useUserStore } from '@/lib/user-store';
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -29,6 +30,13 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { registerPageConfig, isLoading: isLoadingConfig } = useRegisterPageConfig();
+  const { user, loading: userLoading } = useUserStore();
+
+  useEffect(() => {
+    if (!userLoading && user) {
+      router.push('/');
+    }
+  }, [user, userLoading, router]);
 
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -98,6 +106,14 @@ export default function RegisterPage() {
   };
 
   const isSubmitDisabled = isLoading || !name || !email || !password || !confirmPassword || !termsAccepted;
+
+  if (userLoading || user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
      <div className="w-full lg:grid lg:min-h-[calc(100vh-8rem)] lg:grid-cols-2">
