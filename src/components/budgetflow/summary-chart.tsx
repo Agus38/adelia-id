@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -10,45 +11,68 @@ import {
   ChartLegendContent,
   type ChartConfig,
 } from '@/components/ui/chart';
+import { useBudgetflowStore, expenseCategories } from '@/lib/budgetflow-store';
+import { PackageOpen } from 'lucide-react';
 
-const chartData = [
-  { category: 'Makanan', value: 450, fill: 'var(--color-makanan)' },
-  { category: 'Transportasi', value: 300, fill: 'var(--color-transportasi)' },
-  { category: 'Tagihan', value: 200, fill: 'var(--color-tagihan)' },
-  { category: 'Hiburan', value: 278, fill: 'var(--color-hiburan)' },
-  { category: 'Lainnya', value: 189, fill: 'var(--color-lainnya)' },
+const chartColors = [
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+  'hsl(var(--chart-1) / 0.7)',
+  'hsl(var(--chart-2) / 0.7)',
+  'hsl(var(--chart-3) / 0.7)',
+  'hsl(var(--chart-4) / 0.7)',
+  'hsl(var(--chart-5) / 0.7)',
 ];
 
-const chartConfig = {
-  value: {
-    label: 'Value',
-  },
-  makanan: {
-    label: 'Makanan',
-    color: 'hsl(var(--chart-1))',
-  },
-  transportasi: {
-    label: 'Transportasi',
-    color: 'hsl(var(--chart-2))',
-  },
-  tagihan: {
-    label: 'Tagihan',
-    color: 'hsl(var(--chart-3))',
-  },
-  hiburan: {
-    label: 'Hiburan',
-    color: 'hsl(var(--chart-4))',
-  },
-  lainnya: {
-    label: 'Lainnya',
-    color: 'hsl(var(--chart-5))',
-  },
-} satisfies ChartConfig;
+const generateChartConfig = (data: { category: string; value: number }[]): ChartConfig => {
+  const config: ChartConfig = {
+    value: { label: 'Value' },
+  };
+  data.forEach((item, index) => {
+    config[item.category] = {
+      label: item.category,
+      color: chartColors[index % chartColors.length],
+    };
+  });
+  return config;
+};
 
 export function SummaryChart() {
-  const totalValue = React.useMemo(() => {
-    return chartData.reduce((acc, curr) => acc + curr.value, 0);
-  }, []);
+  const { transactions } = useBudgetflowStore();
+
+  const { chartData, chartConfig } = React.useMemo(() => {
+    const monthlyExpenses: { [key: string]: number } = {};
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+    transactions.forEach(tx => {
+      const txDate = tx.date instanceof Date ? tx.date : tx.date.toDate();
+      if (tx.type === 'expense' && txDate >= startOfMonth) {
+        monthlyExpenses[tx.category] = (monthlyExpenses[tx.category] || 0) + tx.amount;
+      }
+    });
+
+    const data = Object.entries(monthlyExpenses)
+      .map(([category, value]) => ({ category, value }))
+      .filter(item => item.value > 0)
+      .sort((a, b) => b.value - a.value);
+
+    const config = generateChartConfig(data);
+    return { chartData: data, chartConfig: config };
+  }, [transactions]);
+
+
+  if (chartData.length === 0) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full aspect-square text-center text-muted-foreground p-4">
+            <PackageOpen className="h-10 w-10 mb-2" />
+            <p className="text-sm font-medium">Belum Ada Data Pengeluaran</p>
+            <p className="text-xs">Catat pengeluaran bulan ini untuk melihat ringkasannya di sini.</p>
+        </div>
+    );
+  }
 
   return (
     <ChartContainer
@@ -58,7 +82,9 @@ export function SummaryChart() {
       <PieChart>
         <ChartTooltip
           cursor={false}
-          content={<ChartTooltipContent hideLabel />}
+          content={<ChartTooltipContent hideLabel 
+            formatter={(value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value as number)}
+          />}
         />
         <Pie
           data={chartData}
@@ -66,12 +92,11 @@ export function SummaryChart() {
           nameKey="category"
           innerRadius={60}
           strokeWidth={5}
-          labelLine={false}
         >
            {chartData.map((entry, index) => (
              <Cell
               key={`cell-${index}`}
-              fill={entry.fill}
+              fill={chartConfig[entry.category]?.color || chartColors[index % chartColors.length]}
               className="focus:outline-none"
             />
           ))}
