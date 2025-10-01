@@ -11,6 +11,7 @@ import { useUserStore } from '@/lib/user-store';
 import { Bot, Send, User, Sparkles, Trash2, Loader2, AudioLines } from 'lucide-react';
 import { useRef, useState, useTransition, useEffect } from 'react';
 import { useAboutInfoConfig, useDeveloperInfoConfig, useMenuConfig } from '@/lib/menu-store';
+import ReactMarkdown from 'react-markdown';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -207,7 +208,19 @@ export function ChatInterface() {
                 ? 'bg-primary text-primary-foreground' 
                 : 'bg-muted'
             }`}>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+              <div className="prose prose-sm dark:prose-invert max-w-full leading-relaxed">
+                  <ReactMarkdown
+                      components={{
+                          p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                          ul: ({node, ...props}) => <ul className="list-disc list-inside" {...props} />,
+                          ol: ({node, ...props}) => <ol className="list-decimal list-inside" {...props} />,
+                          li: ({node, ...props}) => <li className="pl-2" {...props} />,
+                      }}
+                  >
+                      {msg.content}
+                  </ReactMarkdown>
+              </div>
+
               {msg.role === 'model' && msg.content && (
                   <div className="mt-2 pt-2 border-t border-muted-foreground/20 flex items-center gap-2">
                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handlePlayAudio(msg.content)} disabled={isPending || (isPlaying !== null && isPlaying !== msg.content)}>
