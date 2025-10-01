@@ -232,8 +232,8 @@ export function TransactionsView() {
                 onOpenChange={setEditDialogOpen}
                 transactionToEdit={transactionToEdit}
             >
-                {/* This is a dummy trigger, the dialog is controlled by state */}
-                <></>
+                {/* This is a dummy trigger, the dialog is controlled by state. The child is required but not used as a trigger. */}
+                <div />
             </AddTransactionDialog>
         )}
     </div>
