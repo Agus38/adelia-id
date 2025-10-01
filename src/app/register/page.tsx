@@ -205,7 +205,7 @@ export default function RegisterPage() {
                   className="underline underline-offset-4 hover:text-primary"
                   target="_blank"
                 >
-                  Syarat & Ketentuan
+                  Syarat &amp; Ketentuan
                 </Link>
                 .
               </Label>
