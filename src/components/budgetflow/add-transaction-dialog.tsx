@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -71,6 +72,17 @@ function TransactionForm({ type, onSaveSuccess }: TransactionFormProps) {
         setIsSaving(false);
     }
   };
+  
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-digit characters
+    setAmount(value);
+  };
+  
+  const formatDisplayValue = (value: string) => {
+    if (!value) return '';
+    return Number(value).toLocaleString('id-ID');
+  };
+
 
   const categories = type === 'income' ? incomeCategories : expenseCategories;
   
@@ -86,7 +98,14 @@ function TransactionForm({ type, onSaveSuccess }: TransactionFormProps) {
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
             Rp
           </span>
-          <Input id={`${type}-amount`} type="number" placeholder="0" className="pl-8" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <Input 
+            id={`${type}-amount`} 
+            type="text" 
+            inputMode="numeric"
+            placeholder="0" 
+            className="pl-8" 
+            value={formatDisplayValue(amount)} 
+            onChange={handleAmountChange} />
         </div>
       </div>
       <div className="space-y-2">
