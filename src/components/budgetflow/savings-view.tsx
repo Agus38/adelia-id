@@ -34,6 +34,8 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
+import type { Timestamp } from 'firebase/firestore';
+
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
@@ -223,7 +225,7 @@ export function SavingsView() {
         </div>
         <Button onClick={() => setAddDialogOpen(true)}>
             <PlusCircle className="h-4 w-4 mr-2" />
-            Buat Target Baru
+            Buat Target
         </Button>
       </CardHeader>
       <CardContent>
@@ -237,7 +239,7 @@ export function SavingsView() {
           <div className="flex flex-col items-center justify-center text-center h-48 border-2 border-dashed rounded-lg">
             <PiggyBank className="h-10 w-10 text-muted-foreground mb-2" />
             <p className="font-medium">Belum ada target tabungan.</p>
-            <p className="text-sm text-muted-foreground">Klik "Buat Target Baru" untuk memulai.</p>
+            <p className="text-sm text-muted-foreground">Klik "Buat Target" untuk memulai.</p>
           </div>
         )}
       </CardContent>
