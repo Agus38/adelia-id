@@ -20,25 +20,20 @@ const chartColors = [
   'hsl(var(--chart-3))',
   'hsl(var(--chart-4))',
   'hsl(var(--chart-5))',
-  'hsl(var(--chart-1) / 0.7)',
-  'hsl(var(--chart-2) / 0.7)',
-  'hsl(var(--chart-3) / 0.7)',
-  'hsl(var(--chart-4) / 0.7)',
-  'hsl(var(--chart-5) / 0.7)',
 ];
 
 export function SummaryChart() {
   const { transactions, expenseCategories } = useBudgetflowStore();
 
-  const chartConfig = React.useMemo(() => 
-    expenseCategories.reduce((config, category, index) => {
+  const chartConfig = React.useMemo(() => {
+    return expenseCategories.reduce((config, category, index) => {
       config[category.value] = {
         label: category.label,
         color: chartColors[index % chartColors.length],
       };
       return config;
-    }, {} as ChartConfig),
-  [expenseCategories]);
+    }, {} as ChartConfig);
+  }, [expenseCategories]);
 
   const chartData = React.useMemo(() => {
     const monthlyExpenses: { [key: string]: number } = {};
@@ -92,7 +87,7 @@ export function SummaryChart() {
            {chartData.map((entry, index) => (
              <Cell
               key={`cell-${index}`}
-              fill={chartConfig[entry.category]?.color || chartColors[index % chartColors.length]}
+              fill={chartConfig[entry.category]?.color}
               className="focus:outline-none"
             />
           ))}
