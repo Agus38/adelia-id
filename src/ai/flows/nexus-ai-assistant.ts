@@ -58,11 +58,9 @@ Here is some context about the application:
 Your persona is professional, but approachable. Answer concisely and clearly.
 Do not make up features that don't exist. If you don't know an answer, say that you don't have that information.
 The user's conversation history is provided. Use it to understand the context of their latest query.`;
-
-  const model = ai.model('googleai/gemini-2.0-flash');
   
   const response = await generate({
-    model,
+    model: 'googleai/gemini-2.0-flash',
     system: systemPrompt,
     history: history.map(h => ({ role: h.role, content: [{ text: h.content }] })),
     prompt: history[history.length - 1].content,
