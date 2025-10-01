@@ -1,3 +1,4 @@
+
 'use client';
 
 import { BudgetFlowDashboard } from "@/components/budgetflow/dashboard";
@@ -7,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TransactionsView } from "@/components/budgetflow/views/transactions-view";
 import { BudgetsView } from "@/components/budgetflow/views/budgets-view";
 import { ReportsView } from "@/components/budgetflow/views/reports-view";
-import { AddTransactionDialog } from "@/components/budgetflow/add-transaction-dialog";
+import { AddTransactionButton } from "@/components/budgetflow/add-transaction-dialog";
 
 
 export default function BudgetFlowPage() {
@@ -49,7 +50,7 @@ export default function BudgetFlowPage() {
               <TabsTrigger value="reports" className="flex-1 sm:flex-initial">Laporan</TabsTrigger>
             </TabsList>
              <div className="w-full sm:w-auto">
-               <AddTransactionDialog />
+               <AddTransactionButton />
             </div>
         </div>
         

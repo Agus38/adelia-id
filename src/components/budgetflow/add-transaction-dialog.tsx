@@ -31,15 +31,16 @@ import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useUserStore } from '@/lib/user-store';
-import { addTransaction, type TransactionType } from '@/lib/budgetflow-store';
+import { addTransaction, updateTransaction, type Transaction, type TransactionType } from '@/lib/budgetflow-store';
 import { incomeCategories, expenseCategories } from '@/lib/budgetflow-store';
 
 interface TransactionFormProps {
   type: TransactionType;
   onSaveSuccess: () => void;
+  transactionToEdit?: Transaction | null;
 }
 
-function TransactionForm({ type, onSaveSuccess }: TransactionFormProps) {
+function TransactionForm({ type, onSaveSuccess, transactionToEdit }: TransactionFormProps) {
   const [description, setDescription] = React.useState('');
   const [amount, setAmount] = React.useState('');
   const [category, setCategory] = React.useState('');
@@ -47,6 +48,22 @@ function TransactionForm({ type, onSaveSuccess }: TransactionFormProps) {
   const [isSaving, setIsSaving] = React.useState(false);
   const { user } = useUserStore();
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    if (transactionToEdit && transactionToEdit.type === type) {
+        setDescription(transactionToEdit.description);
+        setAmount(String(transactionToEdit.amount));
+        setCategory(transactionToEdit.category);
+        setDate(transactionToEdit.date instanceof Date ? transactionToEdit.date : transactionToEdit.date.toDate());
+    } else {
+        // Reset form if switching tabs or no item to edit
+        setDescription('');
+        setAmount('');
+        setCategory('');
+        setDate(new Date());
+    }
+  }, [transactionToEdit, type]);
+
 
   const handleSave = async () => {
     if (!description || !amount || !category || !date || !user) {
@@ -56,15 +73,23 @@ function TransactionForm({ type, onSaveSuccess }: TransactionFormProps) {
     
     setIsSaving(true);
     try {
-        await addTransaction({
+        const transactionData = {
             userId: user.uid,
             type,
             description,
             amount: parseFloat(amount),
             category,
             date,
-        });
-        toast({ title: 'Transaksi Disimpan', description: 'Transaksi baru telah berhasil ditambahkan.' });
+        };
+
+        if (transactionToEdit) {
+            await updateTransaction(user.uid, transactionToEdit.id, transactionData);
+            toast({ title: 'Transaksi Diperbarui', description: 'Transaksi telah berhasil diperbarui.' });
+        } else {
+            await addTransaction(transactionData);
+            toast({ title: 'Transaksi Disimpan', description: 'Transaksi baru telah berhasil ditambahkan.' });
+        }
+        
         onSaveSuccess();
     } catch (error) {
         toast({ title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan transaksi.', variant: 'destructive' });
@@ -146,34 +171,42 @@ function TransactionForm({ type, onSaveSuccess }: TransactionFormProps) {
       <DialogFooter className="pt-4">
         <Button onClick={handleSave} disabled={isSaving} className="w-full">
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Simpan Transaksi
+            {transactionToEdit ? 'Simpan Perubahan' : 'Simpan Transaksi'}
         </Button>
       </DialogFooter>
     </div>
   );
 }
 
-export function AddTransactionDialog() {
-  const [open, setOpen] = React.useState(false);
+interface AddTransactionDialogProps {
+    children: React.ReactNode;
+    transactionToEdit?: Transaction | null;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+}
+
+
+export function AddTransactionDialog({ children, transactionToEdit, open, onOpenChange }: AddTransactionDialogProps) {
 
   const handleSaveSuccess = () => {
-    setOpen(false);
+    if (onOpenChange) {
+        onOpenChange(false);
+    }
   };
+  
+  const defaultTab = transactionToEdit?.type || 'expense';
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Tambah Transaksi
-        </Button>
+        {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
-        <Tabs defaultValue="expense" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <DialogHeader className="mb-4">
-            <DialogTitle>Tambah Transaksi Baru</DialogTitle>
+            <DialogTitle>{transactionToEdit ? 'Edit Transaksi' : 'Tambah Transaksi Baru'}</DialogTitle>
             <DialogDescription>
-              Pilih jenis transaksi dan isi detail di bawah ini.
+              {transactionToEdit ? 'Ubah detail transaksi Anda.' : 'Pilih jenis transaksi dan isi detail di bawah ini.'}
             </DialogDescription>
             <TabsList className="grid w-full grid-cols-2 mt-4">
               <TabsTrigger value="expense">Pengeluaran</TabsTrigger>
@@ -182,13 +215,24 @@ export function AddTransactionDialog() {
           </DialogHeader>
           
           <TabsContent value="expense" className="space-y-4">
-            <TransactionForm type="expense" onSaveSuccess={handleSaveSuccess} />
+            <TransactionForm type="expense" onSaveSuccess={handleSaveSuccess} transactionToEdit={transactionToEdit} />
           </TabsContent>
           <TabsContent value="income" className="space-y-4">
-            <TransactionForm type="income" onSaveSuccess={handleSaveSuccess} />
+            <TransactionForm type="income" onSaveSuccess={handleSaveSuccess} transactionToEdit={transactionToEdit} />
           </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
   );
+}
+
+export function AddTransactionButton() {
+    return (
+        <AddTransactionDialog>
+            <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Tambah Transaksi
+            </Button>
+        </AddTransactionDialog>
+    )
 }

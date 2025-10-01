@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -28,13 +29,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChevronDown, Loader2, ArrowUpCircle, ArrowDownCircle, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Loader2, ArrowUpCircle, ArrowDownCircle, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useBudgetflowStore, type Transaction, deleteTransaction } from '@/lib/budgetflow-store';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AddTransactionDialog } from '../add-transaction-dialog';
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
@@ -48,9 +50,17 @@ export function TransactionsView() {
   const [isDeleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [transactionToDelete, setTransactionToDelete] = React.useState<Transaction | null>(null);
 
+  const [isEditDialogOpen, setEditDialogOpen] = React.useState(false);
+  const [transactionToEdit, setTransactionToEdit] = React.useState<Transaction | null>(null);
+
   const handleDelete = (transaction: Transaction) => {
     setTransactionToDelete(transaction);
     setDeleteDialogOpen(true);
+  };
+
+  const handleEdit = (transaction: Transaction) => {
+    setTransactionToEdit(transaction);
+    setEditDialogOpen(true);
   };
   
   const confirmDelete = async () => {
@@ -108,7 +118,7 @@ export function TransactionsView() {
                     <Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                    <DropdownMenuItem disabled><Edit className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleEdit(row.original)}><Edit className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleDelete(row.original)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Hapus</DropdownMenuItem>
                 </DropdownMenuContent>
              </DropdownMenu>
@@ -215,6 +225,17 @@ export function TransactionsView() {
                 </AlertDialogFooter>
             </AlertDialogContent>
        </AlertDialog>
+
+        {transactionToEdit && (
+            <AddTransactionDialog
+                open={isEditDialogOpen}
+                onOpenChange={setEditDialogOpen}
+                transactionToEdit={transactionToEdit}
+            >
+                {/* This is a dummy trigger, the dialog is controlled by state */}
+                <></>
+            </AddTransactionDialog>
+        )}
     </div>
   );
 }

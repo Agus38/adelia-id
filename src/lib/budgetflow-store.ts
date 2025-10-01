@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -103,8 +104,10 @@ export const addTransaction = async (data: Omit<Transaction, 'id' | 'createdAt'>
     });
 };
 
-export const updateTransaction = async (userId: string, transactionId: string, data: Partial<Omit<Transaction, 'id' | 'userId'>>) => {
-    await updateDoc(doc(db, 'budgetflow', userId, 'transactions', transactionId), data);
+export const updateTransaction = async (userId: string, transactionId: string, data: Omit<Transaction, 'id' | 'createdAt'>) => {
+    await updateDoc(doc(db, 'budgetflow', userId, 'transactions', transactionId), {
+        ...data,
+    });
 };
 
 export const deleteTransaction = async (transactionId: string) => {
