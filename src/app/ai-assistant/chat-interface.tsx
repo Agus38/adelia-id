@@ -1,3 +1,4 @@
+
 'use client';
 
 import { nexusAIAssistant } from '@/ai/flows/nexus-ai-assistant';
@@ -133,7 +134,7 @@ export function ChatInterface() {
   };
 
   return (
-    <Card className="flex flex-col h-[calc(100vh-14rem)]">
+    <Card className="flex flex-col flex-1">
       <CardHeader className='flex-row justify-between items-center'>
         <p className="text-muted-foreground">Mulai percakapan dengan Asisten AI Nexus.</p>
         {messages.length > 0 && (
