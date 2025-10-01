@@ -41,18 +41,18 @@ export default function RegisterPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (password !== confirmPassword) {
-      toast({
-        title: 'Error',
-        description: 'Kata sandi dan konfirmasi kata sandi tidak cocok.',
-        variant: 'destructive',
-      });
-      return;
-    }
      if (!termsAccepted) {
       toast({
         title: 'Persetujuan Diperlukan',
         description: 'Anda harus menyetujui Syarat & Ketentuan untuk melanjutkan.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Kata sandi dan konfirmasi kata sandi tidak cocok.',
         variant: 'destructive',
       });
       return;
@@ -104,8 +104,8 @@ export default function RegisterPage() {
         setIsLoading(false);
     }
   };
-
-  const isSubmitDisabled = isLoading || !name || !email || !password || !confirmPassword || !termsAccepted;
+  
+  const isSubmitDisabled = isLoading || !name || !email || !password || !confirmPassword;
 
   if (userLoading || user) {
     return (
