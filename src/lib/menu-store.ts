@@ -54,6 +54,11 @@ interface BrandingConfigDTO {
   imageUrl?: string;
 }
 
+interface LoginPageConfigDTO {
+  imageUrl: string;
+  aiHint: string;
+}
+
 interface SocialLinkDTO {
   name: string;
   url: string;
@@ -98,6 +103,11 @@ export interface BrandingConfig {
   imageUrl?: string;
 }
 
+export interface LoginPageConfig {
+    imageUrl: string;
+    aiHint: string;
+}
+
 export interface SocialLink {
     name: string;
     url: string;
@@ -131,6 +141,7 @@ const sidebarMenuConfigDocRef = doc(db, 'app-settings', 'sidebar-menu');
 const adminSidebarMenuConfigDocRef = doc(db, 'app-settings', 'admin-sidebar-menu');
 const bannerConfigDocRef = doc(db, 'app-settings', 'banner-slides');
 const brandingConfigDocRef = doc(db, 'app-settings', 'branding');
+const loginPageConfigDocRef = doc(db, 'app-settings', 'login-page');
 const developerInfoDocRef = doc(db, 'app-settings', 'developer-info');
 const sessionConfigDocRef = doc(db, 'app-settings', 'sessionConfig');
 const aboutInfoDocRef = doc(db, 'app-settings', 'aboutInfo');
@@ -170,6 +181,11 @@ const defaultBrandingConfig: BrandingConfig = {
   icon: Logo,
   iconName: 'Logo',
   imageUrl: ''
+};
+
+const defaultLoginPageConfig: LoginPageConfig = {
+    imageUrl: 'https://images.unsplash.com/photo-1588590396420-55b01a8511a1?q=80&w=1887&auto=format&fit=crop',
+    aiHint: 'security lock',
 };
 
 const defaultDeveloperInfo: DeveloperInfo = {
@@ -481,6 +497,50 @@ export const saveBrandingConfig = async (config: BrandingConfig) => {
         imageUrl: config.imageUrl,
     };
     await setDoc(brandingConfigDocRef, configToStore);
+};
+
+// --- Login Page Config Store ---
+interface LoginPageStoreState {
+  loginPageConfig: LoginPageConfig;
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const useLoginPageStore = create<LoginPageStoreState>((set) => ({
+    loginPageConfig: defaultLoginPageConfig,
+    isLoading: true,
+    error: null,
+    initializeListener: () => {
+        const unsubscribe = onSnapshot(loginPageConfigDocRef, (docSnap) => {
+            if (docSnap.exists() && docSnap.data()) {
+                set({ loginPageConfig: docSnap.data() as LoginPageConfig, isLoading: false, error: null });
+            } else {
+                set({ loginPageConfig: defaultLoginPageConfig, isLoading: false, error: null });
+            }
+        }, (error) => {
+            console.error("Error fetching login page config:", error);
+            set({ loginPageConfig: defaultLoginPageConfig, isLoading: false, error });
+        });
+        return unsubscribe;
+    }
+}));
+
+export const useLoginPageConfig = () => {
+    const { loginPageConfig, isLoading, initializeListener } = useLoginPageStore();
+    React.useEffect(() => {
+        const unsubscribe = initializeListener();
+        return () => unsubscribe();
+    }, [initializeListener]);
+    return { loginPageConfig, isLoading };
+};
+
+export const saveLoginPageConfig = async (config: LoginPageConfig) => {
+    const configToStore: LoginPageConfigDTO = {
+        imageUrl: config.imageUrl,
+        aiHint: config.aiHint,
+    };
+    await setDoc(loginPageConfigDocRef, configToStore);
 };
 
 
