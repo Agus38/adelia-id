@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,10 +20,14 @@ import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { LogOut, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 
 export function AccountSettings() {
   const { toast } = useToast();
   const router = useRouter();
+  const [confirmationText, setConfirmationText] = React.useState('');
+  const CONFIRMATION_WORD = 'KONFIRMASI';
 
   const handleLogoutAll = () => {
     // NOTE: Firebase Client SDK cannot revoke tokens. This is a mock.
@@ -77,7 +82,7 @@ export function AccountSettings() {
         <p className="text-sm text-destructive/80 mt-1 mb-4">
           Tindakan berikut tidak dapat diurungkan. Harap berhati-hati.
         </p>
-        <AlertDialog>
+        <AlertDialog onOpenChange={(open) => !open && setConfirmationText('')}>
           <AlertDialogTrigger asChild>
             <Button variant="destructive">
               <Trash2 className="mr-2 h-4 w-4" />
@@ -88,12 +93,24 @@ export function AccountSettings() {
             <AlertDialogHeader>
               <AlertDialogTitle>Apakah Anda benar-benar yakin?</AlertDialogTitle>
               <AlertDialogDescription>
-                Tindakan ini tidak dapat dibatalkan. Ini akan menghapus akun Anda dan semua data terkait secara permanen.
+                Tindakan ini tidak dapat dibatalkan. Ini akan menghapus akun Anda dan semua data terkait secara permanen. Untuk melanjutkan, ketik <strong className="text-foreground">{CONFIRMATION_WORD}</strong> di bawah ini.
               </AlertDialogDescription>
             </AlertDialogHeader>
+            <div className="space-y-2 pt-2">
+                <Label htmlFor="confirmation-input">Ketik untuk konfirmasi</Label>
+                <Input
+                    id="confirmation-input"
+                    value={confirmationText}
+                    onChange={(e) => setConfirmationText(e.target.value)}
+                    placeholder={CONFIRMATION_WORD}
+                />
+            </div>
             <AlertDialogFooter>
               <AlertDialogCancel>Batal</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteAccount}>
+              <AlertDialogAction 
+                onClick={handleDeleteAccount}
+                disabled={confirmationText !== CONFIRMATION_WORD}
+              >
                 Ya, Hapus Akun Saya
               </AlertDialogAction>
             </AlertDialogFooter>
