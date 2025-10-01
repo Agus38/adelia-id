@@ -1,4 +1,3 @@
-
 'use client';
 
 import { nexusAIAssistant } from '@/ai/flows/nexus-ai-assistant';
@@ -7,13 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useUserStore } from '@/lib/user-store';
-import { Bot, Send, User } from 'lucide-react';
-import { useRef, useState, useTransition } from 'react';
+import { Bot, Send, User, Sparkles, Trash2, Loader2 } from 'lucide-react';
+import { useRef, useState, useTransition, useEffect } from 'react';
+import { useAboutInfoConfig, useDeveloperInfoConfig, useMenuConfig } from '@/lib/menu-store';
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: 'user' | 'model';
   content: string;
 }
+
+const promptSuggestions = [
+    "Apa saja fitur di aplikasi ini?",
+    "Siapa yang membuat aplikasi ini?",
+    "Bagaimana cara mengubah profil saya?",
+];
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -21,41 +27,122 @@ export function ChatInterface() {
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const { user } = useUserStore();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  // Fetching app context
+  const { aboutInfo } = useAboutInfoConfig();
+  const { developerInfo } = useDeveloperInfoConfig();
+  const { menuItems } = useMenuConfig();
+
+  // Load chat from localStorage on initial render
+  useEffect(() => {
+    try {
+        const savedMessages = localStorage.getItem('nexus-chat-history');
+        if (savedMessages) {
+            setMessages(JSON.parse(savedMessages));
+        }
+    } catch (error) {
+        console.error("Failed to parse chat history from localStorage", error);
+        localStorage.removeItem('nexus-chat-history');
+    }
+  }, []);
+
+  // Save chat to localStorage whenever it changes
+  useEffect(() => {
+      if (messages.length > 0) {
+          localStorage.setItem('nexus-chat-history', JSON.stringify(messages));
+      } else {
+          localStorage.removeItem('nexus-chat-history');
+      }
+  }, [messages]);
+  
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isPending]);
+
+  const handlePromptSuggestionClick = (prompt: string) => {
+      setInput(prompt);
+      // Automatically submit the form
+      const syntheticEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
+      handleSubmit(syntheticEvent, prompt);
+  };
+
+  const handleClearChat = () => {
+      setMessages([]);
+  }
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>, suggestedPrompt?: string) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    const currentInput = suggestedPrompt || input;
+    if (!currentInput.trim()) return;
 
-    const userMessage: Message = { role: 'user', content: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const userMessage: Message = { role: 'user', content: currentInput };
+    const newHistory = [...messages, userMessage];
+    setMessages(newHistory);
     setInput('');
 
     startTransition(async () => {
-      const result = await nexusAIAssistant({ query: input });
-      const assistantMessage: Message = { role: 'assistant', content: result.response };
+      const appContext = {
+          appName: aboutInfo.appName,
+          appVersion: aboutInfo.version,
+          appDescription: aboutInfo.description,
+          features: menuItems.map(item => item.title),
+          developerName: developerInfo.name,
+          developerTitle: developerInfo.title,
+      };
+      
+      const result = await nexusAIAssistant({ history: newHistory, appContext });
+      const assistantMessage: Message = { role: 'model', content: result.response };
       setMessages((prev) => [...prev, assistantMessage]);
     });
   };
 
   return (
     <Card className="flex flex-col h-[calc(100vh-14rem)]">
-      <CardHeader>
+      <CardHeader className='flex-row justify-between items-center'>
         <p className="text-muted-foreground">Mulai percakapan dengan Asisten AI Nexus.</p>
+        {messages.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handleClearChat} disabled={isPending}>
+                <Trash2 className="h-4 w-4 mr-2"/>
+                Bersihkan
+            </Button>
+        )}
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
+        {messages.length === 0 && !isPending && (
+             <div className="text-center text-muted-foreground space-y-6 animate-in fade-in duration-500">
+                <div className="flex justify-center">
+                    <div className="p-4 bg-primary/10 rounded-full w-fit">
+                        <Sparkles className="h-10 w-10 text-primary" />
+                    </div>
+                </div>
+                <div>
+                    <p className="font-semibold text-lg text-foreground">Selamat datang di Asisten AI Nexus!</p>
+                    <p className="text-sm">Saya di sini untuk membantu Anda. Coba salah satu pertanyaan di bawah ini atau ketik pertanyaan Anda sendiri.</p>
+                </div>
+                 <div className="flex flex-wrap justify-center gap-2">
+                    {promptSuggestions.map((prompt, index) => (
+                        <Button key={index} variant="outline" size="sm" onClick={() => handlePromptSuggestionClick(prompt)}>
+                            {prompt}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+        )}
+
         {messages.map((msg, index) => (
           <div key={index} className={`flex items-start gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-            {msg.role === 'assistant' && (
+            {msg.role === 'model' && (
               <Avatar>
                 <AvatarFallback><Bot /></AvatarFallback>
               </Avatar>
             )}
-            <div className={`rounded-lg p-3 max-w-[75%] ${
+            <div className={`rounded-lg p-3 max-w-[85%] ${
               msg.role === 'user' 
                 ? 'bg-primary text-primary-foreground' 
                 : 'bg-muted'
             }`}>
-              <p className="text-sm">{msg.content}</p>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
             </div>
             {msg.role === 'user' && (
               <Avatar>
@@ -66,15 +153,17 @@ export function ChatInterface() {
           </div>
         ))}
         {isPending && (
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-4 animate-in fade-in duration-300">
              <Avatar>
                 <AvatarFallback><Bot /></AvatarFallback>
               </Avatar>
-            <div className="rounded-lg p-3 bg-muted">
-              <p className="text-sm">Mengetik...</p>
+            <div className="rounded-lg p-3 bg-muted flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Mengetik...</p>
             </div>
           </div>
         )}
+         <div ref={messagesEndRef} />
       </CardContent>
       <CardFooter className="border-t pt-4">
         <form ref={formRef} onSubmit={handleSubmit} className="flex w-full items-center gap-2">
