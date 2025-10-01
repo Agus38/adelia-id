@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -42,7 +43,7 @@ export function BudgetsView() {
 
   const handleSaveBudget = async () => {
     if (!selectedCategory || !amount) {
-      toast({ title: 'Data tidak lengkap', variant: 'destructive' });
+      toast({ title: 'Data tidak lengkap', description: 'Harap pilih kategori dan masukkan jumlah.', variant: 'destructive' });
       return;
     }
     setIsSaving(true);
@@ -56,7 +57,7 @@ export function BudgetsView() {
       }
       setDialogOpen(false);
     } catch (error) {
-      toast({ title: 'Gagal Menyimpan', variant: 'destructive' });
+      toast({ title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan anggaran.', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
@@ -172,7 +173,7 @@ export function BudgetsView() {
                     <span>{formatCurrency(spent)} / {formatCurrency(budget.amount)}</span>
                     <span className={isOverBudget ? "font-semibold text-destructive" : ""}>
                       {isOverBudget 
-                        ? `Over budget ${formatCurrency(spent - budget.amount)}`
+                        ? `Lewat ${formatCurrency(spent - budget.amount)}`
                         : `${formatCurrency(budget.amount - spent)} tersisa`
                       }
                     </span>
