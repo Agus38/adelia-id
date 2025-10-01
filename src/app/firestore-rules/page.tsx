@@ -60,6 +60,12 @@ service cloud.firestore {
       // Only Admin can list/delete reports
       allow delete, list: if isDbAdmin();
     }
+    
+    // Rules for BudgetFlow feature. This allows a user to access any document
+    // within their own folder (e.g., /budgetflow/{userId}/transactions/{txId}).
+    match /budgetflow/{userId}/{document=**} {
+      allow read, write, delete: if request.auth.uid == userId;
+    }
 
     // Rules for SMW Manyar reports
     match /smwManyarReports/{reportId} {
@@ -148,10 +154,9 @@ export default function FirestoreRulesPage() {
       </p>
       
        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>PENTING: Segera Perbarui Aturan Anda!</AlertTitle>
           <AlertDescription>
-            Aturan keamanan telah diubah untuk memperbaiki masalah izin akses dan fitur blokir. Anda **WAJIB** menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong>.
+            Aturan keamanan telah diubah untuk mengakomodasi fitur BudgetFlow. Anda **WAJIB** menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan data keuangan Anda aman.
           </AlertDescription>
        </Alert>
        
