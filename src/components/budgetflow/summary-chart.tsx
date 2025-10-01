@@ -12,11 +12,11 @@ import {
 } from '@/components/ui/chart';
 
 const chartData = [
-  { category: 'Makanan', value: 450, fill: 'hsl(var(--chart-1))' },
-  { category: 'Transportasi', value: 300, fill: 'hsl(var(--chart-2))' },
-  { category: 'Tagihan', value: 200, fill: 'hsl(var(--chart-3))' },
-  { category: 'Hiburan', value: 278, fill: 'hsl(var(--chart-4))' },
-  { category: 'Lainnya', value: 189, fill: 'hsl(var(--chart-5))' },
+  { category: 'Makanan', value: 450, fill: 'var(--color-makanan)' },
+  { category: 'Transportasi', value: 300, fill: 'var(--color-transportasi)' },
+  { category: 'Tagihan', value: 200, fill: 'var(--color-tagihan)' },
+  { category: 'Hiburan', value: 278, fill: 'var(--color-hiburan)' },
+  { category: 'Lainnya', value: 189, fill: 'var(--color-lainnya)' },
 ];
 
 const chartConfig = {
@@ -46,8 +46,15 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function SummaryChart() {
+  const totalValue = React.useMemo(() => {
+    return chartData.reduce((acc, curr) => acc + curr.value, 0);
+  }, []);
+
   return (
-    <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[300px]">
+    <ChartContainer
+      config={chartConfig}
+      className="mx-auto aspect-square max-h-[300px]"
+    >
       <PieChart>
         <ChartTooltip
           cursor={false}
@@ -59,12 +66,13 @@ export function SummaryChart() {
           nameKey="category"
           innerRadius={60}
           strokeWidth={5}
+          labelLine={false}
         >
            {chartData.map((entry, index) => (
              <Cell
               key={`cell-${index}`}
               fill={entry.fill}
-              className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="focus:outline-none"
             />
           ))}
         </Pie>
