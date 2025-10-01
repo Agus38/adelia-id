@@ -84,6 +84,16 @@ export function BudgetsView() {
           toast({ title: 'Gagal Menghapus', variant: 'destructive'});
       }
   }
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-digit characters
+    setAmount(value);
+  };
+
+  const formatDisplayValue = (value: string) => {
+    if (!value) return '';
+    return Number(value).toLocaleString('id-ID');
+  };
   
   const availableCategories = expenseCategories.filter(cat => !budgets.some(b => b.category === cat && b.id !== editingBudget?.id));
 
@@ -126,7 +136,20 @@ export function BudgetsView() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="amount">Jumlah Anggaran</Label>
-                    <Input id="amount" type="number" placeholder="Rp 0" value={amount} onChange={e => setAmount(e.target.value)} />
+                     <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                            Rp
+                        </span>
+                        <Input
+                            id="amount"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="0"
+                            className="pl-8"
+                            value={formatDisplayValue(amount)}
+                            onChange={handleAmountChange}
+                        />
+                    </div>
                   </div>
                 </div>
                 <DialogFooter>
