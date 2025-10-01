@@ -1,4 +1,3 @@
-
 import {
   MessageSquare,
   Package,
@@ -76,6 +75,7 @@ import {
   UsersRound,
   LogIn,
   Megaphone,
+  TrendingUp,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -122,6 +122,13 @@ export const menuItems: MenuItem[] = [
     title: 'Stok Produk',
     href: '/stok-produk',
     icon: Package,
+    requiresAuth: true,
+  },
+  {
+    id: 'budgetflow',
+    title: 'BudgetFlow',
+    href: '/budgetflow',
+    icon: TrendingUp,
     requiresAuth: true,
   },
   {
@@ -522,6 +529,7 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Sun,
   Tag,
   ThumbsUp,
+  TrendingUp,
   Truck,
   User,
   UserPlus,
