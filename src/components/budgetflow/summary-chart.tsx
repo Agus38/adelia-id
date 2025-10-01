@@ -11,7 +11,7 @@ import {
   ChartLegendContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-import { useBudgetflowStore, expenseCategories } from '@/lib/budgetflow-store';
+import { useBudgetflowStore } from '@/lib/budgetflow-store';
 import { PackageOpen } from 'lucide-react';
 
 const chartColors = [
@@ -27,18 +27,18 @@ const chartColors = [
   'hsl(var(--chart-5) / 0.7)',
 ];
 
-// Pre-define chart config for all possible expense categories
-const chartConfig = expenseCategories.reduce((config, category, index) => {
-  config[category] = {
-    label: category,
-    color: chartColors[index % chartColors.length],
-  };
-  return config;
-}, {} as ChartConfig);
-
-
 export function SummaryChart() {
-  const { transactions } = useBudgetflowStore();
+  const { transactions, expenseCategories } = useBudgetflowStore();
+
+  const chartConfig = React.useMemo(() => 
+    expenseCategories.reduce((config, category, index) => {
+      config[category.value] = {
+        label: category.label,
+        color: chartColors[index % chartColors.length],
+      };
+      return config;
+    }, {} as ChartConfig),
+  [expenseCategories]);
 
   const chartData = React.useMemo(() => {
     const monthlyExpenses: { [key: string]: number } = {};
