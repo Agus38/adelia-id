@@ -281,7 +281,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
   },
   {
     id: 'sidebar-management',
-    title: 'Manajemen Sidebar',
+    title: 'Menu Sidebar',
     href: '/admin/sidebar',
     icon: PanelLeft,
     description: 'Sesuaikan item menu di sidebar utama.',
@@ -290,7 +290,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
   },
   {
     id: 'admin-sidebar-management',
-    title: 'Manajemen Sidebar Admin',
+    title: 'Sidebar Admin',
     href: '/admin/admin-sidebar',
     icon: PanelLeft,
     description: 'Sesuaikan item menu di sidebar admin.',
