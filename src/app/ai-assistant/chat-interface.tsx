@@ -1,12 +1,13 @@
 'use client';
 
 import { nexusAIAssistant } from '@/ai/flows/nexus-ai-assistant';
+import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useUserStore } from '@/lib/user-store';
-import { Bot, Send, User, Sparkles, Trash2, Loader2 } from 'lucide-react';
+import { Bot, Send, User, Sparkles, Trash2, Loader2, AudioLines } from 'lucide-react';
 import { useRef, useState, useTransition, useEffect } from 'react';
 import { useAboutInfoConfig, useDeveloperInfoConfig, useMenuConfig } from '@/lib/menu-store';
 
@@ -28,6 +29,10 @@ export function ChatInterface() {
   const formRef = useRef<HTMLFormElement>(null);
   const { user } = useUserStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState<string | null>(null); // message content being played
 
   // Fetching app context
   const { aboutInfo } = useAboutInfoConfig();
@@ -59,6 +64,36 @@ export function ChatInterface() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isPending]);
+
+  const handlePlayAudio = async (text: string) => {
+    if (isPlaying === text) { // If it's already playing this text
+        audioRef.current?.pause();
+        setIsPlaying(null);
+        setAudioUrl(null);
+        return;
+    }
+
+    setIsPlaying(text); // Show loading state
+    setAudioUrl(null);
+    try {
+        const result = await textToSpeech({ text });
+        setAudioUrl(result.audioDataUri);
+    } catch(error) {
+        console.error("TTS Error:", error);
+        setIsPlaying(null);
+    }
+  }
+
+  useEffect(() => {
+    if(audioUrl && audioRef.current) {
+        audioRef.current.play();
+    }
+  }, [audioUrl]);
+
+  const handleAudioEnded = () => {
+      setIsPlaying(null);
+      setAudioUrl(null);
+  }
 
   const handlePromptSuggestionClick = (prompt: string) => {
       setInput(prompt);
@@ -117,8 +152,8 @@ export function ChatInterface() {
                     </div>
                 </div>
                 <div>
-                    <p className="font-semibold text-lg text-foreground">Selamat datang di Asisten AI Nexus!</p>
-                    <p className="text-sm">Saya di sini untuk membantu Anda. Coba salah satu pertanyaan di bawah ini atau ketik pertanyaan Anda sendiri.</p>
+                    <p className="font-semibold text-lg text-foreground">Hai! Aku Nexus, sahabat AI-mu!</p>
+                    <p className="text-sm">Ada yang bisa aku bantu? Tanya aja soal aplikasi ini, atau coba salah satu pertanyaan di bawah!</p>
                 </div>
                  <div className="flex flex-wrap justify-center gap-2">
                     {promptSuggestions.map((prompt, index) => (
@@ -143,6 +178,17 @@ export function ChatInterface() {
                 : 'bg-muted'
             }`}>
               <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+              {msg.role === 'model' && msg.content && (
+                  <div className="mt-2 pt-2 border-t border-muted-foreground/20 flex items-center gap-2">
+                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handlePlayAudio(msg.content)} disabled={isPending || (isPlaying !== null && isPlaying !== msg.content)}>
+                        {isPlaying === msg.content ? <Loader2 className="h-4 w-4 animate-spin"/> : <AudioLines className="h-4 w-4"/>}
+                        <span className="sr-only">Dengarkan</span>
+                     </Button>
+                     {isPlaying === msg.content && audioUrl && (
+                        <audio ref={audioRef} src={audioUrl} onEnded={handleAudioEnded} className="h-8" controls />
+                     )}
+                  </div>
+              )}
             </div>
             {msg.role === 'user' && (
               <Avatar>
