@@ -59,6 +59,12 @@ interface LoginPageConfigDTO {
   aiHint: string;
 }
 
+interface RegisterPageConfigDTO {
+  imageUrl: string;
+  aiHint: string;
+}
+
+
 interface SocialLinkDTO {
   name: string;
   url: string;
@@ -108,6 +114,11 @@ export interface LoginPageConfig {
     aiHint: string;
 }
 
+export interface RegisterPageConfig {
+    imageUrl: string;
+    aiHint: string;
+}
+
 export interface SocialLink {
     name: string;
     url: string;
@@ -142,6 +153,7 @@ const adminSidebarMenuConfigDocRef = doc(db, 'app-settings', 'admin-sidebar-menu
 const bannerConfigDocRef = doc(db, 'app-settings', 'banner-slides');
 const brandingConfigDocRef = doc(db, 'app-settings', 'branding');
 const loginPageConfigDocRef = doc(db, 'app-settings', 'login-page');
+const registerPageConfigDocRef = doc(db, 'app-settings', 'register-page');
 const developerInfoDocRef = doc(db, 'app-settings', 'developer-info');
 const sessionConfigDocRef = doc(db, 'app-settings', 'sessionConfig');
 const aboutInfoDocRef = doc(db, 'app-settings', 'aboutInfo');
@@ -187,6 +199,12 @@ const defaultLoginPageConfig: LoginPageConfig = {
     imageUrl: 'https://images.unsplash.com/photo-1588590396420-55b01a8511a1?q=80&w=1887&auto=format&fit=crop',
     aiHint: 'security lock',
 };
+
+const defaultRegisterPageConfig: RegisterPageConfig = {
+    imageUrl: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=1887&auto=format&fit=crop',
+    aiHint: 'team working',
+};
+
 
 const defaultDeveloperInfo: DeveloperInfo = {
   name: 'Agus Eka',
@@ -541,6 +559,50 @@ export const saveLoginPageConfig = async (config: LoginPageConfig) => {
         aiHint: config.aiHint,
     };
     await setDoc(loginPageConfigDocRef, configToStore);
+};
+
+// --- Register Page Config Store ---
+interface RegisterPageStoreState {
+  registerPageConfig: RegisterPageConfig;
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const useRegisterPageStore = create<RegisterPageStoreState>((set) => ({
+    registerPageConfig: defaultRegisterPageConfig,
+    isLoading: true,
+    error: null,
+    initializeListener: () => {
+        const unsubscribe = onSnapshot(registerPageConfigDocRef, (docSnap) => {
+            if (docSnap.exists() && docSnap.data()) {
+                set({ registerPageConfig: docSnap.data() as RegisterPageConfig, isLoading: false, error: null });
+            } else {
+                set({ registerPageConfig: defaultRegisterPageConfig, isLoading: false, error: null });
+            }
+        }, (error) => {
+            console.error("Error fetching register page config:", error);
+            set({ registerPageConfig: defaultRegisterPageConfig, isLoading: false, error });
+        });
+        return unsubscribe;
+    }
+}));
+
+export const useRegisterPageConfig = () => {
+    const { registerPageConfig, isLoading, initializeListener } = useRegisterPageStore();
+    React.useEffect(() => {
+        const unsubscribe = initializeListener();
+        return () => unsubscribe();
+    }, [initializeListener]);
+    return { registerPageConfig, isLoading };
+};
+
+export const saveRegisterPageConfig = async (config: RegisterPageConfig) => {
+    const configToStore: RegisterPageConfigDTO = {
+        imageUrl: config.imageUrl,
+        aiHint: config.aiHint,
+    };
+    await setDoc(registerPageConfigDocRef, configToStore);
 };
 
 

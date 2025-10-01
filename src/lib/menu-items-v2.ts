@@ -323,6 +323,15 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
+   {
+    id: 'register-page-settings',
+    title: 'Pengaturan Halaman Daftar',
+    href: '/admin/register-page',
+    icon: UserPlus,
+    description: 'Kelola gambar di halaman registrasi.',
+    access: 'admin',
+    requiresAuth: true,
+  },
   {
     id: 'developer-settings',
     title: 'Pengaturan Developer',

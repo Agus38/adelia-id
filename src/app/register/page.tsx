@@ -14,6 +14,8 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useRegisterPageConfig } from '@/lib/menu-store';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -26,6 +28,8 @@ export default function RegisterPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const { registerPageConfig, isLoading: isLoadingConfig } = useRegisterPageConfig();
+
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -204,14 +208,18 @@ export default function RegisterPage() {
         </div>
       </div>
       <div className="hidden bg-muted lg:block">
+        {isLoadingConfig ? (
+          <Skeleton className="h-full w-full" />
+        ) : (
          <Image
-          src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=1887&auto=format&fit=crop"
+          src={registerPageConfig.imageUrl}
           alt="Image"
           width="1887"
           height="1258"
-          data-ai-hint="team working"
+          data-ai-hint={registerPageConfig.aiHint}
           className="h-full w-full object-cover dark:brightness-[0.3]"
         />
+        )}
       </div>
     </div>
   );
