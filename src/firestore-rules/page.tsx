@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -62,13 +63,10 @@ service cloud.firestore {
     }
     
     // Rules for BudgetFlow feature
-    match /budgetflow/{userId}/transactions/{transactionId} {
-    	// Users can only access their own transactions
-      allow read, write, delete: if request.auth.uid == userId;
-    }
-    match /budgetflow/{userId}/budgets/{budgetId} {
-    	// Users can only access their own budgets
-      allow read, write, delete: if request.auth.uid == userId;
+    match /budgetflow/{userId}/{document=**} {
+    	// Users can only access their own data within their folder.
+      // This covers transactions, goals, debts, and categories sub-collections.
+      allow read, write, delete, create: if request.auth.uid == userId;
     }
 
     // Rules for SMW Manyar reports

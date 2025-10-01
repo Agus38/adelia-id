@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { create } from 'zustand';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, serverTimestamp, Timestamp, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, serverTimestamp, Timestamp, getDocs, runTransaction } from 'firebase/firestore';
 import { db } from './firebase';
 import { useUserStore } from './user-store';
 import type { ComboboxOption } from '@/components/ui/combobox';
@@ -22,13 +22,29 @@ export interface Transaction {
   createdAt: any;
 }
 
-export interface Budget {
+export interface Goal {
     id: string;
     userId: string;
-    category: string;
-    amount: number;
+    name: string;
+    targetAmount: number;
+    currentAmount: number;
     createdAt: any;
 }
+
+export type DebtType = 'debt' | 'receivable';
+
+export interface Debt {
+    id: string;
+    userId: string;
+    name: string;
+    type: DebtType;
+    totalAmount: number;
+    paidAmount: number;
+    isPaid: boolean;
+    dueDate?: Date | Timestamp;
+    createdAt: any;
+}
+
 
 export interface Category {
     id: string;
@@ -42,7 +58,8 @@ export const defaultExpenseCategories: ComboboxOption[] = ['Makanan & Minuman', 
 // --- Zustand Store ---
 interface BudgetflowState {
   transactions: Transaction[];
-  budgets: Budget[];
+  goals: Goal[];
+  debts: Debt[];
   incomeCategories: ComboboxOption[];
   expenseCategories: ComboboxOption[];
   loading: boolean;
@@ -52,7 +69,8 @@ interface BudgetflowState {
 
 export const useBudgetflowStore = create<BudgetflowState>((set) => ({
   transactions: [],
-  budgets: [],
+  goals: [],
+  debts: [],
   incomeCategories: defaultIncomeCategories,
   expenseCategories: defaultExpenseCategories,
   loading: true,
@@ -61,7 +79,8 @@ export const useBudgetflowStore = create<BudgetflowState>((set) => ({
     set({ loading: true });
 
     const transactionsQuery = query(collection(db, 'budgetflow', userId, 'transactions'));
-    const budgetsQuery = query(collection(db, 'budgetflow', userId, 'budgets'));
+    const goalsQuery = query(collection(db, 'budgetflow', userId, 'goals'));
+    const debtsQuery = query(collection(db, 'budgetflow', userId, 'debts'));
     const categoriesQuery = query(collection(db, 'budgetflow', userId, 'categories'));
 
     const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
@@ -72,11 +91,19 @@ export const useBudgetflowStore = create<BudgetflowState>((set) => ({
       set({ error, loading: false });
     });
 
-    const unsubscribeBudgets = onSnapshot(budgetsQuery, (snapshot) => {
-      const budgetsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Budget));
-      set(state => ({ budgets: budgetsData }));
+    const unsubscribeGoals = onSnapshot(goalsQuery, (snapshot) => {
+      const goalsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Goal));
+      set(state => ({ goals: goalsData }));
     }, (error) => {
-      console.error("Error fetching budgets:", error);
+      console.error("Error fetching goals:", error);
+      set({ error, loading: false });
+    });
+
+     const unsubscribeDebts = onSnapshot(debtsQuery, (snapshot) => {
+      const debtsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Debt));
+      set(state => ({ debts: debtsData }));
+    }, (error) => {
+      console.error("Error fetching debts:", error);
       set({ error, loading: false });
     });
     
@@ -105,8 +132,7 @@ export const useBudgetflowStore = create<BudgetflowState>((set) => ({
       set({ error, loading: false });
     });
     
-    // Initial load might be fast, so ensure loading is false
-    Promise.all([getDocs(transactionsQuery), getDocs(budgetsQuery), getDocs(categoriesQuery)]).then(() => {
+    Promise.all([getDocs(transactionsQuery), getDocs(goalsQuery), getDocs(debtsQuery), getDocs(categoriesQuery)]).then(() => {
         set({ loading: false });
     }).catch(error => {
         set({ loading: false, error });
@@ -114,7 +140,8 @@ export const useBudgetflowStore = create<BudgetflowState>((set) => ({
 
     return () => {
       unsubscribeTransactions();
-      unsubscribeBudgets();
+      unsubscribeGoals();
+      unsubscribeDebts();
       unsubscribeCategories();
     };
   },
@@ -136,48 +163,109 @@ export const useBudgetflowData = () => {
 }
 
 // --- API Functions ---
+const getUserId = () => {
+  const userId = useUserStore.getState().user?.uid;
+  if (!userId) throw new Error("User not authenticated");
+  return userId;
+};
+
+// Transactions
 export const addTransaction = async (data: Omit<Transaction, 'id' | 'createdAt'>) => {
     const { userId, ...rest } = data;
-    await addDoc(collection(db, 'budgetflow', userId, 'transactions'), {
-        ...rest,
-        createdAt: serverTimestamp(),
-    });
+    await addDoc(collection(db, 'budgetflow', userId, 'transactions'), { ...rest, createdAt: serverTimestamp() });
 };
-
 export const updateTransaction = async (userId: string, transactionId: string, data: Partial<Omit<Transaction, 'id' | 'createdAt'>>) => {
-    await updateDoc(doc(db, 'budgetflow', userId, 'transactions', transactionId), {
-        ...data,
-    });
+    await updateDoc(doc(db, 'budgetflow', userId, 'transactions', transactionId), { ...data });
 };
-
 export const deleteTransaction = async (transactionId: string) => {
-    const userId = useUserStore.getState().user?.uid;
-    if (!userId) throw new Error("User not authenticated");
+    const userId = getUserId();
     await deleteDoc(doc(db, 'budgetflow', userId, 'transactions', transactionId));
 };
 
-export const addBudget = async (data: Omit<Budget, 'id' | 'createdAt' | 'userId'>) => {
-    const userId = useUserStore.getState().user?.uid;
-    if (!userId) throw new Error("User not authenticated");
-    await addDoc(collection(db, 'budgetflow', userId, 'budgets'), {
-        ...data,
-        userId,
-        createdAt: serverTimestamp(),
+// Goals (Savings)
+export const addGoal = async (data: Omit<Goal, 'id' | 'createdAt' | 'userId'>) => {
+    const userId = getUserId();
+    await addDoc(collection(db, 'budgetflow', userId, 'goals'), { ...data, userId, createdAt: serverTimestamp() });
+};
+export const updateGoal = async (goalId: string, data: Partial<Omit<Goal, 'id' | 'userId'>>) => {
+    const userId = getUserId();
+    await updateDoc(doc(db, 'budgetflow', userId, 'goals', goalId), data);
+};
+export const deleteGoal = async (goalId: string) => {
+    const userId = getUserId();
+    await deleteDoc(doc(db, 'budgetflow', userId, 'goals', goalId));
+};
+export const adjustGoalAmount = async (goalId: string, amount: number, description: string) => {
+    const userId = getUserId();
+    const goalDocRef = doc(db, 'budgetflow', userId, 'goals', goalId);
+    
+    await runTransaction(db, async (transaction) => {
+        const goalDoc = await transaction.get(goalDocRef);
+        if (!goalDoc.exists()) throw new Error("Goal not found");
+
+        const newCurrentAmount = goalDoc.data().currentAmount + amount;
+        transaction.update(goalDocRef, { currentAmount: newCurrentAmount });
+
+        const transactionType = amount > 0 ? 'income' : 'expense';
+        const transactionDescription = amount > 0 ? `Tabungan: ${description}` : `Ambil dari tabungan: ${description}`;
+        const transactionData = {
+            userId,
+            type: transactionType,
+            description: transactionDescription,
+            amount: Math.abs(amount),
+            category: 'Tabungan',
+            date: new Date(),
+            createdAt: serverTimestamp(),
+        };
+        const newTransactionRef = doc(collection(db, 'budgetflow', userId, 'transactions'));
+        transaction.set(newTransactionRef, transactionData);
     });
 };
 
-export const updateBudget = async (budgetId: string, data: Partial<Omit<Budget, 'id' | 'userId'>>) => {
-    const userId = useUserStore.getState().user?.uid;
-    if (!userId) throw new Error("User not authenticated");
-    await updateDoc(doc(db, 'budgetflow', userId, 'budgets', budgetId), data);
+// Debts / Receivables
+export const addDebt = async (data: Omit<Debt, 'id' | 'createdAt' | 'userId'>) => {
+    const userId = getUserId();
+    await addDoc(collection(db, 'budgetflow', userId, 'debts'), { ...data, userId, createdAt: serverTimestamp() });
+};
+export const updateDebt = async (debtId: string, data: Partial<Omit<Debt, 'id' | 'userId'>>) => {
+    const userId = getUserId();
+    await updateDoc(doc(db, 'budgetflow', userId, 'debts', debtId), data);
+};
+export const deleteDebt = async (debtId: string) => {
+    const userId = getUserId();
+    await deleteDoc(doc(db, 'budgetflow', userId, 'debts', debtId));
+};
+export const recordDebtPayment = async (debtId: string, amount: number, description: string) => {
+    const userId = getUserId();
+    const debtDocRef = doc(db, 'budgetflow', userId, 'debts', debtId);
+    
+    await runTransaction(db, async (transaction) => {
+        const debtDoc = await transaction.get(debtDocRef);
+        if (!debtDoc.exists()) throw new Error("Debt/Receivable not found");
+
+        const debtData = debtDoc.data() as Debt;
+        const newPaidAmount = debtData.paidAmount + amount;
+        const isPaid = newPaidAmount >= debtData.totalAmount;
+        transaction.update(debtDocRef, { paidAmount: newPaidAmount, isPaid });
+
+        const transactionType = debtData.type === 'debt' ? 'expense' : 'income';
+        const transactionDescription = debtData.type === 'debt' ? `Bayar hutang: ${description}` : `Terima piutang: ${description}`;
+        const transactionData = {
+            userId,
+            type: transactionType,
+            description: transactionDescription,
+            amount: amount,
+            category: debtData.type === 'debt' ? 'Bayar Hutang' : 'Piutang',
+            date: new Date(),
+            createdAt: serverTimestamp(),
+        };
+        const newTransactionRef = doc(collection(db, 'budgetflow', userId, 'transactions'));
+        transaction.set(newTransactionRef, transactionData);
+    });
 };
 
-export const deleteBudget = async (budgetId: string) => {
-    const userId = useUserStore.getState().user?.uid;
-    if (!userId) throw new Error("User not authenticated");
-    await deleteDoc(doc(db, 'budgetflow', userId, 'budgets', budgetId));
-};
 
+// Categories
 export const addCategory = async (userId: string, name: string, type: TransactionType) => {
     if (!userId || !name.trim()) return;
     await addDoc(collection(db, 'budgetflow', userId, 'categories'), {
