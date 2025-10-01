@@ -27,23 +27,20 @@ const chartColors = [
   'hsl(var(--chart-5) / 0.7)',
 ];
 
-const generateChartConfig = (data: { category: string; value: number }[]): ChartConfig => {
-  const config: ChartConfig = {
-    value: { label: 'Value' },
+// Pre-define chart config for all possible expense categories
+const chartConfig = expenseCategories.reduce((config, category, index) => {
+  config[category] = {
+    label: category,
+    color: chartColors[index % chartColors.length],
   };
-  data.forEach((item, index) => {
-    config[item.category] = {
-      label: item.category,
-      color: chartColors[index % chartColors.length],
-    };
-  });
   return config;
-};
+}, {} as ChartConfig);
+
 
 export function SummaryChart() {
   const { transactions } = useBudgetflowStore();
 
-  const { chartData, chartConfig } = React.useMemo(() => {
+  const chartData = React.useMemo(() => {
     const monthlyExpenses: { [key: string]: number } = {};
     const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
@@ -59,8 +56,7 @@ export function SummaryChart() {
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
 
-    const config = generateChartConfig(data);
-    return { chartData: data, chartConfig: config };
+    return data;
   }, [transactions]);
 
 
