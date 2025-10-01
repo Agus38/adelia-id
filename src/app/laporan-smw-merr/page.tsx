@@ -604,6 +604,7 @@ ${pemasukanText}
             <Button 
               className="flex-1 bg-green-600 text-white hover:bg-green-700"
               onClick={handleSendWhatsApp}
+              disabled={!modalAwal || !omsetBersih}
             >
               <Send className="mr-2 h-4 w-4" />
               Kirim WA
