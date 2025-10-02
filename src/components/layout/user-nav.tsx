@@ -74,6 +74,7 @@ export function UserNav() {
   const roleBadgeVariant: { [key: string]: 'destructive' | 'secondary' | 'default' } = {
       'Admin': 'destructive',
       'Editor': 'default',
+      'Khusus': 'default',
       'Pengguna': 'secondary',
   };
 

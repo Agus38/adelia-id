@@ -65,7 +65,7 @@ import { toast } from '@/hooks/use-toast';
 import { useUserStore } from '@/lib/user-store';
 
 type UserStatus = 'Aktif' | 'Diblokir';
-type UserRole = 'Admin' | 'Pengguna' | 'Editor';
+type UserRole = 'Admin' | 'Pengguna' | 'Editor' | 'Khusus';
 
 type User = {
   id: string; // Firestore document ID
@@ -83,6 +83,7 @@ const roleBadgeVariant: { [key in UserRole]: 'destructive' | 'secondary' | 'defa
   'Admin': 'destructive',
   'Editor': 'default',
   'Pengguna': 'secondary',
+  'Khusus': 'default',
 };
 
 const statusBadgeVariant: { [key in UserStatus]: 'default' | 'destructive' } = {
@@ -456,7 +457,7 @@ export function UserManagement() {
               <DropdownMenuContent align="end">
                  <DropdownMenuLabel>Filter peran</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {['Admin', 'Editor', 'Pengguna'].map(role => {
+                  {['Admin', 'Editor', 'Pengguna', 'Khusus'].map(role => {
                      const roleFilter: string[] = table.getColumn('role')?.getFilterValue() as any || [];
                      return (
                         <DropdownMenuCheckboxItem
@@ -626,6 +627,7 @@ export function UserManagement() {
                     <SelectItem value="Pengguna">Pengguna</SelectItem>
                     <SelectItem value="Editor">Editor</SelectItem>
                     <SelectItem value="Admin">Admin</SelectItem>
+                    <SelectItem value="Khusus">Khusus</SelectItem>
                   </SelectContent>
                 </Select>
             </div>
