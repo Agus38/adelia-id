@@ -24,15 +24,8 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import type { MenuItem } from '@/lib/menu-items-v2';
-import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon, Search, Loader2, Wrench, Lock } from 'lucide-react';
+import { ArrowDown, ArrowUp, PlusCircle, Trash2, type LucideIcon, Search, Loader2, Wrench, Lock, Users } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Badge } from '../ui/badge';
 import {
   AlertDialog,
@@ -47,21 +40,28 @@ import {
 } from '../ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
 import { useMenuConfig, saveMenuConfig } from '@/lib/menu-store';
-
+import { useUserStore } from '@/lib/user-store';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const iconList = Object.entries(allIcons).map(([name, component]) => ({ name, component })).sort((a,b) => a.name.localeCompare(b.name));
 
 
 export function MenuManagement() {
   const { menuItems, isLoading } = useMenuConfig();
+  const { userGroups, loading: isLoadingGroups } = useUserStore();
   const [menuState, setMenuState] = useState<MenuItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isNew, setIsNew] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
   
   const [isIconPickerOpen, setIconPickerOpen] = useState(false);
   const [iconSearchTerm, setIconSearchTerm] = useState("");
+  
+  const [isPermissionsDialogOpen, setPermissionsDialogOpen] = React.useState(false);
+  const [editedPermissions, setEditedPermissions] = React.useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (menuItems) {
@@ -145,19 +145,6 @@ export function MenuManagement() {
       prevState.map(item => item.id === id ? {...item, requiresAuth} : item)
     );
   }
-
-  const handleAccessChange = (id: string, access: 'all' | 'admin') => {
-     setMenuState(prevState => 
-        prevState.map(item => {
-          if (item.id === id) {
-            // If access is 'admin', it must require authentication.
-            const requiresAuth = access === 'admin' ? true : item.requiresAuth;
-            return {...item, access, requiresAuth };
-          }
-          return item;
-        })
-    );
-  }
   
   const handleSaveMenu = () => {
     if (!selectedMenuItem) return;
@@ -199,6 +186,36 @@ export function MenuManagement() {
     setSelectedMenuItem(prev => prev ? {...prev, icon: icon.component, iconName: icon.name } : null);
     setIconPickerOpen(false);
   }
+
+  const openPermissionsDialog = (menuItem: MenuItem) => {
+      const initialPermissions: Record<string, boolean> = {};
+      userGroups.forEach(group => {
+          initialPermissions[group.id] = group.menuAccess?.[menuItem.id] || false;
+      });
+      setSelectedMenuItem(menuItem);
+      setEditedPermissions(initialPermissions);
+      setPermissionsDialogOpen(true);
+  };
+  
+  const handleSavePermissions = async () => {
+      if (!selectedMenuItem) return;
+      setIsSaving(true);
+      try {
+          // This is a complex operation. We need to update multiple group documents.
+          const promises = userGroups.map(group => {
+              const groupDocRef = doc(db, 'userGroups', group.id);
+              const newMenuAccess = { ...group.menuAccess, [selectedMenuItem.id]: editedPermissions[group.id] || false };
+              return updateDoc(groupDocRef, { menuAccess: newMenuAccess });
+          });
+          await Promise.all(promises);
+          toast({ title: "Hak Akses Diperbarui", description: `Izin untuk menu "${selectedMenuItem.title}" telah disimpan.` });
+          setPermissionsDialogOpen(false);
+      } catch (error) {
+          toast({ title: 'Gagal Menyimpan Hak Akses', variant: 'destructive' });
+      } finally {
+          setIsSaving(false);
+      }
+  };
   
   const filteredIcons = iconList.filter(icon => 
     icon.name.toLowerCase().includes(iconSearchTerm.toLowerCase())
@@ -227,15 +244,14 @@ export function MenuManagement() {
               <TableHead>Label</TableHead>
               <TableHead>Visibilitas</TableHead>
               <TableHead>Maintenance</TableHead>
-              <TableHead>Hak Akses</TableHead>
               <TableHead>Wajib Login</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {isLoading || isLoadingGroups ? (
                 <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                         <p>Memuat konfigurasi menu...</p>
                     </TableCell>
@@ -265,20 +281,6 @@ export function MenuManagement() {
                             aria-label="Mode Maintenance" />
                     </TableCell>
                     <TableCell>
-                    <Select 
-                        value={item.access || 'all'} 
-                        onValueChange={(value: 'all' | 'admin') => handleAccessChange(item.id, value)}
-                    >
-                        <SelectTrigger className="w-[120px]">
-                        <SelectValue placeholder="Pilih akses" />
-                        </SelectTrigger>
-                        <SelectContent>
-                        <SelectItem value="all">Semua</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    </TableCell>
-                    <TableCell>
                       <Switch
                         checked={item.requiresAuth}
                         onCheckedChange={(checked) => handleAuthChange(item.id, checked)}
@@ -296,6 +298,11 @@ export function MenuManagement() {
                     <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
                         Edit
                     </Button>
+                    {item.access !== 'admin' && (
+                      <Button variant="outline" size="sm" onClick={() => openPermissionsDialog(item)}>
+                        <Users className="h-4 w-4"/>
+                      </Button>
+                    )}
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="sm">Hapus</Button>
@@ -425,6 +432,38 @@ export function MenuManagement() {
                     </div>
                 )}
             </ScrollArea>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isPermissionsDialogOpen} onOpenChange={setPermissionsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Atur Akses Grup untuk: {selectedMenuItem?.title}</DialogTitle>
+            <DialogDescription>
+              Pilih grup pengguna mana yang dapat melihat item menu ini.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] my-4">
+            <div className="space-y-4 pr-6">
+                {userGroups.map(group => (
+                    <div key={group.id} className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <Label htmlFor={`group-access-${group.id}`} className="font-medium">{group.name}</Label>
+                        <Switch
+                            id={`group-access-${group.id}`}
+                            checked={editedPermissions[group.id] || false}
+                            onCheckedChange={(checked) => setEditedPermissions(prev => ({...prev, [group.id]: checked}))}
+                        />
+                    </div>
+                ))}
+            </div>
+           </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPermissionsDialogOpen(false)} disabled={isSaving}>Batal</Button>
+            <Button onClick={handleSavePermissions} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Simpan Hak Akses
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
