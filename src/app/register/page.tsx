@@ -70,14 +70,14 @@ export default function RegisterPage() {
         photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
       });
 
-      // 3. Create user document in Firestore with only the required fields.
-      // The role and status will be validated by Firestore rules.
+      // 3. Create user document in Firestore.
+      // This now includes role and status, which will be validated by the new, stricter Firestore rule.
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
         email: user.email,
         fullName: name,
-        role: 'Pengguna', // This will be validated by the new rule
-        status: 'Aktif',    // This will be validated by the new rule
+        role: 'Pengguna', // Explicitly set the role for validation
+        status: 'Aktif',   // Explicitly set the status for validation
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         createdAt: serverTimestamp(),
       });
@@ -94,7 +94,7 @@ export default function RegisterPage() {
         if (error.code === 'auth/email-already-in-use') {
             errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.';
         } else if (error.code === 'permission-denied') {
-            errorMessage = 'Pendaftaran gagal karena masalah izin. Hubungi administrator.';
+            errorMessage = 'Pendaftaran gagal karena masalah izin. Pastikan aturan Firestore Anda sudah benar.';
         } else {
             console.error("Registration error:", error);
         }

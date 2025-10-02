@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -24,12 +25,17 @@ service cloud.firestore {
       // Admin can manage any user profile.
       allow read, write, list: if isDbAdmin();
       
-      // An authenticated user can create their own document.
-      allow create: if request.auth.uid == userId;
+      // An authenticated user can create their own document, but only with a 'Pengguna' role and 'Aktif' status.
+      // This prevents a user from creating an Admin account for themselves.
+      allow create: if request.auth.uid == userId
+                    && request.resource.data.role == 'Pengguna'
+                    && request.resource.data.status == 'Aktif';
       
-      // An authenticated user can read or update their own profile,
-      // but CANNOT change their role or status.
+      // An authenticated user can read their own profile.
       allow read: if request.auth.uid == userId;
+
+      // An authenticated user can update their own profile,
+      // but CANNOT change their role or status.
       allow update: if request.auth.uid == userId
                     && request.resource.data.role == resource.data.role
                     && request.resource.data.status == resource.data.status;
@@ -37,8 +43,10 @@ service cloud.firestore {
     
     // Rules for user groups
     match /userGroups/{groupId} {
-        // Only Admin can manage user groups
-        allow read, write, delete, list: if isDbAdmin();
+        // Authenticated users can read the list of groups (for access checks).
+        allow list, read: if request.auth != null;
+        // ONLY Admin can create, write, or delete user groups.
+        allow create, write, delete: if isDbAdmin();
     }
 
     // Rules for daily financial reports
@@ -61,10 +69,11 @@ service cloud.firestore {
       allow delete, list: if isDbAdmin();
     }
     
-    // Rules for BudgetFlow feature. This allows a user to access any document
-    // within their own folder (e.g., /budgetflow/{userId}/transactions/{txId}).
+    // Rules for BudgetFlow feature
     match /budgetflow/{userId}/{document=**} {
-      allow read, write, delete: if request.auth.uid == userId;
+    	// Users can only access their own data within their folder.
+      // This covers transactions, goals, debts, and categories sub-collections.
+      allow read, write, delete, create: if request.auth.uid == userId;
     }
 
     // Rules for SMW Manyar reports
@@ -154,9 +163,9 @@ export default function FirestoreRulesPage() {
       </p>
       
        <Alert variant="destructive">
-          <AlertTitle>PENTING: Segera Perbarui Aturan Anda!</AlertTitle>
+          <AlertTitle>PERINGATAN KEAMANAN: Aturan Diperbarui!</AlertTitle>
           <AlertDescription>
-            Aturan keamanan telah diubah untuk mengakomodasi fitur BudgetFlow. Anda **WAJIB** menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan data keuangan Anda aman.
+            Aturan keamanan telah diperbarui secara signifikan untuk menutup celah keamanan pada proses pendaftaran pengguna. Anda <strong>WAJIB</strong> menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan keamanan aplikasi Anda.
           </AlertDescription>
        </Alert>
        
