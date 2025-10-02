@@ -31,7 +31,7 @@ interface MenuItemDTO {
   title: string;
   href: string;
   iconName: string;
-  access: 'all' | 'admin';
+  access: string;
   comingSoon: boolean;
   badgeText?: string;
   isUnderMaintenance?: boolean;
@@ -401,6 +401,9 @@ export const saveSidebarMenuConfig = async (items: MenuItem[]) => {
     iconName: (item as any).iconName || (item.icon && (item.icon as any).displayName) || 'Package',
     access: item.access || 'all',
     comingSoon: item.comingSoon || false,
+    badgeText: item.badgeText,
+    isUnderMaintenance: item.isUnderMaintenance,
+    requiresAuth: item.requiresAuth,
   }));
   await setDoc(sidebarMenuConfigDocRef, { items: itemsToStore });
 };
@@ -458,6 +461,9 @@ export const saveAdminSidebarMenuConfig = async (items: MenuItem[]) => {
     iconName: (item as any).iconName || (item.icon && (item.icon as any).displayName) || 'Package',
     access: 'admin',
     comingSoon: item.comingSoon || false,
+    badgeText: item.badgeText,
+    isUnderMaintenance: item.isUnderMaintenance,
+    requiresAuth: item.requiresAuth,
   }));
   await setDoc(adminSidebarMenuConfigDocRef, { items: itemsToStore });
 };

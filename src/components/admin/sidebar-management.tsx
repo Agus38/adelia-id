@@ -45,14 +45,15 @@ import {
   AlertDialogTrigger,
 } from '../ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
-import { useSidebarMenuConfig, saveSidebarMenuConfig } from '@/lib/menu-store';
+import { useSidebarMenuConfig, saveSidebarMenuConfig, useRolesConfig } from '@/lib/menu-store';
 
 
 const iconList = Object.entries(allIcons).map(([name, component]) => ({ name, component })).sort((a,b) => a.name.localeCompare(b.name));
 
 
 export function SidebarManagement() {
-  const { sidebarMenuItems, isLoading } = useSidebarMenuConfig();
+  const { sidebarMenuItems, isLoading: isLoadingSidebar } = useSidebarMenuConfig();
+  const { roles, isLoading: isLoadingRoles } = useRolesConfig();
   const [menuState, setMenuState] = useState<MenuItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -62,6 +63,8 @@ export function SidebarManagement() {
   
   const [isIconPickerOpen, setIconPickerOpen] = useState(false);
   const [iconSearchTerm, setIconSearchTerm] = useState("");
+
+  const isLoading = isLoadingSidebar || isLoadingRoles;
 
   useEffect(() => {
     if (sidebarMenuItems) {
@@ -111,7 +114,7 @@ export function SidebarManagement() {
 
     const swapIndex = direction === 'up' ? index - 1 : index + 1;
 
-    if (swapIndex <= 0 || swapIndex >= newMenuState.length) {
+    if (swapIndex < 1 || swapIndex >= newMenuState.length) {
       return;
     }
 
@@ -121,7 +124,7 @@ export function SidebarManagement() {
     setMenuState(newMenuState);
   };
 
-  const handleAccessChange = (id: string, access: 'all' | 'admin') => {
+  const handleAccessChange = (id: string, access: 'all' | 'admin' | string) => {
      setMenuState(prevState => 
         prevState.map(item => item.id === id ? {...item, access} : item)
     );
@@ -209,15 +212,17 @@ export function SidebarManagement() {
                     <TableCell>
                     <Select 
                         value={item.access || 'all'} 
-                        onValueChange={(value: 'all' | 'admin') => handleAccessChange(item.id, value)}
+                        onValueChange={(value) => handleAccessChange(item.id, value)}
                         disabled={item.id === 'home'}
                     >
                         <SelectTrigger className="w-[120px]">
                         <SelectValue placeholder="Pilih akses" />
                         </SelectTrigger>
                         <SelectContent>
-                        <SelectItem value="all">Semua</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="all">Semua</SelectItem>
+                           {roles.map(role => (
+                               <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>
+                           ))}
                         </SelectContent>
                     </Select>
                     </TableCell>

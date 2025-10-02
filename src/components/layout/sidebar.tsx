@@ -37,10 +37,18 @@ export function AppSidebar({ }: AppSidebarProps) {
 
   // Filter items based on user role
   const filteredSidebarItems = React.useMemo(() => {
-    if (user?.role === 'Admin') {
+    if (!user) {
+        return sidebarMenuItems.filter(item => item.access === 'all' || !item.access);
+    }
+    if (user.role === 'Admin') {
       return sidebarMenuItems; // Admins see all sidebar items
     }
-    return sidebarMenuItems.filter(item => item.access !== 'admin');
+    return sidebarMenuItems.filter(item => {
+        if (!item.access || item.access === 'all') {
+            return true;
+        }
+        return user.role?.toLowerCase() === item.access.toLowerCase();
+    });
   }, [sidebarMenuItems, user]);
 
   const itemsToDisplay = isAdminPage ? adminSidebarMenuItems : filteredSidebarItems;
