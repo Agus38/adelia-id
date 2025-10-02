@@ -124,7 +124,7 @@ export function SidebarManagement() {
     setMenuState(newMenuState);
   };
 
-  const handleAccessChange = (id: string, access: 'all' | 'admin' | string) => {
+  const handleAccessChange = (id: string, access: 'all' | string) => {
      setMenuState(prevState => 
         prevState.map(item => item.id === id ? {...item, access} : item)
     );
@@ -216,13 +216,13 @@ export function SidebarManagement() {
                         disabled={item.id === 'home'}
                     >
                         <SelectTrigger className="w-[120px]">
-                        <SelectValue placeholder="Pilih akses" />
+                            <SelectValue placeholder="Pilih akses" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">Semua</SelectItem>
-                           {roles.map(role => (
-                               <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>
-                           ))}
+                            <SelectItem value="all">Semua</SelectItem>
+                            {roles.map(role => (
+                                <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                     </TableCell>
