@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -10,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle, Trash2, Edit, Users, Settings, Loader2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, Edit, Users, Settings, Loader2, Star } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +30,9 @@ import { useUserStore, type UserProfile } from '@/lib/user-store';
 import { collection, getDocs, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from '@/hooks/use-toast';
-import { useMenuConfig } from '@/lib/menu-store';
+import { useMenuConfig, useDefaultUserGroupConfig, saveDefaultUserGroupConfig } from '@/lib/menu-store';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 interface UserGroup {
     id: string;
@@ -63,7 +66,17 @@ export function UserGroupManagement() {
   const [editedDescription, setEditedDescription] = React.useState('');
   const [editedPermissions, setEditedPermissions] = React.useState<Record<string, boolean>>({});
   const [editedMemberIds, setEditedMemberIds] = React.useState<string[]>([]);
+  
+  const { defaultUserGroupId, isLoading: isLoadingDefaultGroup } = useDefaultUserGroupConfig();
 
+  const handleSetDefault = async (groupId: string) => {
+    try {
+        await saveDefaultUserGroupConfig(groupId);
+        toast({ title: 'Grup Default Diperbarui', description: 'Pengguna baru akan otomatis ditambahkan ke grup ini.' });
+    } catch (error) {
+        toast({ title: 'Gagal Memperbarui', variant: 'destructive' });
+    }
+  }
 
   const fetchData = React.useCallback(async () => {
     setLoadingData(true);
@@ -198,7 +211,7 @@ export function UserGroupManagement() {
       }
   }
   
-  const isLoading = isLoadingUser || loadingData;
+  const isLoading = isLoadingUser || loadingData || isLoadingDefaultGroup;
 
   const appMenuItems = menuItems.filter(item => item.access !== 'admin');
 
@@ -219,6 +232,7 @@ export function UserGroupManagement() {
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
+           <TooltipProvider>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -243,8 +257,22 @@ export function UserGroupManagement() {
                 ) : groups.map(group => (
                   <TableRow key={group.id}>
                     <TableCell>
-                      <p className="font-medium">{group.name}</p>
-                      <p className="text-xs text-muted-foreground">{group.description}</p>
+                      <div className="flex items-center gap-2">
+                        {group.id === defaultUserGroupId && (
+                           <Tooltip>
+                             <TooltipTrigger>
+                               <Star className="h-5 w-5 text-yellow-500 fill-yellow-400"/>
+                             </TooltipTrigger>
+                             <TooltipContent>
+                               <p>Grup Default untuk Pengguna Baru</p>
+                             </TooltipContent>
+                           </Tooltip>
+                        )}
+                        <div>
+                            <p className="font-medium">{group.name}</p>
+                            <p className="text-xs text-muted-foreground">{group.description}</p>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>{group.memberIds?.length || 0} Pengguna</TableCell>
                     <TableCell className="text-right">
@@ -256,6 +284,11 @@ export function UserGroupManagement() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                           <DropdownMenuItem onClick={() => handleSetDefault(group.id)} disabled={group.id === defaultUserGroupId}>
+                            <Star className="mr-2 h-4 w-4" />
+                            Jadikan Default
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => openDialog(group, 'detail')}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Detail Grup
@@ -280,6 +313,7 @@ export function UserGroupManagement() {
                 ))}
               </TableBody>
             </Table>
+           </TooltipProvider>
           </div>
         </CardContent>
       </Card>

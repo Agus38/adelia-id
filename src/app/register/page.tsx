@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { setDoc, doc, serverTimestamp, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRegisterPageConfig } from '@/lib/menu-store';
@@ -62,19 +62,20 @@ export default function RegisterPage() {
     try {
       // 1. Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const authUser = userCredential.user;
 
       // 2. Update basic profile in Firebase Authentication.
-      await updateProfile(user, {
+      await updateProfile(authUser, {
         displayName: name,
         photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
       });
+      
+      const userDocRef = doc(db, "users", authUser.uid);
 
       // 3. Create user document in Firestore.
-      // This now includes role and status, which will be validated by the new, stricter Firestore rule.
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        email: user.email,
+      await setDoc(userDocRef, {
+        uid: authUser.uid,
+        email: authUser.email,
         fullName: name,
         role: 'Pengguna', // Explicitly set the role for validation
         status: 'Aktif',   // Explicitly set the status for validation
@@ -82,7 +83,19 @@ export default function RegisterPage() {
         createdAt: serverTimestamp(),
       });
       
-      // 4. Show success and redirect
+      // 4. Add user to the default group
+      const defaultGroupConfigDoc = await getDoc(doc(db, 'app-settings', 'defaultUserGroup'));
+      if (defaultGroupConfigDoc.exists()) {
+          const { groupId } = defaultGroupConfigDoc.data();
+          if (groupId) {
+              const groupDocRef = doc(db, 'userGroups', groupId);
+              await updateDoc(groupDocRef, {
+                  memberIds: arrayUnion(userDocRef.id)
+              });
+          }
+      }
+      
+      // 5. Show success and redirect
       toast({
         title: 'Pendaftaran Berhasil!',
         description: 'Akun Anda telah dibuat. Anda akan diarahkan ke halaman login.',

@@ -178,6 +178,7 @@ const developerInfoDocRef = doc(db, 'app-settings', 'developer-info');
 const sessionConfigDocRef = doc(db, 'app-settings', 'sessionConfig');
 const aboutInfoDocRef = doc(db, 'app-settings', 'aboutInfo');
 const promoPopupConfigDocRef = doc(db, 'app-settings', 'promo-popup');
+const defaultUserGroupDocRef = doc(db, 'app-settings', 'defaultUserGroup');
 
 
 // --- Default Data ---
@@ -825,4 +826,43 @@ export const savePromoPopupConfig = async (config: PromoPopupConfig) => {
     ...config,
   };
   await setDoc(promoPopupConfigDocRef, configToStore);
+};
+
+
+// --- Default User Group Store ---
+interface DefaultUserGroupState {
+  defaultUserGroupId: string | null;
+  isLoading: boolean;
+  initializeListener: () => () => void;
+}
+
+const useDefaultUserGroupStore = create<DefaultUserGroupState>((set) => ({
+  defaultUserGroupId: null,
+  isLoading: true,
+  initializeListener: () => {
+    const unsubscribe = onSnapshot(defaultUserGroupDocRef, (docSnap) => {
+      if (docSnap.exists() && docSnap.data()?.groupId) {
+        set({ defaultUserGroupId: docSnap.data()?.groupId, isLoading: false });
+      } else {
+        set({ defaultUserGroupId: null, isLoading: false });
+      }
+    }, (error) => {
+      console.error("Error fetching default user group:", error);
+      set({ isLoading: false });
+    });
+    return unsubscribe;
+  }
+}));
+
+export const useDefaultUserGroupConfig = () => {
+  const { defaultUserGroupId, isLoading, initializeListener } = useDefaultUserGroupStore();
+  React.useEffect(() => {
+    const unsubscribe = initializeListener();
+    return () => unsubscribe();
+  }, [initializeListener]);
+  return { defaultUserGroupId, isLoading };
+};
+
+export const saveDefaultUserGroupConfig = async (groupId: string) => {
+  await setDoc(defaultUserGroupDocRef, { groupId });
 };
