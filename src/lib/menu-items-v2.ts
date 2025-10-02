@@ -214,15 +214,6 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
-  {
-    id: 'user-group-management',
-    title: 'Grup Pengguna',
-    href: '/admin/user-groups',
-    icon: UsersRound,
-    description: 'Buat grup dan kelola hak akses menu.',
-    access: 'admin',
-    requiresAuth: true,
-  },
    {
     id: 'team-management',
     title: 'Manajemen Tim',
