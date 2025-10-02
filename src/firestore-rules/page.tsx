@@ -120,3 +120,86 @@ service cloud.firestore {
     }
   }
 }
+`;
+
+export default function FirestoreRulesPage() {
+  const { toast } = useToast();
+  const [lastUpdated, setLastUpdated] = useState('');
+
+  useEffect(() => {
+    // This runs on the client-side, ensuring the date is current for the user.
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+    });
+    const formattedTime = now.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    });
+    setLastUpdated(`${formattedDate}, ${formattedTime} WIB`);
+  }, []);
+  
+  const handleCopyRules = () => {
+    navigator.clipboard.writeText(firestoreRules.trim());
+    toast({
+      title: 'Aturan Disalin!',
+      description: 'Aturan keamanan Firestore telah disalin ke clipboard.',
+    });
+  };
+
+  const characterCount = firestoreRules.trim().length;
+
+  return (
+    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+      <div className="flex items-center space-x-2">
+        <ShieldCheck className="h-8 w-8" />
+        <h2 className="text-3xl font-bold tracking-tight">Aturan Keamanan Firestore</h2>
+      </div>
+      <p className="text-muted-foreground">
+        Gunakan aturan ini untuk mengamankan database Firestore Anda. Salin dan tempelkan di Firebase Console.
+      </p>
+      
+       <Alert variant="destructive">
+          <AlertTitle>PERINGATAN KEAMANAN: Aturan Diperbarui!</AlertTitle>
+          <AlertDescription>
+            Aturan keamanan telah diperbarui secara signifikan untuk menutup celah keamanan pada proses pendaftaran pengguna. Anda <strong>WAJIB</strong> menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan keamanan aplikasi Anda.
+          </AlertDescription>
+       </Alert>
+       
+       <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>Logika Verifikasi Admin Berubah!</AlertTitle>
+          <AlertDescription>
+            Sistem verifikasi Admin sekarang menggunakan pembacaan langsung ke dokumen pengguna di Firestore, bukan lagi custom claims. Ini lebih andal dan mudah dikelola.
+          </AlertDescription>
+       </Alert>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Konten file firestore.rules</CardTitle>
+          <CardDescription>
+            Klik tombol di bawah untuk menyalin seluruh konten aturan. Total karakter: <strong>{characterCount}</strong>.
+            <br />
+            {lastUpdated ? `Terakhir diperbarui (real-time): ${lastUpdated}` : ''}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+           <Textarea
+            readOnly
+            value={firestoreRules.trim()}
+            className="font-mono text-xs h-96"
+          />
+        </CardContent>
+         <CardFooter>
+            <Button onClick={handleCopyRules}>
+              <Copy className="mr-2 h-4 w-4" />
+              Salin Aturan
+            </Button>
+          </CardFooter>
+      </Card>
+    </div>
+  );
+}
