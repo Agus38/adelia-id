@@ -20,18 +20,6 @@ export function usePageAccess(pageId: string) {
     }
 
     const menuItem = menuItems.find(item => item.id === pageId);
-    
-    // Default to accessible if page isn't in menu config (e.g. /profile, /settings)
-    if (!menuItem) {
-      // Still need to check for login on these specific pages
-      if ((pageId === 'profile' || pageId === 'settings') && !user) {
-         router.push('/login');
-         setHasAccess(false);
-      } else {
-         setHasAccess(true);
-      }
-      return;
-    }
 
     // 1. Admin always has access
     if (user?.role === 'Admin') {
@@ -39,47 +27,74 @@ export function usePageAccess(pageId: string) {
       return;
     }
     
-    // 2. Check for maintenance mode (takes precedence over other checks for non-admins)
+    // Default to accessible if page isn't in menu config (e.g., /profile, /settings, /)
+    if (!menuItem) {
+      setHasAccess(true);
+      return;
+    }
+    
+    // 2. Check for maintenance mode (takes precedence for non-admins)
     if (menuItem.isUnderMaintenance) {
         router.push('/maintenance');
         setHasAccess(false);
         return;
     }
 
-    // 3. For non-admins, check if logged in
-    if (!user) {
-      // If the page requires auth or is managed by groups, redirect to login
-      if (menuItem.requiresAuth || menuItem.access === 'all') { // Check 'all' as it might be group controlled
-         router.push('/login?redirect=' + pageId);
-         setHasAccess(false);
-         return;
-      }
-    }
+    // 3. Handle pages that require authentication
+    if (menuItem.requiresAuth) {
+        if (!user) {
+            router.push('/login?redirect=' + pageId);
+            setHasAccess(false);
+            return;
+        }
 
-    // 4. For logged-in non-admins, check group-based access
-    if (user && user.role !== 'Admin') {
+        // User is logged in, now check group permissions
         const userGroupIds = userGroups.filter(g => g.memberIds.includes(user.id)).map(g => g.id);
         
         let isAllowedByGroup = false;
-        // If a menu is available to 'all', it's accessible unless restricted by groups.
-        // For simplicity, let's assume if any group gives access, it's a yes.
-        for (const groupId of userGroupIds) {
-            const group = userGroups.find(g => g.id === groupId);
-            if (group && group.menuAccess && group.menuAccess[pageId]) {
-                isAllowedByGroup = true;
-                break;
-            }
+        if (userGroupIds.length > 0) {
+          for (const groupId of userGroupIds) {
+              const group = userGroups.find(g => g.id === groupId);
+              if (group && group.menuAccess && group.menuAccess[pageId]) {
+                  isAllowedByGroup = true;
+                  break;
+              }
+          }
         }
         
-        if (!isAllowedByGroup) {
+        // This handles cases where a menu is for all logged-in users, 
+        // but might be explicitly disabled for some groups.
+        // For simplicity, if it requires auth and isn't explicitly granted by a group, we deny.
+        // A better approach might be to check if ANY group manages this menu item.
+        // Let's refine: if any group has a setting for this menu, access MUST be granted by a group.
+        const isMenuGroupManaged = userGroups.some(g => g.menuAccess && g.menuAccess[pageId] !== undefined);
+
+        if (isMenuGroupManaged && !isAllowedByGroup) {
             router.push('/unauthorized');
             setHasAccess(false);
             return;
         }
-    }
+        
+        // If the menu requires auth, but is not managed by any group, we can assume it's for all logged-in users.
+        if (!isMenuGroupManaged) {
+            setHasAccess(true);
+            return;
+        }
 
-    // 5. If all checks pass
-    setHasAccess(true);
+        if (isAllowedByGroup) {
+          setHasAccess(true);
+          return;
+        }
+
+    } else {
+        // 4. Page is public, access is granted
+        setHasAccess(true);
+        return;
+    }
+    
+    // Default to unauthorized if no other condition is met
+    router.push('/unauthorized');
+    setHasAccess(false);
 
   }, [isLoading, menuItems, user, userGroups, pageId, router]);
 
