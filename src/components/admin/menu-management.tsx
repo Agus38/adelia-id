@@ -40,7 +40,7 @@ import {
   AlertDialogTrigger,
 } from '../ui/alert-dialog';
 import { ScrollArea } from '../ui/scroll-area';
-import { useMenuConfig, saveMenuConfig } from '@/lib/menu-store';
+import { useMenuConfig, saveMenuConfig, useRolesConfig } from '@/lib/menu-store';
 import {
   Select,
   SelectContent,
@@ -52,7 +52,8 @@ import {
 const iconList = Object.entries(allIcons).map(([name, component]) => ({ name, component })).sort((a,b) => a.name.localeCompare(b.name));
 
 export function MenuManagement() {
-  const { menuItems, isLoading } = useMenuConfig();
+  const { menuItems, isLoading: isLoadingMenu } = useMenuConfig();
+  const { roles, isLoading: isLoadingRoles } = useRolesConfig();
   const [menuState, setMenuState] = useState<MenuItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -62,6 +63,8 @@ export function MenuManagement() {
   
   const [isIconPickerOpen, setIconPickerOpen] = useState(false);
   const [iconSearchTerm, setIconSearchTerm] = useState("");
+
+  const isLoading = isLoadingMenu || isLoadingRoles;
 
   useEffect(() => {
     if (menuItems) {
@@ -146,12 +149,12 @@ export function MenuManagement() {
     );
   }
 
-  const handleAccessChange = (id: string, access: 'all' | 'admin') => {
+  const handleAccessChange = (id: string, access: 'all' | 'admin' | string) => {
      setMenuState(prevState => 
         prevState.map(item => {
             if (item.id === id) {
-                // If set to admin, it must require auth
-                return { ...item, access, requiresAuth: access === 'admin' ? true : item.requiresAuth };
+                // If set to any role other than 'all', it must require auth
+                return { ...item, access, requiresAuth: access !== 'all' ? true : item.requiresAuth };
             }
             return item;
         })
@@ -268,20 +271,22 @@ export function MenuManagement() {
                         checked={item.requiresAuth}
                         onCheckedChange={(checked) => handleAuthChange(item.id, checked)}
                         aria-label="Wajib Login"
-                        disabled={item.access === 'admin'}
+                        disabled={item.access !== 'all'}
                       />
                     </TableCell>
                     <TableCell>
                       <Select 
                           value={item.access || 'all'} 
-                          onValueChange={(value: 'all' | 'admin') => handleAccessChange(item.id, value)}
+                          onValueChange={(value) => handleAccessChange(item.id, value)}
                       >
                           <SelectTrigger className="w-[120px]">
                           <SelectValue placeholder="Pilih akses" />
                           </SelectTrigger>
                           <SelectContent>
                           <SelectItem value="all">Semua</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
+                           {roles.map(role => (
+                               <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                           ))}
                           </SelectContent>
                       </Select>
                     </TableCell>

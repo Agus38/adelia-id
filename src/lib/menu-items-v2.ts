@@ -1,3 +1,4 @@
+
 import {
   MessageSquare,
   Package,
@@ -84,7 +85,7 @@ export interface MenuItem {
   href: string;
   icon: LucideIcon;
   description?: string;
-  access?: 'all' | 'admin';
+  access?: 'all' | 'admin' | string; // Changed to string to be more flexible
   comingSoon?: boolean;
   badgeText?: string;
   iconName?: string; // Added for serialization

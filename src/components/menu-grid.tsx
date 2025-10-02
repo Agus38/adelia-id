@@ -14,13 +14,20 @@ export function MenuGrid() {
   const { user, loading: isLoadingUser } = useUserStore();
 
   const filteredMenuItems = menuItems.filter(item => {
-    // Admin sees everything.
-    if (user?.role === 'Admin') {
+    // If access is 'all', everyone sees it (respecting requiresAuth later)
+    if (item.access === 'all' || !item.access) {
       return true;
     }
-    
-    // Non-admins only see 'all' access items
-    return item.access !== 'admin';
+    // If user is not logged in, they can't see role-restricted items
+    if (!user) {
+      return false;
+    }
+    // If user is Admin, they see everything
+    if (user.role === 'Admin') {
+        return true;
+    }
+    // Check if user's role matches the required role for the menu item
+    return user.role?.toLowerCase() === item.access.toLowerCase();
   });
 
   if (isLoadingMenu || isLoadingUser) {

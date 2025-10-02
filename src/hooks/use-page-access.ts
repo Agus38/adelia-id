@@ -33,22 +33,34 @@ export function usePageAccess(pageId: string) {
         setHasAccess(false);
         return;
     }
-
-    // 2. Check for admin-only pages
-    if (menuItem.access === 'admin') {
-      if (user?.role !== 'Admin') {
-        router.push('/unauthorized');
-        setHasAccess(false);
-        return;
-      }
-    }
-
-    // 3. Check for pages that require authentication
+    
+    // 2. Check for pages that require authentication but user is not logged in
     if (menuItem.requiresAuth && !user) {
       router.push('/login?redirect=' + pageId);
       setHasAccess(false);
       return;
     }
+
+    // 3. Check for role-based access
+    if (menuItem.access && menuItem.access !== 'all') {
+      if (!user) { // Should be caught by requiresAuth, but as a safeguard
+        router.push('/login?redirect=' + pageId);
+        setHasAccess(false);
+        return;
+      }
+      // Admins have access to everything
+      if (user.role === 'Admin') {
+        setHasAccess(true);
+        return;
+      }
+      // Check if user's role matches the required role
+      if (user.role?.toLowerCase() !== menuItem.access.toLowerCase()) {
+         router.push('/unauthorized');
+         setHasAccess(false);
+         return;
+      }
+    }
+
 
     // If none of the above conditions are met, grant access.
     setHasAccess(true);
