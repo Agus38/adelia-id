@@ -100,6 +100,10 @@ interface PromoPopupConfigDTO {
   promoVersion?: number;
 }
 
+interface RoleDTO {
+  id: string;
+  name: string;
+}
 
 // --- Type Definitions ---
 export interface BannerSlide {
@@ -165,6 +169,11 @@ export interface PromoPopupConfig {
   promoVersion?: number;
 }
 
+export interface Role {
+  id: string;
+  name: string;
+}
+
 
 // --- Firestore Document References ---
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
@@ -179,6 +188,7 @@ const sessionConfigDocRef = doc(db, 'app-settings', 'sessionConfig');
 const aboutInfoDocRef = doc(db, 'app-settings', 'aboutInfo');
 const promoPopupConfigDocRef = doc(db, 'app-settings', 'promo-popup');
 const defaultUserGroupDocRef = doc(db, 'app-settings', 'defaultUserGroup');
+const rolesDocRef = doc(db, 'app-settings', 'userRoles');
 
 
 // --- Default Data ---
@@ -267,6 +277,13 @@ const defaultPromoPopupConfig: PromoPopupConfig = {
   buttonLink: '/digital-products',
   promoVersion: 1,
 };
+
+const defaultRoles: Role[] = [
+    { id: 'admin', name: 'Admin' },
+    { id: 'pengguna', name: 'Pengguna' },
+    { id: 'editor', name: 'Editor' },
+    { id: 'khusus', name: 'Khusus' },
+];
 
 
 // --- Menu Grid Store ---
@@ -537,7 +554,7 @@ export const useBrandingConfig = () => {
         return () => unsubscribe();
     }, [initializeListener]);
     return { brandingConfig, isLoading };
-}
+};
 
 export const saveBrandingConfig = async (config: BrandingConfig) => {
     const configToStore: BrandingConfigDTO = {
@@ -865,4 +882,48 @@ export const useDefaultUserGroupConfig = () => {
 
 export const saveDefaultUserGroupConfig = async (groupId: string) => {
   await setDoc(defaultUserGroupDocRef, { groupId });
+};
+
+// --- Roles Store ---
+interface RolesState {
+  roles: Role[];
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const useRolesStore = create<RolesState>((set) => ({
+  roles: defaultRoles,
+  isLoading: true,
+  error: null,
+  initializeListener: () => {
+    const unsubscribe = onSnapshot(
+      rolesDocRef,
+      (docSnap) => {
+        if (docSnap.exists() && docSnap.data()?.roles) {
+          set({ roles: docSnap.data()?.roles as Role[], isLoading: false, error: null });
+        } else {
+          set({ roles: defaultRoles, isLoading: false, error: null });
+        }
+      },
+      (error) => {
+        console.error("Error fetching roles: ", error);
+        set({ roles: defaultRoles, isLoading: false, error });
+      }
+    );
+    return unsubscribe;
+  },
+}));
+
+export const useRolesConfig = () => {
+  const { roles, isLoading, initializeListener } = useRolesStore();
+  React.useEffect(() => {
+    const unsubscribe = initializeListener();
+    return () => unsubscribe();
+  }, [initializeListener]);
+  return { roles, isLoading };
+};
+
+export const saveRolesConfig = async (roles: Role[]) => {
+  await setDoc(rolesDocRef, { roles });
 };

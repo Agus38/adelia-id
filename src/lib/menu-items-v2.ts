@@ -214,6 +214,15 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
+  {
+    id: 'role-management',
+    title: 'Manajemen Peran',
+    href: '/admin/roles',
+    icon: Shield,
+    description: 'Kelola peran pengguna di seluruh aplikasi.',
+    access: 'admin',
+    requiresAuth: true,
+  },
    {
     id: 'team-management',
     title: 'Manajemen Tim',

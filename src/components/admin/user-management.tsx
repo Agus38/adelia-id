@@ -32,7 +32,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Ban, Trash2, Edit, CheckCircle, ChevronDown, Eye, Loader2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Ban, Trash2, Edit, CheckCircle, ChevronDown, Eye, Loader2, Settings } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import {
   Dialog,
@@ -56,16 +56,16 @@ import {
 } from '../ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
-import { allMenuItems } from '@/lib/menu-items-v2';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { ScrollArea } from '../ui/scroll-area';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { useUserStore } from '@/lib/user-store';
+import { RoleManagement } from './role-management';
+import { useRolesConfig, type Role } from '@/lib/menu-store';
 
 type UserStatus = 'Aktif' | 'Diblokir';
-type UserRole = 'Admin' | 'Pengguna' | 'Editor' | 'Khusus';
+type UserRole = string;
 
 type User = {
   id: string; // Firestore document ID
@@ -78,12 +78,11 @@ type User = {
   menuAccess?: Record<string, boolean>;
 };
 
-
-const roleBadgeVariant: { [key in UserRole]: 'destructive' | 'secondary' | 'default' } = {
-  'Admin': 'destructive',
-  'Editor': 'default',
-  'Pengguna': 'secondary',
-  'Khusus': 'default',
+const roleBadgeVariant: { [key in string]: 'destructive' | 'secondary' | 'default' } = {
+  'admin': 'destructive',
+  'pengguna': 'secondary',
+  'editor': 'default',
+  'khusus': 'default',
 };
 
 const statusBadgeVariant: { [key in UserStatus]: 'default' | 'destructive' } = {
@@ -94,6 +93,7 @@ const statusBadgeVariant: { [key in UserStatus]: 'default' | 'destructive' } = {
 export function UserManagement() {
   const { user: currentUser, loading: isLoadingUser } = useUserStore();
   const [users, setUsers] = React.useState<User[]>([]);
+  const { roles, isLoading: isLoadingRoles } = useRolesConfig();
   const [isDataLoading, setIsDataLoading] = React.useState(true);
   
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -107,6 +107,7 @@ export function UserManagement() {
   const [isBlockDialogOpen, setBlockDialogOpen] = React.useState(false);
   const [isUnblockDialogOpen, setUnblockDialogOpen] = React.useState(false);
   const [isDetailModalOpen, setDetailModalOpen] = React.useState(false);
+  const [isRoleManagementOpen, setRoleManagementOpen] = React.useState(false);
   
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
   const [editedUserData, setEditedUserData] = React.useState<Partial<User>>({});
@@ -152,10 +153,6 @@ export function UserManagement() {
         email: '',
         role: 'Pengguna',
         status: 'Aktif',
-        menuAccess: allMenuItems.reduce((acc, item) => {
-          acc[item.id] = item.access === 'all';
-          return acc;
-        }, {} as Record<string, boolean>)
     };
     setEditedUserData(newUserTemplate);
     setAddEditDialogOpen(true);
@@ -193,7 +190,6 @@ export function UserManagement() {
         await updateDoc(userDocRef, {
             fullName: editedUserData.fullName,
             role: editedUserData.role,
-            // menuAccess: editedUserData.menuAccess, // Implement if needed
         });
         toast({ title: "Pengguna Diperbarui", description: "Data pengguna telah berhasil diperbarui." });
       } else { // Adding new user
@@ -217,16 +213,6 @@ export function UserManagement() {
        toast({ title: "Error", description: "Gagal menyimpan data pengguna.", variant: "destructive" });
     }
   };
-
-  const handleAccessChange = (menuId: string, checked: boolean) => {
-    setEditedUserData(prev => ({
-        ...prev,
-        menuAccess: {
-            ...prev?.menuAccess,
-            [menuId]: checked
-        }
-    }));
-  }
   
   const handleRoleChange = (role: UserRole) => {
     setEditedUserData(prev => ({ ...prev, role }));
@@ -313,7 +299,7 @@ export function UserManagement() {
       header: 'Peran',
       cell: ({ row }) => {
         const role = row.getValue('role') as UserRole;
-        return <Badge variant={roleBadgeVariant[role] || 'secondary'}>{role}</Badge>;
+        return <Badge variant={roleBadgeVariant[role?.toLowerCase()] || 'secondary'}>{role}</Badge>;
       },
        filterFn: (row, id, value) => {
         return value.includes(row.getValue(id));
@@ -405,7 +391,7 @@ export function UserManagement() {
     },
   });
 
-  const isLoading = isLoadingUser || isDataLoading;
+  const isLoading = isLoadingUser || isDataLoading || isLoadingRoles;
 
   return (
     <div className="space-y-4">
@@ -457,21 +443,21 @@ export function UserManagement() {
               <DropdownMenuContent align="end">
                  <DropdownMenuLabel>Filter peran</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {['Admin', 'Editor', 'Pengguna', 'Khusus'].map(role => {
+                  {roles.map(role => {
                      const roleFilter: string[] = table.getColumn('role')?.getFilterValue() as any || [];
                      return (
                         <DropdownMenuCheckboxItem
-                            key={role}
-                            checked={roleFilter.includes(role)}
+                            key={role.id}
+                            checked={roleFilter.includes(role.name)}
                             onCheckedChange={(checked) => {
                                 const currentFilter = roleFilter || [];
                                 const newFilter = checked
-                                ? [...currentFilter, role]
-                                : currentFilter.filter(r => r !== role);
+                                ? [...currentFilter, role.name]
+                                : currentFilter.filter(r => r !== role.name);
                                 table.getColumn('role')?.setFilterValue(newFilter.length ? newFilter : undefined);
                             }}
                         >
-                           {role}
+                           {role.name}
                         </DropdownMenuCheckboxItem>
                      )
                   })}
@@ -479,6 +465,10 @@ export function UserManagement() {
             </DropdownMenu>
           </div>
           <div className="flex items-center gap-2">
+             <Button variant="outline" size="sm" onClick={() => setRoleManagementOpen(true)}>
+                <Settings className="mr-2 h-4 w-4" />
+                Kelola Peran
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
@@ -624,10 +614,9 @@ export function UserManagement() {
                     <SelectValue placeholder="Pilih peran" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Pengguna">Pengguna</SelectItem>
-                    <SelectItem value="Editor">Editor</SelectItem>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="Khusus">Khusus</SelectItem>
+                    {roles.map(role => (
+                        <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
             </div>
@@ -660,7 +649,7 @@ export function UserManagement() {
                         <p className="font-semibold col-span-2">{selectedUser.email}</p>
 
                         <p className="text-muted-foreground col-span-1">Peran:</p>
-                        <div className="col-span-2"><Badge variant={roleBadgeVariant[selectedUser.role] || 'secondary'}>{selectedUser.role}</Badge></div>
+                        <div className="col-span-2"><Badge variant={roleBadgeVariant[selectedUser.role?.toLowerCase()] || 'secondary'}>{selectedUser.role}</Badge></div>
                         
                         <p className="text-muted-foreground col-span-1">Status:</p>
                         <div className="col-span-2">
@@ -681,6 +670,18 @@ export function UserManagement() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+       <Dialog open={isRoleManagementOpen} onOpenChange={setRoleManagementOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Kelola Peran</DialogTitle>
+              <DialogDescription>Tambah, edit, atau hapus peran yang tersedia untuk pengguna.</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <RoleManagement />
+            </div>
+          </DialogContent>
+        </Dialog>
 
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -731,5 +732,3 @@ export function UserManagement() {
     </div>
   );
 }
-
-    
