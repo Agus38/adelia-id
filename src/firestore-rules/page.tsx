@@ -51,21 +51,20 @@ service cloud.firestore {
 
     // Rules for daily financial reports
     match /dailyReports/{reportId} {
-      // Allow authenticated users to create a report if the userId in the report data matches their own uid.
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      // Allow users to read/update their own reports, and Admin to read/update any report.
-      allow read, update: if isDbAdmin() || (request.auth != null && reportId.split('-')[0] == request.auth.uid);
-      // Only Admin can delete or list all reports.
-      allow delete, list: if isDbAdmin();
+      // Allow users to GET/UPDATE their own reports, and Admin to do anything.
+      allow get, update: if isDbAdmin() || (request.auth != null && reportId.split('-')[0] == request.auth.uid);
+      // Only Admin can LIST/DELETE reports.
+      allow list, delete: if isDbAdmin();
     }
 
     // Rules for stock reports
     match /stockReports/{reportId} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      // Admin can read any report. Regular users can only read their own.
-      allow read, update: if isDbAdmin() || (request.auth != null && reportId.split('-')[0] == request.auth.uid);
-      // Only Admin can list/delete reports
-      allow delete, list: if isDbAdmin();
+      // Allow users to GET/UPDATE their own reports, and Admin to do anything.
+      allow get, update: if isDbAdmin() || (request.auth != null && reportId.split('-')[0] == request.auth.uid);
+      // Only Admin can LIST/DELETE reports.
+      allow list, delete: if isDbAdmin();
     }
     
     // Rules for BudgetFlow feature
@@ -77,13 +76,11 @@ service cloud.firestore {
 
     // Rules for SMW Manyar reports
     match /smwManyarReports/{reportId} {
-      // Allow users to create or update their own reports.
       allow create, update: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      
-      // Admin can read any report. Regular users can only read their own.
-      allow read: if isDbAdmin() || (request.auth != null && reportId.split('-')[0] == request.auth.uid);
-      // Only Admin can list/delete reports
-      allow delete, list: if isDbAdmin();
+      // Allow users to GET their own reports, and Admin to do anything.
+      allow get: if isDbAdmin() || (request.auth != null && reportId.split('-')[0] == request.auth.uid);
+      // Only Admin can LIST/DELETE reports.
+      allow list, delete: if isDbAdmin();
     }
 
     // Rules for activity logs
