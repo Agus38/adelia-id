@@ -77,8 +77,8 @@ export default function RegisterPage() {
         uid: authUser.uid,
         email: authUser.email,
         fullName: name,
-        role: 'Pengguna', // Explicitly set the role for validation
-        status: 'Aktif',   // Explicitly set the status for validation
+        role: 'Pengguna',
+        status: 'Aktif',
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         createdAt: serverTimestamp(),
       });
@@ -90,7 +90,7 @@ export default function RegisterPage() {
           if (groupId) {
               const groupDocRef = doc(db, 'userGroups', groupId);
               await updateDoc(groupDocRef, {
-                  memberIds: arrayUnion(userDocRef.id)
+                  memberIds: arrayUnion(authUser.uid)
               });
           }
       }
