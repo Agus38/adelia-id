@@ -8,10 +8,11 @@ import { db } from './firebase';
 import {
   type MenuItem,
   menuItems as defaultMenuItems,
-  allMenuItems as defaultSidebarItems,
+  allMenuItems as defaultAllMenuItems,
   defaultAdminMenuItems,
   allIcons,
   type LucideIcon,
+  homeMenuItem,
 } from './menu-items-v2';
 import { create } from 'zustand';
 import { Logo } from '@/components/icons';
@@ -211,6 +212,8 @@ const smwManyarConfigDocRef = doc(db, 'app-settings', 'smwManyarConfig');
 
 
 // --- Default Data ---
+const defaultSidebarItems: MenuItem[] = [homeMenuItem, ...defaultAllMenuItems];
+
 const defaultBannerSlides: BannerSlide[] = [
   {
     id: 1,
@@ -375,7 +378,7 @@ export const saveMenuConfig = async (items: MenuItem[]) => {
     id: item.id,
     title: item.title,
     href: item.href,
-    iconName: (item as any).iconName || (item.icon && (item.icon as any).displayName) || 'Package',
+    iconName: item.iconName || (item.icon && (item.icon as any).displayName) || 'Package',
     access: item.access || 'all',
     comingSoon: item.comingSoon || false,
     badgeText: item.badgeText || '',
@@ -435,12 +438,12 @@ export const saveSidebarMenuConfig = async (items: MenuItem[]) => {
     id: item.id,
     title: item.title,
     href: item.href,
-    iconName: (item as any).iconName || (item.icon && (item.icon as any).displayName) || 'Package',
+    iconName: item.iconName || (item.icon && (item.icon as any).displayName) || 'Package',
     access: item.access || 'all',
     comingSoon: item.comingSoon || false,
-    badgeText: item.badgeText,
-    isUnderMaintenance: item.isUnderMaintenance,
-    requiresAuth: item.requiresAuth,
+    badgeText: item.badgeText || '',
+    isUnderMaintenance: item.isUnderMaintenance || false,
+    requiresAuth: item.requiresAuth || false,
   }));
   await setDoc(sidebarMenuConfigDocRef, { items: itemsToStore });
 };
@@ -495,7 +498,7 @@ export const saveAdminSidebarMenuConfig = async (items: MenuItem[]) => {
     id: item.id,
     title: item.title,
     href: item.href,
-    iconName: (item as any).iconName || (item.icon && (item.icon as any).displayName) || 'Package',
+    iconName: item.iconName || (item.icon && (item.icon as any).displayName) || 'Package',
     access: 'admin',
     comingSoon: item.comingSoon || false,
     badgeText: item.badgeText,
