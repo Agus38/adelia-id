@@ -5,11 +5,21 @@ import { create } from 'zustand';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth, db } from './firebase';
 import type { UserProfile } from '@/app/main-layout';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection, query } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+
+interface UserGroup {
+    id: string;
+    name: string;
+    description: string;
+    memberIds: string[];
+    menuAccess: Record<string, boolean>;
+    createdAt?: any;
+}
 
 interface UserState {
   user: UserProfile | null;
+  userGroups: UserGroup[];
   loading: boolean;
   initializeUserListener: () => () => void;
   setUserProfile: (profile: UserProfile) => void;
@@ -18,21 +28,23 @@ interface UserState {
 
 export const useUserStore = create<UserState>((set) => ({
   user: null,
+  userGroups: [],
   loading: true,
   initializeUserListener: () => {
     let firestoreUnsubscribe: (() => void) | null = null;
+    let groupsUnsubscribe: (() => void) | null = null;
 
     const authUnsubscribe = onAuthStateChanged(auth, (authUser) => {
-      // Unsubscribe from any previous Firestore listener
-      if (firestoreUnsubscribe) {
-        firestoreUnsubscribe();
-        firestoreUnsubscribe = null;
-      }
+      // Unsubscribe from any previous Firestore listeners
+      if (firestoreUnsubscribe) firestoreUnsubscribe();
+      if (groupsUnsubscribe) groupsUnsubscribe();
+      
+      firestoreUnsubscribe = null;
+      groupsUnsubscribe = null;
 
       if (authUser) {
         const userDocRef = doc(db, 'users', authUser.uid);
         
-        // Listen for real-time updates on the user's document
         firestoreUnsubscribe = onSnapshot(userDocRef, (userDoc) => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -55,41 +67,36 @@ export const useUserStore = create<UserState>((set) => ({
             };
             set({ user: fullUserProfile, loading: false });
           } else {
-            // User exists in Auth but not in Firestore. Fallback to basic info.
             const basicProfile: UserProfile = {
-                uid: authUser.uid,
-                email: authUser.email,
-                id: authUser.uid,
-                fullName: authUser.displayName,
-                avatarUrl: authUser.photoURL,
-                role: undefined,
+                uid: authUser.uid, email: authUser.email, id: authUser.uid,
+                fullName: authUser.displayName, avatarUrl: authUser.photoURL, role: undefined,
             };
             set({ user: basicProfile, loading: false });
           }
         }, (error) => {
-           console.error("Error with onSnapshot:", error);
-           const basicProfile: UserProfile = {
-              uid: authUser.uid,
-              email: authUser.email,
-              id: authUser.uid,
-              fullName: authUser.displayName,
-              avatarUrl: authUser.photoURL,
-              role: undefined,
-           };
-           set({ user: basicProfile, loading: false });
+           console.error("Error with onSnapshot for user:", error);
+           set({ loading: false });
         });
+        
+        // Also listen to user groups
+        const groupsQuery = query(collection(db, 'userGroups'));
+        groupsUnsubscribe = onSnapshot(groupsQuery, (snapshot) => {
+            const groupsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserGroup));
+            set({ userGroups: groupsList });
+        }, (error) => {
+            console.error("Error fetching user groups:", error);
+        });
+
       } else {
         // No authenticated user
-        set({ user: null, loading: false });
+        set({ user: null, userGroups: [], loading: false });
       }
     });
 
-    // Return a function that cleans up both listeners
     return () => {
       authUnsubscribe();
-      if (firestoreUnsubscribe) {
-        firestoreUnsubscribe();
-      }
+      if (firestoreUnsubscribe) firestoreUnsubscribe();
+      if (groupsUnsubscribe) groupsUnsubscribe();
     };
   },
   setUserProfile: (profile) => {

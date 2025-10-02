@@ -91,7 +91,7 @@ const statusBadgeVariant: { [key in UserStatus]: 'default' | 'destructive' } = {
 };
 
 export function UserManagement() {
-  const { user: currentUser, loading: isLoadingUser } = useUserStore();
+  const { user: currentUser, userGroups, loading: isLoadingUser } = useUserStore();
   const [users, setUsers] = React.useState<User[]>([]);
   const [isDataLoading, setIsDataLoading] = React.useState(true);
   
@@ -659,6 +659,17 @@ export function UserManagement() {
 
                         <p className="text-muted-foreground col-span-1">Peran:</p>
                         <div className="col-span-2"><Badge variant={roleBadgeVariant[selectedUser.role] || 'secondary'}>{selectedUser.role}</Badge></div>
+                        
+                         <p className="text-muted-foreground col-span-1">Grup:</p>
+                        <div className="col-span-2 flex flex-wrap gap-1">
+                           {userGroups.filter(g => g.memberIds.includes(selectedUser.id)).length > 0 ? (
+                                userGroups.filter(g => g.memberIds.includes(selectedUser.id)).map(g => (
+                                    <Badge key={g.id} variant="outline">{g.name}</Badge>
+                                ))
+                           ) : (
+                               <span className="text-muted-foreground italic">Tidak ada grup</span>
+                           )}
+                        </div>
 
                         <p className="text-muted-foreground col-span-1">Status:</p>
                         <div className="col-span-2">
