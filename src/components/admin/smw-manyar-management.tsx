@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -42,54 +42,15 @@ import {
 } from '../ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Edit, Trash2, Loader2, Eye, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Eye, MoreHorizontal, Save } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getSmwReports, deleteSmwReport, type SmwReport } from '@/lib/smw-manyar-report-store';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { Separator } from '../ui/separator';
+import { useSmwManyarConfig, saveSmwManyarConfig, type ReportItem } from '@/lib/menu-store';
 
-type ReportItem = {
-  id: string;
-  label: string;
-};
-
-const initialSisaIkanItems: ReportItem[] = [
-  { id: 'daging', label: 'DAGING' },
-  { id: 'babat', label: 'BABAT' },
-  { id: 'paru', label: 'PARU' },
-  { id: 'usus', label: 'USUS' },
-  { id: 'ati', label: 'ATI' },
-  { id: 'otak', label: 'OTAK' },
-  { id: 'telur', label: 'TELUR' },
-  { id: 'kuah', label: 'KUAH' },
-  { id: 'bgoreng', label: 'B•GORENG' },
-  { id: 'seledri', label: 'SELEDRI' },
-  { id: 'garam', label: 'GARAM' },
-];
-
-const initialTerjualItems: ReportItem[] = [
-  { id: 'babat', label: 'Babat' },
-  { id: 'babatTelur', label: 'Babat Telur' },
-  { id: 'biasa', label: 'Biasa' },
-  { id: 'biasaTelur', label: 'Biasa Telur' },
-  { id: 'daging', label: 'Daging' },
-  { id: 'dagingTelur', label: 'Daging Telur' },
-  { id: 'dagingDoubleT', label: 'Daging Double T' },
-  { id: 'istimewa', label: 'Istimewa' },
-  { id: 'atiOtak', label: 'Ati Otak' },
-  { id: 'atiOtakTelur', label: 'Ati Otak Telur' },
-  { id: 'telurKuah', label: 'Telur Kuah' },
-  { id: 'telur', label: 'Telur' },
-  { id: 'nasi', label: 'Nasi' },
-];
-
-const initialOnlineSalesItems: ReportItem[] = [
-  { id: 'goFood', label: 'GoFood' },
-  { id: 'grabFood', label: 'GrabFood' },
-  { id: 'cash', label: 'Cash/Dll' },
-];
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -101,23 +62,32 @@ const formatCurrency = (value: number) => {
 
 
 export function SmwManyarManagement() {
-  const [sisaIkanItems, setSisaIkanItems] = useState<ReportItem[]>(initialSisaIkanItems);
-  const [terjualItems, setTerjualItems] = useState<ReportItem[]>(initialTerjualItems);
-  const [onlineSalesItems, setOnlineSalesItems] = useState<ReportItem[]>(initialOnlineSalesItems);
+  const { smwManyarConfig, isLoading: isLoadingConfig } = useSmwManyarConfig();
+  const [sisaIkanItems, setSisaIkanItems] = React.useState<ReportItem[]>([]);
+  const [terjualItems, setTerjualItems] = React.useState<ReportItem[]>([]);
+  const [onlineSalesItems, setOnlineSalesItems] = React.useState<ReportItem[]>([]);
 
   // Dialog state for item editing
-  const [isDialogOpen, setDialogOpen] = useState(false);
-  const [currentItem, setCurrentItem] = useState<ReportItem | null>(null);
-  const [currentList, setCurrentList] = useState<'sisaIkan' | 'terjual' | 'onlineSales' | null>(null);
-  const [isNew, setIsNew] = useState(false);
+  const [isDialogOpen, setDialogOpen] = React.useState(false);
+  const [currentItem, setCurrentItem] = React.useState<ReportItem | null>(null);
+  const [currentList, setCurrentList] = React.useState<'sisaIkan' | 'terjual' | 'onlineSales' | null>(null);
+  const [isNew, setIsNew] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
   
   // State for report list
-  const [reports, setReports] = useState<SmwReport[]>([]);
-  const [isLoadingReports, setIsLoadingReports] = useState(true);
-  const [selectedReport, setSelectedReport] = useState<SmwReport | null>(null);
-  const [isDetailOpen, setDetailOpen] = useState(false);
-  const [isDeleteOpen, setDeleteOpen] = useState(false);
+  const [reports, setReports] = React.useState<SmwReport[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = React.useState(true);
+  const [selectedReport, setSelectedReport] = React.useState<SmwReport | null>(null);
+  const [isDetailOpen, setDetailOpen] = React.useState(false);
+  const [isDeleteOpen, setDeleteOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    if (smwManyarConfig) {
+      setSisaIkanItems(smwManyarConfig.sisaIkanItems);
+      setTerjualItems(smwManyarConfig.terjualItems);
+      setOnlineSalesItems(smwManyarConfig.onlineSalesItems);
+    }
+  }, [smwManyarConfig]);
 
   const fetchReports = async () => {
     setIsLoadingReports(true);
@@ -131,7 +101,7 @@ export function SmwManyarManagement() {
     }
   }
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetchReports();
   }, []);
 
@@ -182,6 +152,22 @@ export function SmwManyarManagement() {
     setCurrentList(null);
   };
   
+  const handleSaveAllChanges = async () => {
+    setIsSaving(true);
+    try {
+        await saveSmwManyarConfig({
+            sisaIkanItems,
+            terjualItems,
+            onlineSalesItems,
+        });
+        toast({ title: 'Konfigurasi Disimpan', description: 'Semua perubahan item laporan telah disimpan.' });
+    } catch (error) {
+        toast({ title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan konfigurasi.', variant: 'destructive' });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
   const handleViewDetails = (report: SmwReport) => {
     setSelectedReport(report);
     setDetailOpen(true);
@@ -289,88 +275,98 @@ export function SmwManyarManagement() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="report-list" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="report-list">Daftar Laporan</TabsTrigger>
-            <TabsTrigger value="sisa-ikan">Item Sisa Ikan</TabsTrigger>
-            <TabsTrigger value="item-terjual">Item Terjual</TabsTrigger>
-            <TabsTrigger value="penjualan-online">Item Penjualan Online</TabsTrigger>
-          </TabsList>
-           <TabsContent value="report-list" className="pt-6">
-                <div className="rounded-md border">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Tanggal</TableHead>
-                                <TableHead>Dibuat Oleh</TableHead>
-                                <TableHead>Waktu Kirim</TableHead>
-                                <TableHead className="text-right">Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoadingReports ? (
+         {isLoadingConfig ? (
+             <div className="flex h-64 items-center justify-center">
+                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+             </div>
+         ) : (
+            <Tabs defaultValue="report-list" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="report-list">Daftar Laporan</TabsTrigger>
+                <TabsTrigger value="sisa-ikan">Item Sisa Ikan</TabsTrigger>
+                <TabsTrigger value="item-terjual">Item Terjual</TabsTrigger>
+                <TabsTrigger value="penjualan-online">Item Penjualan Online</TabsTrigger>
+            </TabsList>
+            <TabsContent value="report-list" className="pt-6">
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center">
-                                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                                    </TableCell>
+                                    <TableHead>Tanggal</TableHead>
+                                    <TableHead>Dibuat Oleh</TableHead>
+                                    <TableHead>Waktu Kirim</TableHead>
+                                    <TableHead className="text-right">Aksi</TableHead>
                                 </TableRow>
-                            ) : reports.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                                        Belum ada laporan yang dibuat.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                reports.map((report) => (
-                                    <TableRow key={report.id}>
-                                        <TableCell className="font-medium">
-                                            {format(report.date, 'eeee, d MMMM yyyy', { locale: id })}
-                                        </TableCell>
-                                        <TableCell>{report.createdBy}</TableCell>
-                                         <TableCell className="text-muted-foreground">
-                                            {format(report.createdAt, 'HH:mm', { locale: id })}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <span className="sr-only">Buka menu</span>
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleViewDetails(report)}>
-                                                    <Eye className="mr-2 h-4 w-4" />
-                                                    Lihat Detail
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteReport(report)}>
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Hapus
-                                                </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoadingReports ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                            <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                                         </TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-          </TabsContent>
-          <TabsContent value="sisa-ikan" className="pt-6">
-            <ItemTable items={sisaIkanItems} listName="sisaIkan" onEdit={handleEdit} onDelete={handleDelete} />
-          </TabsContent>
-          <TabsContent value="item-terjual" className="pt-6">
-            <ItemTable items={terjualItems} listName="terjual" onEdit={handleEdit} onDelete={handleDelete} />
-          </TabsContent>
-          <TabsContent value="penjualan-online" className="pt-6">
-            <ItemTable items={onlineSalesItems} listName="onlineSales" onEdit={handleEdit} onDelete={handleDelete} />
-          </TabsContent>
-        </Tabs>
+                                ) : reports.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                                            Belum ada laporan yang dibuat.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    reports.map((report) => (
+                                        <TableRow key={report.id}>
+                                            <TableCell className="font-medium">
+                                                {format(report.date, 'eeee, d MMMM yyyy', { locale: id })}
+                                            </TableCell>
+                                            <TableCell>{report.createdBy}</TableCell>
+                                            <TableCell className="text-muted-foreground">
+                                                {format(report.createdAt, 'HH:mm', { locale: id })}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                        <span className="sr-only">Buka menu</span>
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleViewDetails(report)}>
+                                                        <Eye className="mr-2 h-4 w-4" />
+                                                        Lihat Detail
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteReport(report)}>
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Hapus
+                                                    </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+            </TabsContent>
+            <TabsContent value="sisa-ikan" className="pt-6">
+                <ItemTable items={sisaIkanItems} listName="sisaIkan" onEdit={handleEdit} onDelete={handleDelete} />
+            </TabsContent>
+            <TabsContent value="item-terjual" className="pt-6">
+                <ItemTable items={terjualItems} listName="terjual" onEdit={handleEdit} onDelete={handleDelete} />
+            </TabsContent>
+            <TabsContent value="penjualan-online" className="pt-6">
+                <ItemTable items={onlineSalesItems} listName="onlineSales" onEdit={handleEdit} onDelete={handleDelete} />
+            </TabsContent>
+            </Tabs>
+         )}
       </CardContent>
       <CardFooter>
-        <Button>Simpan Semua Perubahan</Button>
+        <Button onClick={handleSaveAllChanges} disabled={isSaving || isLoadingConfig}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Save className="mr-2 h-4 w-4" />
+            Simpan Semua Perubahan
+        </Button>
       </CardFooter>
     </Card>
 
@@ -439,21 +435,21 @@ export function SmwManyarManagement() {
                     Laporan dibuat oleh <strong>{selectedReport?.createdBy}</strong> pada <strong>{selectedReport ? format(selectedReport.date, 'd MMM yyyy', {locale: id}) : ''}</strong>.
                 </DialogDescription>
             </DialogHeader>
-            {selectedReport && (
+            {selectedReport && smwManyarConfig &&(
                 <div className="space-y-6 pt-4 max-h-[60vh] overflow-y-auto pr-4 text-sm">
                     <DetailSection 
                         title="Sisa Ikan" 
-                        items={sisaIkanItems} 
+                        items={smwManyarConfig.sisaIkanItems} 
                         data={Object.fromEntries(Object.entries(selectedReport.formData).filter(([k]) => k.startsWith('sisa-')).map(([k,v]) => [k.replace('sisa-',''), v]))} 
                     />
                      <DetailSection 
                         title="Item Terjual" 
-                        items={terjualItems} 
+                        items={smwManyarConfig.terjualItems} 
                         data={Object.fromEntries(Object.entries(selectedReport.formData).filter(([k]) => k.startsWith('terjual-')).map(([k,v]) => [k.replace('terjual-',''), v]))} 
                     />
                     <DetailSection 
                         title="Total Online Sales" 
-                        items={onlineSalesItems} 
+                        items={smwManyarConfig.onlineSalesItems} 
                         data={Object.fromEntries(Object.entries(selectedReport.formData).filter(([k]) => k.startsWith('online-')).map(([k,v]) => [k.replace('online-',''), v]))} 
                     />
                 </div>

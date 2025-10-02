@@ -105,6 +105,18 @@ interface RoleDTO {
   name: string;
 }
 
+export interface ReportItem {
+    id: string;
+    label: string;
+}
+
+interface SmwManyarConfigDTO {
+    sisaIkanItems: ReportItem[];
+    terjualItems: ReportItem[];
+    onlineSalesItems: ReportItem[];
+}
+
+
 // --- Type Definitions ---
 export interface BannerSlide {
   id: number;
@@ -174,6 +186,12 @@ export interface Role {
   name: string;
 }
 
+export interface SmwManyarConfig {
+    sisaIkanItems: ReportItem[];
+    terjualItems: ReportItem[];
+    onlineSalesItems: ReportItem[];
+}
+
 
 // --- Firestore Document References ---
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
@@ -189,6 +207,7 @@ const aboutInfoDocRef = doc(db, 'app-settings', 'aboutInfo');
 const promoPopupConfigDocRef = doc(db, 'app-settings', 'promo-popup');
 const defaultUserGroupDocRef = doc(db, 'app-settings', 'defaultUserGroup');
 const rolesDocRef = doc(db, 'app-settings', 'userRoles');
+const smwManyarConfigDocRef = doc(db, 'app-settings', 'smwManyarConfig');
 
 
 // --- Default Data ---
@@ -284,6 +303,24 @@ const defaultRoles: Role[] = [
     { id: 'editor', name: 'Editor' },
     { id: 'khusus', name: 'Khusus' },
 ];
+
+const defaultSmwManyarConfig: SmwManyarConfig = {
+    sisaIkanItems: [
+        { id: 'daging', label: 'DAGING' }, { id: 'babat', label: 'BABAT' }, { id: 'paru', label: 'PARU' },
+        { id: 'usus', label: 'USUS' }, { id: 'ati', label: 'ATI' }, { id: 'otak', label: 'OTAK' },
+        { id: 'telur', label: 'TELUR' }, { id: 'kuah', label: 'KUAH' }, { id: 'bgoreng', label: 'B•GORENG' },
+        { id: 'seledri', label: 'SELEDRI' }, { id: 'garam', label: 'GARAM' },
+    ],
+    terjualItems: [
+        { id: 'babat', label: 'Babat' }, { id: 'babat-telur', label: 'Babat Telur' }, { id: 'biasa', label: 'Biasa' },
+        { id: 'biasa-telur', label: 'Biasa Telur' }, { id: 'daging', label: 'Daging' }, { id: 'daging-telur', label: 'Daging Telur' },
+        { id: 'daging-double-t', label: 'Daging Double T' }, { id: 'istimewa', label: 'Istimewa' }, { id: 'ati-otak', label: 'Ati Otak' },
+        { id: 'ati-otak-telur', label: 'Ati Otak Telur' }, { id: 'telur-kuah', label: 'Telur Kuah' }, { id: 'telur', label: 'Telur' }, { id: 'nasi', label: 'Nasi' },
+    ],
+    onlineSalesItems: [
+        { id: 'go-food', label: 'GoFood' }, { id: 'grab-food', label: 'GrabFood' }, { id: 'cash', label: 'Cash/Dll' },
+    ],
+};
 
 
 // --- Menu Grid Store ---
@@ -932,4 +969,49 @@ export const useRolesConfig = () => {
 
 export const saveRolesConfig = async (roles: Role[]) => {
   await setDoc(rolesDocRef, { roles });
+};
+
+// --- SMW Manyar Config Store ---
+interface SmwManyarConfigState {
+  smwManyarConfig: SmwManyarConfig;
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const useSmwManyarConfigStore = create<SmwManyarConfigState>((set) => ({
+    smwManyarConfig: defaultSmwManyarConfig,
+    isLoading: true,
+    error: null,
+    initializeListener: () => {
+        const unsubscribe = onSnapshot(smwManyarConfigDocRef, (docSnap) => {
+            if (docSnap.exists() && docSnap.data()) {
+                set({ smwManyarConfig: docSnap.data() as SmwManyarConfig, isLoading: false, error: null });
+            } else {
+                set({ smwManyarConfig: defaultSmwManyarConfig, isLoading: false, error: null });
+            }
+        }, (error) => {
+            console.error("Error fetching SMW Manyar config:", error);
+            set({ smwManyarConfig: defaultSmwManyarConfig, isLoading: false, error });
+        });
+        return unsubscribe;
+    }
+}));
+
+export const useSmwManyarConfig = () => {
+    const { smwManyarConfig, isLoading, initializeListener } = useSmwManyarConfigStore();
+    React.useEffect(() => {
+        const unsubscribe = initializeListener();
+        return () => unsubscribe();
+    }, [initializeListener]);
+    return { smwManyarConfig, isLoading };
+};
+
+export const saveSmwManyarConfig = async (config: SmwManyarConfig) => {
+    const configToStore: SmwManyarConfigDTO = {
+        sisaIkanItems: config.sisaIkanItems,
+        terjualItems: config.terjualItems,
+        onlineSalesItems: config.onlineSalesItems,
+    };
+    await setDoc(smwManyarConfigDocRef, configToStore);
 };

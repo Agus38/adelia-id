@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -18,42 +19,8 @@ import { auth } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { getSmwReport, addOrUpdateSmwReport } from '@/lib/smw-manyar-store';
+import { useSmwManyarConfig } from '@/lib/menu-store';
 
-const sisaIkanItems = [
-  { id: 'daging', label: 'DAGING' },
-  { id: 'babat', label: 'BABAT' },
-  { id: 'paru', label: 'PARU' },
-  { id: 'usus', label: 'USUS' },
-  { id: 'ati', label: 'ATI' },
-  { id: 'otak', label: 'OTAK' },
-  { id: 'telur', label: 'TELUR' },
-  { id: 'kuah', label: 'KUAH' },
-  { id: 'bgoreng', label: 'B•GORENG' },
-  { id: 'seledri', label: 'SELEDRI' },
-  { id: 'garam', label: 'GARAM' },
-];
-
-const terjualItems = [
-  { id: 'babat', label: 'Babat' },
-  { id: 'babatTelur', label: 'Babat Telur' },
-  { id: 'biasa', label: 'Biasa' },
-  { id: 'biasaTelur', label: 'Biasa Telur' },
-  { id: 'daging', label: 'Daging' },
-  { id: 'dagingTelur', label: 'Daging Telur' },
-  { id: 'dagingDoubleT', label: 'Daging Double T' },
-  { id: 'istimewa', label: 'Istimewa' },
-  { id: 'atiOtak', label: 'Ati Otak' },
-  { id: 'atiOtakTelur', label: 'Ati Otak Telur' },
-  { id: 'telurKuah', label: 'Telur Kuah' },
-  { id: 'telur', label: 'Telur' },
-  { id: 'nasi', label: 'Nasi' },
-];
-
-const onlineSalesItems = [
-  { id: 'goFood', label: 'GoFood' },
-  { id: 'grabFood', label: 'GrabFood' },
-  { id: 'cash', label: 'Cash/Dll' },
-];
 
 type FormData = {
   [key: string]: string;
@@ -64,6 +31,7 @@ interface SmwManyarReportFormProps {
 }
 
 export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
+  const { smwManyarConfig, isLoading: isLoadingConfig } = useSmwManyarConfig();
   const [formData, setFormData] = React.useState<FormData>({});
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
@@ -148,11 +116,11 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
     return new Intl.NumberFormat('id-ID').format(value);
   };
 
-  const totalPorsi = terjualItems
+  const totalPorsi = smwManyarConfig?.terjualItems
     .filter(item => item.id !== 'telur' && item.id !== 'nasi')
-    .reduce((sum, item) => sum + (Number(formData[`terjual-${item.id}`]) || 0), 0);
+    .reduce((sum, item) => sum + (Number(formData[`terjual-${item.id}`]) || 0), 0) ?? 0;
   
-  const grossTotal = onlineSalesItems.reduce((sum, item) => sum + (Number(formData[`online-${item.id}`]) || 0), 0);
+  const grossTotal = smwManyarConfig?.onlineSalesItems.reduce((sum, item) => sum + (Number(formData[`online-${item.id}`]) || 0), 0) ?? 0;
 
   const handleSaveReport = async () => {
     if (!date || !currentUser) {
@@ -178,18 +146,19 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
   };
 
   const handleSendWhatsApp = () => {
+    if (!smwManyarConfig) return;
     const reportDate = date ? format(date, 'eeee, dd-MM-yyyy', { locale: id }) : 'Belum diisi';
     
-    const sisaIkanText = sisaIkanItems
+    const sisaIkanText = smwManyarConfig.sisaIkanItems
       .map(item => `${item.label.padEnd(14, ' ')}: ${formData[`sisa-${item.id}`] || ' '}`)
       .join('\n');
       
-    const terjualText = terjualItems
+    const terjualText = smwManyarConfig.terjualItems
       .filter(item => formData[`terjual-${item.id}`] && Number(formData[`terjual-${item.id}`]) > 0)
       .map(item => `${item.label.padEnd(14, ' ')}: ${formData[`terjual-${item.id}`]}`)
       .join('\n');
 
-    const onlineSalesText = onlineSalesItems
+    const onlineSalesText = smwManyarConfig.onlineSalesItems
       .map(item => `${item.label.padEnd(14, ' ')}: Rp ${formatCurrencyForWA(Number(formData[`online-${item.id}`]) || 0)}`)
       .join('\n');
 
@@ -218,7 +187,9 @@ ${onlineSalesText}\`\`\`
     window.open(whatsappUrl, '_blank');
   };
 
-  if (isLoadingUser) {
+  const isLoading = isLoadingUser || isLoadingConfig;
+
+  if (isLoading) {
     return (
         <div className="flex h-64 w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -271,7 +242,7 @@ ${onlineSalesText}\`\`\`
             </TabsList>
             <TabsContent value="sisa-ikan" className="pt-4">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {sisaIkanItems.map(item => (
+                {smwManyarConfig?.sisaIkanItems.map(item => (
                   <div key={`sisa-${item.id}`} className="space-y-1.5">
                     <Label htmlFor={`sisa-${item.id}`}>{item.label}</Label>
                     <Input id={`sisa-${item.id}`} type="text" value={formData[`sisa-${item.id}`] || ''} onChange={handleInputChange} maxLength={7} />
@@ -281,7 +252,7 @@ ${onlineSalesText}\`\`\`
             </TabsContent>
             <TabsContent value="terjual" className="pt-4">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {terjualItems.map(item => (
+                {smwManyarConfig?.terjualItems.map(item => (
                   <div key={`terjual-${item.id}`} className="space-y-1.5">
                     <Label htmlFor={`terjual-${item.id}`}>{item.label}</Label>
                     <Input id={`terjual-${item.id}`} type="number" value={formData[`terjual-${item.id}`] || ''} onChange={handleInputChange} maxLength={7} />
@@ -297,7 +268,7 @@ ${onlineSalesText}\`\`\`
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Total Online Sales</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {onlineSalesItems.map(item => (
+              {smwManyarConfig?.onlineSalesItems.map(item => (
                 <div key={`online-${item.id}`} className="space-y-1.5">
                   <Label htmlFor={`online-${item.id}`}>{item.label}</Label>
                   <Input 
