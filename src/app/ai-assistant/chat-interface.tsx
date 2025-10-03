@@ -5,7 +5,6 @@ import { nexusAIAssistant } from '@/ai/flows/nexus-ai-assistant';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useUserStore } from '@/lib/user-store';
 import { Bot, Send, User, Sparkles, Trash2, Loader2, AudioLines } from 'lucide-react';
@@ -52,7 +51,6 @@ export function ChatInterface() {
   const { developerInfo } = useDeveloperInfoConfig();
   const { menuItems } = useMenuConfig();
 
-  // Load chat from localStorage on initial render
   useEffect(() => {
     try {
         const savedMessages = localStorage.getItem('nexus-chat-history');
@@ -65,7 +63,6 @@ export function ChatInterface() {
     }
   }, []);
 
-  // Save chat to localStorage whenever it changes
   useEffect(() => {
       if (messages.length > 0) {
           localStorage.setItem('nexus-chat-history', JSON.stringify(messages));
@@ -79,14 +76,14 @@ export function ChatInterface() {
   }, [messages, isPending]);
 
   const handlePlayAudio = async (text: string) => {
-    if (isPlaying === text) { // If it's already playing this text
-        audioRef.current?.pause();
+    if (isPlaying === text && audioRef.current) {
+        audioRef.current.pause();
         setIsPlaying(null);
         setAudioUrl(null);
         return;
     }
 
-    setIsPlaying(text); // Show loading state
+    setIsPlaying(text);
     setAudioUrl(null);
     try {
         const result = await textToSpeech({ text });
@@ -99,6 +96,7 @@ export function ChatInterface() {
 
   useEffect(() => {
     if(audioUrl && audioRef.current) {
+        audioRef.current.src = audioUrl;
         audioRef.current.play();
     }
   }, [audioUrl]);
@@ -110,7 +108,6 @@ export function ChatInterface() {
 
   const handlePromptSuggestionClick = (prompt: string) => {
       setInput(prompt);
-      // Automatically submit the form
       const syntheticEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
       handleSubmit(syntheticEvent, prompt);
   };
@@ -139,54 +136,70 @@ export function ChatInterface() {
           developerTitle: developerInfo.title,
       };
       
-      const result = await nexusAIAssistant({ history: newHistory, appContext });
+      const result = await nexusAIAssistant({ 
+        history: newHistory, 
+        appContext,
+        userName: user?.fullName || 'Pengguna',
+      });
       const assistantMessage: Message = { role: 'model', content: result.response };
       setMessages((prev) => [...prev, assistantMessage]);
     });
   };
 
   return (
-    <Card className="flex flex-col flex-1">
-      <CardHeader className='flex-row justify-between items-center'>
-        <p className="text-muted-foreground">Mulai percakapan dengan Asisten AI Nexus.</p>
-        {messages.length > 0 && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" disabled={isPending}>
-                <Trash2 className="h-4 w-4 mr-2"/>
-                Bersihkan
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Hapus Riwayat Percakapan?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Tindakan ini tidak dapat dibatalkan. Seluruh percakapan Anda dengan Nexus akan dihapus secara permanen.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Batal</AlertDialogCancel>
-                <AlertDialogAction onClick={handleClearChat}>
-                  Ya, Hapus
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-      </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto p-6 space-y-6">
+    <div className="flex flex-col flex-1 bg-background rounded-2xl border shadow-neumorphic-light">
+      <header className="p-4 border-b flex items-center justify-between">
+          <div className="flex items-center gap-3">
+              <div className="relative">
+                 <Avatar>
+                    <AvatarFallback><Bot /></AvatarFallback>
+                </Avatar>
+                 <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
+              </div>
+              <div>
+                  <p className="font-semibold">Nexus</p>
+                  <p className="text-xs text-muted-foreground">Online</p>
+              </div>
+          </div>
+          {messages.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isPending}>
+                    <Trash2 className="h-4 w-4 text-muted-foreground"/>
+                    <span className="sr-only">Bersihkan percakapan</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Hapus Riwayat Percakapan?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tindakan ini tidak dapat dibatalkan. Seluruh percakapan Anda dengan Nexus akan dihapus secara permanen.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearChat}>
+                      Ya, Hapus
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+          )}
+      </header>
+
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
         {messages.length === 0 && !isPending && (
-             <div className="text-center text-muted-foreground space-y-6 animate-in fade-in duration-500">
+             <div className="text-center text-muted-foreground space-y-8 animate-in fade-in duration-500 pt-8">
                 <div className="flex justify-center">
-                    <div className="p-4 bg-primary/10 rounded-full w-fit">
-                        <Sparkles className="h-10 w-10 text-primary" />
+                    <div className="p-5 bg-primary/10 rounded-full w-fit shadow-inner">
+                        <Sparkles className="h-12 w-12 text-primary" />
                     </div>
                 </div>
                 <div>
-                    <p className="font-semibold text-lg text-foreground">Hai! Aku Nexus, sahabat AI-mu!</p>
-                    <p className="text-sm">Ada yang bisa aku bantu? Tanya aja soal aplikasi ini, atau coba salah satu pertanyaan di bawah!</p>
+                    <p className="font-semibold text-xl text-foreground">Hai, {user?.fullName || 'Sobat'}! Aku Nexus.</p>
+                    <p className="text-sm">Asisten AI pribadimu. Ada yang bisa kubantu?</p>
                 </div>
-                 <div className="flex flex-wrap justify-center gap-2">
+                 <div className="flex flex-wrap justify-center gap-2 px-4">
                     {promptSuggestions.map((prompt, index) => (
                         <Button key={index} variant="outline" size="sm" onClick={() => handlePromptSuggestionClick(prompt)}>
                             {prompt}
@@ -197,16 +210,22 @@ export function ChatInterface() {
         )}
 
         {messages.map((msg, index) => (
-          <div key={index} className={`flex items-start gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-            {msg.role === 'model' && (
-              <Avatar>
-                <AvatarFallback><Bot /></AvatarFallback>
-              </Avatar>
-            )}
-            <div className={`rounded-lg p-3 max-w-[85%] ${
+          <div key={index} className={`flex items-start gap-3 max-w-[85%] sm:max-w-[75%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
+            <Avatar className="w-8 h-8 flex-shrink-0">
+               {msg.role === 'model' ? (
+                    <AvatarFallback className="bg-primary/20 text-primary"><Bot className="w-5 h-5"/></AvatarFallback>
+               ) : (
+                <>
+                   <AvatarImage src={user?.avatarUrl || user?.photoURL || undefined} alt={user?.fullName || "User"} data-ai-hint="user avatar" />
+                   <AvatarFallback><User className="w-4 h-4"/></AvatarFallback>
+                </>
+               )}
+            </Avatar>
+            
+            <div className={`rounded-2xl p-3 text-sm ${
               msg.role === 'user' 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-muted'
+                ? 'bg-primary text-primary-foreground rounded-br-none' 
+                : 'bg-muted rounded-bl-none'
             }`}>
               <div className="prose prose-xs sm:prose-base dark:prose-invert max-w-full leading-relaxed">
                   <ReactMarkdown
@@ -222,51 +241,45 @@ export function ChatInterface() {
               </div>
 
               {msg.role === 'model' && msg.content && (
-                  <div className="mt-2 pt-2 border-t border-muted-foreground/20 flex items-center gap-2">
+                  <div className="mt-2 pt-2 border-t border-muted-foreground/10 flex items-center gap-2">
                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handlePlayAudio(msg.content)} disabled={isPending || (isPlaying !== null && isPlaying !== msg.content)}>
                         {isPlaying === msg.content ? <Loader2 className="h-4 w-4 animate-spin"/> : <AudioLines className="h-4 w-4"/>}
                         <span className="sr-only">Dengarkan</span>
                      </Button>
-                     {isPlaying === msg.content && audioUrl && (
-                        <audio ref={audioRef} src={audioUrl} onEnded={handleAudioEnded} className="h-8" controls />
-                     )}
                   </div>
               )}
             </div>
-            {msg.role === 'user' && (
-              <Avatar>
-                 <AvatarImage src={user?.avatarUrl || user?.photoURL || undefined} alt={user?.fullName || "User"} data-ai-hint="user avatar" />
-                 <AvatarFallback><User /></AvatarFallback>
-              </Avatar>
-            )}
           </div>
         ))}
         {isPending && (
-          <div className="flex items-start gap-4 animate-in fade-in duration-300">
-             <Avatar>
-                <AvatarFallback><Bot /></AvatarFallback>
+          <div className="flex items-start gap-3 animate-in fade-in duration-300">
+             <Avatar className="w-8 h-8 flex-shrink-0">
+                <AvatarFallback className="bg-primary/20 text-primary"><Bot className="w-5 h-5"/></AvatarFallback>
               </Avatar>
-            <div className="rounded-lg p-3 bg-muted flex items-center gap-2">
+            <div className="rounded-2xl p-3 bg-muted flex items-center gap-2 rounded-bl-none">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               <p className="text-sm text-muted-foreground">Mengetik...</p>
             </div>
           </div>
         )}
          <div ref={messagesEndRef} />
-      </CardContent>
-      <CardFooter className="border-t pt-4">
+         <audio ref={audioRef} onEnded={handleAudioEnded} className="hidden" />
+      </main>
+
+      <footer className="border-t p-2 sm:p-4">
         <form ref={formRef} onSubmit={handleSubmit} className="flex w-full items-center gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ketik pesan Anda..."
             disabled={isPending}
+            className="flex-1"
           />
-          <Button type="submit" disabled={isPending || !input.trim()}>
-            <Send className="h-4 w-4" />
+          <Button type="submit" disabled={isPending || !input.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
+            <Send className="h-5 w-5" />
           </Button>
         </form>
-      </CardFooter>
-    </Card>
+      </footer>
+    </div>
   );
 }

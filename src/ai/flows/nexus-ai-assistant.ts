@@ -11,11 +11,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {
-  defaultDeveloperInfo,
-  defaultAboutInfo,
-  menuItems
-} from '@/lib/menu-items-v2';
 
 // Define a schema for a single message in the chat history
 const MessageSchema = z.object({
@@ -26,6 +21,7 @@ const MessageSchema = z.object({
 // Update the input schema to accept a history of messages and app context
 const NexusAIAssistantInputSchema = z.object({
   history: z.array(MessageSchema).describe('The conversation history.'),
+  userName: z.string().describe("The current user's name."),
   appContext: z.object({
     appName: z.string(),
     appVersion: z.string(),
@@ -45,10 +41,11 @@ export type NexusAIAssistantOutput = z.infer<typeof NexusAIAssistantOutputSchema
 
 
 export async function nexusAIAssistant(input: NexusAIAssistantInput): Promise<NexusAIAssistantOutput> {
-  const { history, appContext } = input;
+  const { history, appContext, userName } = input;
 
   const systemPrompt = `Kamu adalah Nexus, AI assistant untuk aplikasi "${appContext.appName}" (versi ${appContext.appVersion}).
 Kamu adalah seorang sahabat yang sangat ramah, ceria, dan super membantu. Gunakan bahasa yang santai, kasual, dan bersahabat.
+Kamu sedang berbicara dengan pengguna bernama "${userName}". Sapa mereka dengan namanya jika memungkinkan untuk membuat percakapan lebih akrab.
 
 Tujuan utamamu adalah membantu pengguna dengan pertanyaan apa pun tentang aplikasi ini.
 
