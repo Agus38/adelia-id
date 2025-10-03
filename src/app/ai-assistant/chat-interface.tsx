@@ -208,7 +208,7 @@ export function ChatInterface() {
                 ? 'bg-primary text-primary-foreground' 
                 : 'bg-muted'
             }`}>
-              <div className="prose prose-sm dark:prose-invert max-w-full leading-relaxed">
+              <div className="prose prose-sm sm:prose-base dark:prose-invert max-w-full leading-relaxed">
                   <ReactMarkdown
                       components={{
                           p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
