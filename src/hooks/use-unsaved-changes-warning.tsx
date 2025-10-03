@@ -14,9 +14,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useToast } from './use-toast';
-import { AlertTriangle } from 'lucide-react';
 
 let nextPath: string | null = null;
 let isNavigating = false;
@@ -24,8 +21,6 @@ let isNavigating = false;
 
 export function useUnsavedChangesWarning(isDirty: boolean) {
   const router = useRouter();
-  const isMobile = useIsMobile();
-  const { toast, dismiss } = useToast();
 
   const [showDialog, setShowDialog] = useState(false);
 
@@ -46,20 +41,22 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
         setShowDialog(true);
       }
     }
-  }, [isDirty, router]);
+  }, [isDirty]);
 
 
-  // For closing tab/reloading page
+  // For closing tab/reloading page/browser back button
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (isDirty && !isNavigating) {
         event.preventDefault();
+        // Modern browsers have their own default message.
         event.returnValue = "Anda memiliki perubahan yang belum disimpan. Apakah Anda yakin ingin keluar?";
         return event.returnValue;
       }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
+    // For in-app navigation
     document.addEventListener('click', handleLinkClick, true);
 
     return () => {
