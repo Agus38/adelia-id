@@ -11,11 +11,15 @@ import { LockKeyhole, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import Image from 'next/image';
+import { useLoginPageConfig } from '@/lib/menu-store'; // Reuse login page image for consistency
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const { toast } = useToast();
+  const { loginPageConfig, isLoading: isLoadingConfig } = useLoginPageConfig();
+
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -68,15 +72,20 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
       </div>
-      <div className="hidden bg-muted lg:block">
-         <Image
-          src="https://images.unsplash.com/photo-1588590396420-55b01a8511a1?q=80&w=1887&auto=format&fit=crop"
-          alt="Image"
-          width="1887"
-          height="1258"
-          data-ai-hint="security lock"
-          className="h-full w-full object-cover dark:brightness-[0.3]"
-        />
+       <div className="hidden bg-muted lg:block">
+        {isLoadingConfig ? (
+            <Skeleton className="h-full w-full" />
+        ) : (
+             <Image
+                src={loginPageConfig.imageUrl}
+                alt="Forgot password image"
+                width="1887"
+                height="2830"
+                data-ai-hint="security lock"
+                className="h-full w-full object-cover dark:brightness-[0.3]"
+                priority
+            />
+        )}
       </div>
     </div>
   );
