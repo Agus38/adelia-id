@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Table,
   TableBody,
@@ -23,7 +23,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, UploadCloud, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,7 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { toast } from '@/hooks/use-toast';
 
 const initialTeamMembers = [
   {
@@ -74,6 +75,8 @@ export function TeamManagement() {
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleEdit = (member: TeamMember) => {
     setSelectedMember(member);
@@ -110,6 +113,50 @@ export function TeamManagement() {
       setSelectedMember({id: 0, name: '', title: '', avatarUrl: 'https://placehold.co/150x150.png', avatarFallback: ''});
       setEditDialogOpen(true);
   }
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedMember) return;
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      toast({
+        title: "Ukuran File Terlalu Besar",
+        description: "Ukuran file avatar tidak boleh melebihi 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = (error) => reject(error);
+        });
+
+        setSelectedMember(prev => prev ? { ...prev, avatarUrl: dataUrl } : null);
+        
+        toast({
+          title: "Gambar Diproses",
+          description: "Avatar berhasil diproses. Perubahan belum tersimpan.",
+        });
+
+    } catch (error) {
+      toast({
+        title: "Gagal Memproses Gambar",
+        description: "Terjadi kesalahan saat memproses gambar.",
+        variant: "destructive",
+      });
+    } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    }
+  };
 
   return (
     <>
@@ -187,7 +234,21 @@ export function TeamManagement() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="avatarUrl">URL Avatar</Label>
-                <Input id="avatarUrl" value={selectedMember.avatarUrl} onChange={(e) => setSelectedMember({...selectedMember, avatarUrl: e.target.value})} />
+                 <div className="flex gap-2">
+                    <Input id="avatarUrl" value={selectedMember.avatarUrl} onChange={(e) => setSelectedMember({...selectedMember, avatarUrl: e.target.value})} />
+                     <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+                        <span className="sr-only">Unggah Avatar</span>
+                    </Button>
+                     <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                        accept="image/png, image/jpeg, image/webp"
+                        disabled={isUploading}
+                    />
+                </div>
               </div>
                <div className="space-y-2">
                 <Label htmlFor="avatarFallback">Teks Fallback Avatar</Label>
