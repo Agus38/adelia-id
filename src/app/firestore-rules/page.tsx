@@ -72,8 +72,9 @@ service cloud.firestore {
     // Rules for BudgetFlow feature
     match /budgetflow/{userId}/{document=**} {
     	// Users can only access their own data within their folder.
-      // This covers transactions, goals, debts, and categories sub-collections.
-      allow read, write, delete, create: if request.auth.uid == userId;
+      // Admin can read data from any user's folder.
+      allow read: if isDbAdmin() || request.auth.uid == userId;
+      allow write, delete, create: if request.auth.uid == userId;
     }
 
     // Rules for SMW Manyar reports
@@ -119,8 +120,7 @@ service cloud.firestore {
       allow write: if isDbAdmin();
     }
   }
-}
-`;
+}`;
 
 export default function FirestoreRulesPage() {
   const { toast } = useToast();
@@ -204,3 +204,4 @@ export default function FirestoreRulesPage() {
     </div>
   );
 }
+

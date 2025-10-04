@@ -260,6 +260,15 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
+  {
+    id: 'budgetflow-management',
+    title: 'Manajemen BudgetFlow',
+    href: '/admin/budgetflow',
+    icon: TrendingUp,
+    description: 'Lihat dan kelola data keuangan pengguna.',
+    access: 'admin',
+    requiresAuth: true,
+  },
    {
     id: 'digital-product-management',
     title: 'Manajemen Produk',
