@@ -83,7 +83,7 @@ export default function RegisterPage() {
         createdAt: serverTimestamp(),
       });
       
-      // 4. Add user to the default group
+      // 4. Add user to the default group (if configured)
       const defaultGroupConfigDoc = await getDoc(doc(db, 'app-settings', 'defaultUserGroup'));
       if (defaultGroupConfigDoc.exists()) {
           const { groupId } = defaultGroupConfigDoc.data();
@@ -95,22 +95,19 @@ export default function RegisterPage() {
           }
       }
       
-      // 5. Show success and redirect
+      // 5. Show success and redirect to home. The useUserStore listener will handle the login state.
       toast({
         title: 'Pendaftaran Berhasil!',
-        description: 'Akun Anda telah dibuat. Anda akan diarahkan ke halaman login.',
+        description: `Selamat datang, ${name}! Anda akan diarahkan ke halaman utama.`,
       });
-      router.push('/login');
+      router.push('/');
 
     } catch (error: any) {
-        let errorMessage = 'Terjadi kesalahan saat pendaftaran.';
+        let errorMessage = 'Terjadi kesalahan saat pendaftaran. Silakan coba lagi.';
         if (error.code === 'auth/email-already-in-use') {
             errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.';
         } else {
-            // This will catch the intermittent 'permission-denied' and other errors.
-            // It's better to show a generic message than a misleading one.
             console.error("Registration error:", error);
-            errorMessage = 'Terjadi kesalahan saat pendaftaran. Silakan coba lagi.';
         }
         toast({
             title: 'Pendaftaran Gagal',
