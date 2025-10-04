@@ -106,6 +106,8 @@ export default function RegisterPage() {
         let errorMessage = 'Terjadi kesalahan saat pendaftaran. Silakan coba lagi.';
         if (error.code === 'auth/email-already-in-use') {
             errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.';
+        } else if (error.code === 'auth/network-request-failed') {
+            errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
         } else {
             console.error("Registration error:", error);
         }
