@@ -58,7 +58,7 @@ import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { db, rtdb } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { ref, onValue } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { useUserStore } from '@/lib/user-store';
@@ -86,7 +86,7 @@ type PresenceStatus = {
     last_changed: number;
 }
 
-const roleBadgeVariant: { [key in string]: 'destructive' | 'secondary' | 'default' } = {
+const roleBadgeVariant: { [key: string]: 'destructive' | 'secondary' | 'default' } = {
   'admin': 'destructive',
   'pengguna': 'secondary',
   'editor': 'default',
@@ -113,13 +113,11 @@ export function UserManagement() {
   // Dialog states
   const [isAddEditDialogOpen, setAddEditDialogOpen] = React.useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [isBlockDialogOpen, setBlockDialogOpen] = React.useState(false);
-  const [isUnblockDialogOpen, setUnblockDialogOpen] = React.useState(false);
-  const [isDetailModalOpen, setDetailModalOpen] = React.useState(false);
-  const [isRoleManagementOpen, setRoleManagementOpen] = React.useState(false);
+  const [isBlockUnblockDialogOpen, setBlockUnblockDialogOpen] = React.useState(false);
   
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
   const [editedUserData, setEditedUserData] = React.useState<Partial<User>>({});
+  const [bulkAction, setBulkAction] = React.useState<'block' | 'unblock' | 'delete' | null>(null);
 
   const fetchUsers = React.useCallback(async () => {
     setIsDataLoading(true);
@@ -178,24 +176,16 @@ export function UserManagement() {
   };
 
   const handleDelete = (user: User) => {
+    setBulkAction('delete');
     setSelectedUser(user);
     setDeleteDialogOpen(true);
   };
-  
-  const handleBlock = (user: User) => {
-    setSelectedUser(user);
-    setBlockDialogOpen(true);
-  };
 
-  const handleUnblock = (user: User) => {
+  const handleBlockUnblock = (user: User, action: 'block' | 'unblock') => {
+    setBulkAction(action);
     setSelectedUser(user);
-    setUnblockDialogOpen(true);
-  };
-
-  const handleViewDetails = (user: User) => {
-    setSelectedUser(user);
-    setDetailModalOpen(true);
-  };
+    setBlockUnblockDialogOpen(true);
+  }
   
   const handleSaveUser = async () => {
     if (!editedUserData.email || !editedUserData.fullName) {
@@ -237,50 +227,76 @@ export function UserManagement() {
     setEditedUserData(prev => ({ ...prev, role }));
   }
 
-  const confirmDelete = async () => {
-    if (selectedUser) {
-      try {
-        await deleteDoc(doc(db, 'users', selectedUser.id));
-        toast({ title: "Pengguna Dihapus", description: `Pengguna ${selectedUser.fullName} telah dihapus.` });
-        fetchUsers();
-      } catch (error) {
-        toast({ title: "Error", description: "Gagal menghapus pengguna.", variant: "destructive" });
-      }
-    }
-    setDeleteDialogOpen(false);
-    setSelectedUser(null);
+  const handleBulkDelete = () => {
+    setBulkAction('delete');
+    setDeleteDialogOpen(true);
   };
 
-  const confirmBlock = async () => {
-    if (selectedUser) {
-       try {
-        const userDocRef = doc(db, 'users', selectedUser.id);
-        await updateDoc(userDocRef, { status: 'Diblokir' });
-        toast({ title: "Pengguna Diblokir", description: `${selectedUser.fullName} telah diblokir.` });
-        fetchUsers();
-      } catch (error) {
-         toast({ title: "Error", description: "Gagal memblokir pengguna.", variant: "destructive" });
-      }
+  const handleBulkBlockUnblock = (action: 'block' | 'unblock') => {
+    setBulkAction(action);
+    setBlockUnblockDialogOpen(true);
+  };
+  
+  const confirmBulkDelete = async () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const usersToDelete = selectedRows.map(row => row.original).filter(user => user.uid !== currentUser?.uid);
+    
+    if (usersToDelete.length === 0) {
+      setDeleteDialogOpen(false);
+      return;
     }
-    setBlockDialogOpen(false);
-    setSelectedUser(null);
-  }
 
-  const confirmUnblock = async () => {
-    if (selectedUser) {
-       try {
-        const userDocRef = doc(db, 'users', selectedUser.id);
-        await updateDoc(userDocRef, { status: 'Aktif' });
-        toast({ title: "Blokir Dibuka", description: `Blokir untuk ${selectedUser.fullName} telah dibuka.` });
-        fetchUsers();
-      } catch (error) {
-        toast({ title: "Error", description: "Gagal membuka blokir pengguna.", variant: "destructive" });
-      }
+    try {
+      const batch = writeBatch(db);
+      usersToDelete.forEach(user => {
+        const userDocRef = doc(db, 'users', user.id);
+        batch.delete(userDocRef);
+      });
+      await batch.commit();
+
+      toast({ title: `${usersToDelete.length} Pengguna Dihapus`, description: "Pengguna yang dipilih telah berhasil dihapus." });
+      fetchUsers();
+      table.resetRowSelection();
+    } catch (error) {
+      toast({ title: "Gagal Menghapus", description: "Terjadi kesalahan saat menghapus pengguna.", variant: "destructive" });
+    } finally {
+      setDeleteDialogOpen(false);
+      setBulkAction(null);
     }
-    setUnblockDialogOpen(false);
-    setSelectedUser(null);
-  }
+  };
 
+  const confirmBulkBlockUnblock = async () => {
+    if (!bulkAction || (bulkAction !== 'block' && bulkAction !== 'unblock')) return;
+
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const usersToUpdate = selectedRows.map(row => row.original).filter(user => user.uid !== currentUser?.uid);
+
+    if (usersToUpdate.length === 0) {
+      setBlockUnblockDialogOpen(false);
+      return;
+    }
+
+    const newStatus = bulkAction === 'block' ? 'Diblokir' : 'Aktif';
+
+    try {
+      const batch = writeBatch(db);
+      usersToUpdate.forEach(user => {
+        const userDocRef = doc(db, 'users', user.id);
+        batch.update(userDocRef, { status: newStatus });
+      });
+      await batch.commit();
+
+      toast({ title: `Status ${usersToUpdate.length} Pengguna Diperbarui`, description: `Pengguna yang dipilih telah ${newStatus === 'Diblokir' ? 'diblokir' : 'diaktifkan'}.` });
+      fetchUsers();
+      table.resetRowSelection();
+    } catch (error) {
+      toast({ title: "Gagal Memperbarui Status", description: "Terjadi kesalahan saat memperbarui status.", variant: "destructive" });
+    } finally {
+      setBlockUnblockDialogOpen(false);
+      setBulkAction(null);
+    }
+  };
+  
   const columns: ColumnDef<User>[] = [
     {
       id: 'select',
@@ -299,6 +315,7 @@ export function UserManagement() {
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Select row"
+          disabled={row.original.uid === currentUser?.uid}
         />
       ),
       enableSorting: false,
@@ -368,6 +385,8 @@ export function UserManagement() {
       id: 'actions',
       cell: ({ row }) => {
         const user = row.original;
+        const isCurrentUser = user.uid === currentUser?.uid;
+
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -377,27 +396,23 @@ export function UserManagement() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-               <DropdownMenuItem onClick={() => handleViewDetails(user)}>
-                <Eye className="mr-2 h-4 w-4" />
-                Lihat Detail
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleEdit(user)}>
+              <DropdownMenuItem onClick={() => handleEdit(user)} disabled={isCurrentUser}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
                {(user.status === 'Aktif' || !user.status) ? (
-                  <DropdownMenuItem onClick={() => handleBlock(user)}>
+                  <DropdownMenuItem onClick={() => handleBlockUnblock(user, 'block')} disabled={isCurrentUser}>
                     <Ban className="mr-2 h-4 w-4" />
                     Blokir
                   </DropdownMenuItem>
                 ) : (
-                  <DropdownMenuItem onClick={() => handleUnblock(user)}>
+                  <DropdownMenuItem onClick={() => handleBlockUnblock(user, 'unblock')} disabled={isCurrentUser}>
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Buka Blokir
                   </DropdownMenuItem>
                 )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleDelete(user)} className="text-destructive focus:text-destructive">
+              <DropdownMenuItem onClick={() => handleDelete(user)} className="text-destructive focus:text-destructive" disabled={isCurrentUser}>
                  <Trash2 className="mr-2 h-4 w-4" />
                 Hapus
               </DropdownMenuItem>
@@ -428,18 +443,19 @@ export function UserManagement() {
   });
 
   const isLoading = isLoadingUser || isDataLoading || isLoadingRoles;
+  const numSelected = Object.keys(rowSelection).length;
 
   return (
     <div className="space-y-4">
-       <div className="flex items-center justify-between">
-          <div className="flex flex-1 items-center space-x-2">
+       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex flex-1 flex-wrap items-center gap-2 w-full">
             <Input
-              placeholder="Cari pengguna berdasarkan nama..."
+              placeholder="Cari pengguna..."
               value={(table.getColumn('fullName')?.getFilterValue() as string) ?? ''}
               onChange={(event) =>
                 table.getColumn('fullName')?.setFilterValue(event.target.value)
               }
-              className="max-w-sm"
+              className="max-w-xs w-full"
             />
              <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -500,43 +516,23 @@ export function UserManagement() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="flex items-center gap-2">
-             <Button variant="outline" size="sm" onClick={() => setRoleManagementOpen(true)}>
-                <Settings className="mr-2 h-4 w-4" />
-                Kelola Peran
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  Kolom <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {table
-                  .getAllColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
-                      >
-                        {column.id === "fullName" ? "Nama" : column.id}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex items-center gap-2 w-full md:w-auto justify-end">
             <Button onClick={handleAdd}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Tambah Pengguna
             </Button>
           </div>
         </div>
+
+        {numSelected > 0 && (
+          <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+             <span className="text-sm font-semibold pl-2">{numSelected} dipilih</span>
+             <Button variant="outline" size="sm" onClick={() => handleBulkBlockUnblock('unblock')}><CheckCircle className="mr-2 h-4 w-4" />Aktifkan</Button>
+             <Button variant="outline" size="sm" onClick={() => handleBulkBlockUnblock('block')}><Ban className="mr-2 h-4 w-4" />Blokir</Button>
+             <Button variant="destructive" size="sm" onClick={handleBulkDelete}><Trash2 className="mr-2 h-4 w-4" />Hapus</Button>
+          </div>
+        )}
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -620,17 +616,10 @@ export function UserManagement() {
         </div>
       </div>
 
-
-      {/* Dialogs */}
       <Dialog open={isAddEditDialogOpen} onOpenChange={setAddEditDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{selectedUser ? 'Edit Pengguna' : 'Tambah Pengguna Baru'}</DialogTitle>
-            <DialogDescription>
-              {selectedUser
-                ? 'Ubah detail pengguna dan peran di bawah ini.'
-                : 'Isi formulir untuk menambahkan pengguna baru. Pengguna harus tetap mendaftar sendiri.'}
-            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -664,103 +653,32 @@ export function UserManagement() {
         </DialogContent>
       </Dialog>
       
-      <Dialog open={isDetailModalOpen} onOpenChange={setDetailModalOpen}>
-        <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-                <DialogTitle>Detail Pengguna: {selectedUser?.fullName}</DialogTitle>
-                <DialogDescription>
-                    Informasi lengkap untuk pengguna yang dipilih.
-                </DialogDescription>
-            </DialogHeader>
-            {selectedUser && (
-                <div className="space-y-4 pt-2">
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                        <p className="text-muted-foreground col-span-1">User ID:</p>
-                        <p className="font-semibold col-span-2 truncate">{selectedUser.uid}</p>
-
-                        <p className="text-muted-foreground col-span-1">Nama:</p>
-                        <p className="font-semibold col-span-2">{selectedUser.fullName}</p>
-
-                        <p className="text-muted-foreground col-span-1">Email:</p>
-                        <p className="font-semibold col-span-2">{selectedUser.email}</p>
-
-                        <p className="text-muted-foreground col-span-1">Peran:</p>
-                        <div className="col-span-2"><Badge variant={roleBadgeVariant[selectedUser.role?.toLowerCase()] || 'secondary'}>{selectedUser.role}</Badge></div>
-                        
-                        <p className="text-muted-foreground col-span-1">Status:</p>
-                        <div className="col-span-2">
-                           <Badge variant={statusBadgeVariant[selectedUser.status || 'Aktif']} className={cn((selectedUser.status || 'Aktif') === 'Aktif' ? 'bg-green-500/20 text-green-700 border-green-500/30 hover:bg-green-500/30' : 'bg-red-500/20 text-red-700 border-red-500/30 hover:bg-red-500/30', 'border')}>
-                             {selectedUser.status || 'Aktif'}
-                           </Badge>
-                        </div>
-
-                         <p className="text-muted-foreground col-span-1">Bergabung:</p>
-                        <p className="font-semibold col-span-2">{selectedUser.createdAt?.toDate ? new Intl.DateTimeFormat('id-ID').format(selectedUser.createdAt.toDate()) : '-'}</p>
-                    </div>
-                </div>
-            )}
-            <DialogFooter>
-                <Button variant="secondary" onClick={() => setDetailModalOpen(false)}>
-                    Tutup
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-       <Dialog open={isRoleManagementOpen} onOpenChange={setRoleManagementOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Kelola Peran</DialogTitle>
-              <DialogDescription>Tambah, edit, atau hapus peran yang tersedia untuk pengguna.</DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <RoleManagement />
-            </div>
-          </DialogContent>
-        </Dialog>
-
-
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Ini akan menghapus data pengguna dari Firestore, tetapi tidak dari Firebase Authentication.
+               Tindakan ini tidak dapat dibatalkan. Ini akan menghapus {numSelected > 0 ? `${numSelected} pengguna` : `pengguna ${selectedUser?.fullName}`} secara permanen.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Lanjutkan</AlertDialogAction>
+            <AlertDialogAction onClick={confirmBulkDelete}>Lanjutkan</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-       <AlertDialog open={isBlockDialogOpen} onOpenChange={setBlockDialogOpen}>
+       <AlertDialog open={isBlockUnblockDialogOpen} onOpenChange={setBlockUnblockDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Blokir Pengguna: {selectedUser?.fullName}?</AlertDialogTitle>
+            <AlertDialogTitle>Konfirmasi Aksi</AlertDialogTitle>
             <AlertDialogDescription>
-              Pengguna yang diblokir tidak akan dapat mengakses aplikasi. Anda dapat membuka blokir nanti.
+                Anda yakin ingin {bulkAction === 'block' ? 'memblokir' : 'membuka blokir'} {numSelected > 0 ? `${numSelected} pengguna` : `pengguna ${selectedUser?.fullName}`}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSelectedUser(null)}>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmBlock}>Ya, Blokir Pengguna</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={isUnblockDialogOpen} onOpenChange={setUnblockDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Buka Blokir Pengguna: {selectedUser?.fullName}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tindakan ini akan mengizinkan pengguna untuk mengakses aplikasi kembali.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSelectedUser(null)}>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmUnblock}>Ya, Buka Blokir</AlertDialogAction>
+            <AlertDialogCancel onClick={() => setBulkAction(null)}>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmBulkBlockUnblock}>Ya, Lanjutkan</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -768,3 +686,4 @@ export function UserManagement() {
     </div>
   );
 }
+
