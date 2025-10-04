@@ -21,6 +21,8 @@ import {
   Info,
   Loader2,
   Link as LinkIcon,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -34,10 +36,11 @@ import {
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { db } from '@/lib/firebase';
-import { collection, getDocs, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
-import { formatDistanceToNow } from 'date-fns';
+import { collection, getDocs, onSnapshot, query, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { format, formatDistanceToNow, startOfToday, endOfToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useUserStore } from '@/lib/user-store';
+import { cn } from '@/lib/utils';
 
 interface ActivityLog {
   id: string;
@@ -47,6 +50,20 @@ interface ActivityLog {
   target: string;
   timestamp: any;
 }
+
+interface DailyReport {
+  date: Timestamp;
+  omsetBersih: number;
+}
+
+interface SmwReport {
+  date: Timestamp;
+}
+
+const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
+};
+
 
 const managementLinks = [
   {
@@ -121,16 +138,18 @@ icon: Users2,
 export function AdminDashboard() {
   const { user, loading: isLoadingUser } = useUserStore();
   const [userCount, setUserCount] = React.useState<number | null>(null);
+  const [dailyRevenue, setDailyRevenue] = React.useState(0);
+  const [revenuePercentageChange, setRevenuePercentageChange] = React.useState<number | null>(null);
+  const [dailyReportsCount, setDailyReportsCount] = React.useState(0);
+  const [smwReportsCount, setSmwReportsCount] = React.useState(0);
   const [loadingStats, setLoadingStats] = React.useState(true);
   const [recentActivities, setRecentActivities] = React.useState<ActivityLog[]>([]);
   const [loadingActivities, setLoadingActivities] = React.useState(true);
 
 
   React.useEffect(() => {
-    // Wait until user role is confirmed before fetching data
     if (isLoadingUser || user?.role !== 'Admin') {
       if (!isLoadingUser) {
-        // If loading is finished and user is not admin, stop loading stats.
         setLoadingStats(false);
         setLoadingActivities(false);
       }
@@ -141,11 +160,58 @@ export function AdminDashboard() {
       setLoadingStats(true);
       try {
         const usersCollection = collection(db, 'users');
-        const usersSnapshot = await getDocs(usersCollection);
+        const dailyReportsCollection = collection(db, 'dailyReports');
+        const smwReportsCollection = collection(db, 'smwManyarReports');
+
+        const [usersSnapshot, dailyReportsSnapshot, smwReportsSnapshot] = await Promise.all([
+            getDocs(usersCollection),
+            getDocs(dailyReportsCollection),
+            getDocs(smwReportsCollection),
+        ]);
+
         setUserCount(usersSnapshot.size);
+
+        const allDailyReports = dailyReportsSnapshot.docs.map(doc => doc.data() as DailyReport);
+        const allSmwReports = smwReportsSnapshot.docs.map(doc => doc.data() as SmwReport);
+        
+        const todayStart = startOfToday();
+        const todayEnd = endOfToday();
+        const yesterdayStart = startOfYesterday();
+        const yesterdayEnd = endOfYesterday();
+
+        const todayReports = allDailyReports.filter(report => {
+            const reportDate = report.date.toDate();
+            return reportDate >= todayStart && reportDate <= todayEnd;
+        });
+
+        const yesterdayReports = allDailyReports.filter(report => {
+            const reportDate = report.date.toDate();
+            return reportDate >= yesterdayStart && reportDate <= yesterdayEnd;
+        });
+
+        const todayRevenue = todayReports.reduce((sum, report) => sum + report.omsetBersih, 0);
+        const yesterdayRevenue = yesterdayReports.reduce((sum, report) => sum + report.omsetBersih, 0);
+        
+        setDailyRevenue(todayRevenue);
+        setDailyReportsCount(todayReports.length);
+        
+        if (yesterdayRevenue > 0) {
+            const change = ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100;
+            setRevenuePercentageChange(change);
+        } else if (todayRevenue > 0) {
+            setRevenuePercentageChange(100);
+        } else {
+            setRevenuePercentageChange(0);
+        }
+
+        const todaySmwReports = allSmwReports.filter(report => {
+            const reportDate = report.date.toDate();
+            return reportDate >= todayStart && reportDate <= todayEnd;
+        });
+        setSmwReportsCount(todaySmwReports.length);
+
       } catch (error) {
-        console.error("Failed to fetch user count:", error);
-        setUserCount(0); // Set to 0 on error
+        console.error("Failed to fetch stats:", error);
       } finally {
         setLoadingStats(false);
       }
@@ -175,12 +241,30 @@ export function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pendapatan (Harian)</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Pendapatan (Hari Ini)</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rp5.231.890</div>
-            <p className="text-xs text-muted-foreground">+2.5% dari kemarin</p>
+             {loadingStats ? (
+                <div className="flex items-center justify-center h-12">
+                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+            ) : (
+                <>
+                  <div className="text-2xl font-bold">{formatCurrency(dailyRevenue)}</div>
+                   {revenuePercentageChange !== null && (
+                      <p className={cn(
+                          "text-xs text-muted-foreground flex items-center gap-1",
+                          revenuePercentageChange > 0 && "text-green-600",
+                          revenuePercentageChange < 0 && "text-red-600"
+                      )}>
+                          {revenuePercentageChange > 0 && <TrendingUp className="h-3 w-3" />}
+                          {revenuePercentageChange < 0 && <TrendingDown className="h-3 w-3" />}
+                          {revenuePercentageChange.toFixed(1)}% dari kemarin
+                      </p>
+                  )}
+                </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -189,8 +273,16 @@ export function AdminDashboard() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2 Laporan</div>
-            <p className="text-xs text-muted-foreground">1 Menunggu Persetujuan</p>
+             {loadingStats ? (
+                <div className="flex items-center justify-center h-12">
+                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+            ) : (
+                <>
+                    <div className="text-2xl font-bold">{dailyReportsCount} Laporan</div>
+                    <p className="text-xs text-muted-foreground">Total laporan masuk hari ini</p>
+                </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -199,8 +291,16 @@ export function AdminDashboard() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1 Laporan</div>
-            <p className="text-xs text-muted-foreground">Terkirim pukul 08:30</p>
+            {loadingStats ? (
+                <div className="flex items-center justify-center h-12">
+                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+            ) : (
+                <>
+                  <div className="text-2xl font-bold">{smwReportsCount} Laporan</div>
+                  <p className="text-xs text-muted-foreground">Total laporan SMW hari ini</p>
+                </>
+            )}
           </CardContent>
         </Card>
         <Card>
