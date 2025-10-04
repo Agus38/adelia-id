@@ -106,10 +106,11 @@ export default function RegisterPage() {
         let errorMessage = 'Terjadi kesalahan saat pendaftaran.';
         if (error.code === 'auth/email-already-in-use') {
             errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.';
-        } else if (error.code === 'permission-denied') {
-            errorMessage = 'Pendaftaran gagal karena masalah izin. Pastikan aturan Firestore Anda sudah benar.';
         } else {
+            // This will catch the intermittent 'permission-denied' and other errors.
+            // It's better to show a generic message than a misleading one.
             console.error("Registration error:", error);
+            errorMessage = 'Terjadi kesalahan saat pendaftaran. Silakan coba lagi.';
         }
         toast({
             title: 'Pendaftaran Gagal',
