@@ -98,7 +98,7 @@ export default function RegisterPage() {
       // 5. Show success toast and redirect to home.
       toast({
         title: 'Pendaftaran Berhasil!',
-        description: `Selamat datang, ${name}! Anda akan diarahkan ke halaman utama.`,
+        description: `Selamat datang, ${name}!`,
       });
       router.push('/');
 
@@ -115,7 +115,7 @@ export default function RegisterPage() {
         // We still proceed to the success part because the user is already created in Auth.
         toast({
           title: 'Pendaftaran Berhasil!',
-          description: `Selamat datang, ${name}! Anda akan diarahkan ke halaman utama.`,
+          description: `Selamat datang, ${name}!`,
         });
         router.push('/');
         setIsLoading(false);
