@@ -10,6 +10,7 @@ import { useSessionManager } from '@/hooks/use-session-manager';
 import { AppSidebar } from '@/components/layout/sidebar';
 import { useUserStore } from '@/lib/user-store';
 import { useBudgetflowData } from '@/lib/budgetflow-store';
+import { usePresence } from '@/hooks/use-presence';
 
 export type UserProfile = User & {
   id?: string;
@@ -25,6 +26,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   // This hook will initialize the BudgetFlow data listeners when a user logs in.
   useBudgetflowData();
   useSessionManager();
+  usePresence(); // Initialize the presence system
 
   useEffect(() => {
     const unsubscribe = initializeUserListener();

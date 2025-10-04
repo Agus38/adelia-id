@@ -57,12 +57,15 @@ import {
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { db } from '@/lib/firebase';
+import { db, rtdb } from '@/lib/firebase';
 import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, onValue } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { useUserStore } from '@/lib/user-store';
 import { RoleManagement } from './role-management';
 import { useRolesConfig, type Role } from '@/lib/menu-store';
+import { formatDistanceToNow } from 'date-fns';
+import { id as indonesiaLocale } from 'date-fns/locale';
 
 type UserStatus = 'Aktif' | 'Diblokir';
 type UserRole = string;
@@ -77,6 +80,11 @@ type User = {
   status: UserStatus;
   menuAccess?: Record<string, boolean>;
 };
+
+type PresenceStatus = {
+    state: 'online' | 'offline';
+    last_changed: number;
+}
 
 const roleBadgeVariant: { [key in string]: 'destructive' | 'secondary' | 'default' } = {
   'admin': 'destructive',
@@ -93,6 +101,7 @@ const statusBadgeVariant: { [key in UserStatus]: 'default' | 'destructive' } = {
 export function UserManagement() {
   const { user: currentUser, loading: isLoadingUser } = useUserStore();
   const [users, setUsers] = React.useState<User[]>([]);
+  const [presenceData, setPresenceData] = React.useState<Record<string, PresenceStatus>>({});
   const { roles, isLoading: isLoadingRoles } = useRolesConfig();
   const [isDataLoading, setIsDataLoading] = React.useState(true);
   
@@ -138,6 +147,16 @@ export function UserManagement() {
       setIsDataLoading(false);
     }
   }, [isLoadingUser, currentUser, fetchUsers]);
+
+  React.useEffect(() => {
+    const statusRef = ref(rtdb, 'status');
+    const unsubscribe = onValue(statusRef, (snapshot) => {
+        const data = snapshot.val();
+        setPresenceData(data || {});
+    });
+
+    return () => unsubscribe();
+  }, []);
 
 
   const handleEdit = (user: User) => {
@@ -288,7 +307,18 @@ export function UserManagement() {
     {
       accessorKey: 'fullName',
       header: 'Nama',
-      cell: ({ row }) => <div className="font-medium">{row.getValue('fullName')}</div>,
+      cell: ({ row }) => {
+        const user = row.original;
+        const presence = presenceData[user.uid];
+        const isOnline = presence?.state === 'online';
+
+        return (
+            <div className="flex items-center gap-2">
+                <span className={cn("h-2.5 w-2.5 rounded-full", isOnline ? 'bg-green-500' : 'bg-slate-400')} />
+                <div className="font-medium">{row.getValue('fullName')}</div>
+            </div>
+        )
+      },
     },
     {
       accessorKey: 'email',
@@ -321,12 +351,18 @@ export function UserManagement() {
       },
     },
     {
-      accessorKey: 'createdAt',
-      header: 'Tanggal Bergabung',
+      id: 'lastOnline',
+      header: 'Terakhir Online',
       cell: ({ row }) => {
-        const date = row.original.createdAt?.toDate();
-        return date ? new Intl.DateTimeFormat('id-ID', {day: '2-digit', month: 'short', year: 'numeric'}).format(date) : '-';
-      },
+        const presence = presenceData[row.original.uid];
+        if (presence?.state === 'online') {
+            return <span className="text-green-600 font-semibold text-xs">Online</span>
+        }
+        if (presence?.last_changed) {
+            return <span className="text-muted-foreground text-xs">{formatDistanceToNow(new Date(presence.last_changed), { addSuffix: true, locale: indonesiaLocale })}</span>;
+        }
+        return <span className="text-muted-foreground text-xs">-</span>;
+      }
     },
     {
       id: 'actions',
