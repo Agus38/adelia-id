@@ -37,8 +37,8 @@ service cloud.firestore {
       // An authenticated user can update their own profile,
       // but CANNOT change their role or status.
       allow update: if request.auth.uid == userId
-                    && request.resource.data.role == resource.data.role
-                    && request.resource.data.status == resource.data.status;
+                    && (!('role' in request.resource.data) || request.resource.data.role == resource.data.role)
+                    && (!('status' in request.resource.data) || request.resource.data.status == resource.data.status);
     }
     
     // Rules for user groups
