@@ -108,16 +108,20 @@ export default function RegisterPage() {
             errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.';
         } else if (error.code === 'auth/network-request-failed') {
             errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
-        } else {
-            console.error("Registration error:", error);
-            // Don't show permission-denied errors to the user as they are often temporary race conditions.
-            if (error.code !== 'permission-denied') {
-                 toast({
-                    title: 'Pendaftaran Gagal',
-                    description: errorMessage,
-                    variant: 'destructive',
-                });
-            }
+        }
+        
+        // Log all errors for debugging, but only show a toast for relevant ones.
+        console.error("Registration error:", error);
+        
+        // The permission-denied error is a temporary race condition after user creation.
+        // The user is already created, so we don't need to show an error toast for it.
+        // Let the successful redirection proceed.
+        if (error.code !== 'permission-denied') {
+             toast({
+                title: 'Pendaftaran Gagal',
+                description: errorMessage,
+                variant: 'destructive',
+            });
         }
     } finally {
         setIsLoading(false);
