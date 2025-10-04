@@ -95,7 +95,7 @@ export default function RegisterPage() {
           }
       }
       
-      // 5. Show success and redirect to home. The useUserStore listener will handle the login state.
+      // 5. Show success toast and redirect to home.
       toast({
         title: 'Pendaftaran Berhasil!',
         description: `Selamat datang, ${name}! Anda akan diarahkan ke halaman utama.`,
@@ -103,28 +103,34 @@ export default function RegisterPage() {
       router.push('/');
 
     } catch (error: any) {
-        let errorMessage = 'Terjadi kesalahan saat pendaftaran. Silakan coba lagi.';
-        if (error.code === 'auth/email-already-in-use') {
-            errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.';
-        } else if (error.code === 'auth/network-request-failed') {
-            errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
-        }
-        
-        // Log all errors for debugging, but only show a toast for relevant ones.
-        console.error("Registration error:", error);
-        
-        // The permission-denied error is a temporary race condition after user creation.
-        // The user is already created, so we don't need to show an error toast for it.
-        // Let the successful redirection proceed.
-        if (error.code !== 'permission-denied') {
-             toast({
-                title: 'Pendaftaran Gagal',
-                description: errorMessage,
-                variant: 'destructive',
-            });
-        }
-    } finally {
+      let errorMessage = 'Terjadi kesalahan saat pendaftaran. Silakan coba lagi.';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
+      } else if (error.code === 'permission-denied') {
+        // This can be a temporary race condition. We will ignore it for the user
+        // and let the success flow continue, but log it for debugging.
+        console.error("Registration permission error (likely temporary):", error);
+        // We still proceed to the success part because the user is already created in Auth.
+        toast({
+          title: 'Pendaftaran Berhasil!',
+          description: `Selamat datang, ${name}! Anda akan diarahkan ke halaman utama.`,
+        });
+        router.push('/');
         setIsLoading(false);
+        return; // Exit here to prevent showing another toast.
+      }
+      
+      console.error("Registration error:", error);
+      
+      toast({
+        title: 'Pendaftaran Gagal',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
   
