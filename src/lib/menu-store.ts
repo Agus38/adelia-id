@@ -117,6 +117,14 @@ interface SmwManyarConfigDTO {
     onlineSalesItems: ReportItem[];
 }
 
+interface TeamMemberDTO {
+    id: number;
+    name: string;
+    title: string;
+    avatarUrl: string;
+    avatarFallback: string;
+}
+
 
 // --- Type Definitions ---
 export interface BannerSlide {
@@ -193,6 +201,14 @@ export interface SmwManyarConfig {
     onlineSalesItems: ReportItem[];
 }
 
+export interface TeamMember {
+    id: number;
+    name: string;
+    title: string;
+    avatarUrl: string;
+    avatarFallback: string;
+}
+
 
 // --- Firestore Document References ---
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
@@ -209,6 +225,7 @@ const promoPopupConfigDocRef = doc(db, 'app-settings', 'promo-popup');
 const defaultUserGroupDocRef = doc(db, 'app-settings', 'defaultUserGroup');
 const rolesDocRef = doc(db, 'app-settings', 'userRoles');
 const smwManyarConfigDocRef = doc(db, 'app-settings', 'smwManyarConfig');
+const teamMembersDocRef = doc(db, 'app-settings', 'teamMembers');
 
 
 // --- Default Data ---
@@ -324,6 +341,13 @@ const defaultSmwManyarConfig: SmwManyarConfig = {
         { id: 'go-food', label: 'GoFood' }, { id: 'grab-food', label: 'GrabFood' }, { id: 'cash', label: 'Cash/Dll' },
     ],
 };
+
+const defaultTeamMembers: TeamMember[] = [
+  { id: 1, name: 'Adelia', title: 'Project Manager', avatarUrl: 'https://placehold.co/150x150.png', avatarFallback: 'AD' },
+  { id: 2, name: 'Budi', title: 'Lead Developer', avatarUrl: 'https://placehold.co/150x150.png', avatarFallback: 'BU' },
+  { id: 3, name: 'Citra', title: 'UI/UX Designer', avatarUrl: 'https://placehold.co/150x150.png', avatarFallback: 'CI' },
+  { id: 4, name: 'Dewi', title: 'QA Engineer', avatarUrl: 'https://placehold.co/150x150.png', avatarFallback: 'DE' },
+];
 
 
 // --- Menu Grid Store ---
@@ -1017,4 +1041,51 @@ export const saveSmwManyarConfig = async (config: SmwManyarConfig) => {
         onlineSalesItems: config.onlineSalesItems,
     };
     await setDoc(smwManyarConfigDocRef, configToStore);
+};
+
+// --- Team Members Store ---
+interface TeamStoreState {
+  teamMembers: TeamMember[];
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const useTeamStore = create<TeamStoreState>((set) => ({
+  teamMembers: [],
+  isLoading: true,
+  error: null,
+  initializeListener: () => {
+    const unsubscribe = onSnapshot(teamMembersDocRef, (docSnap) => {
+      if (docSnap.exists() && docSnap.data()?.members) {
+        set({ teamMembers: docSnap.data().members as TeamMember[], isLoading: false, error: null });
+      } else {
+        set({ teamMembers: defaultTeamMembers, isLoading: false, error: null });
+      }
+    }, (error) => {
+      console.error("Error fetching team members:", error);
+      set({ teamMembers: defaultTeamMembers, isLoading: false, error });
+    });
+    return unsubscribe;
+  }
+}));
+
+export const useTeamConfig = () => {
+  const { teamMembers, isLoading, initializeListener } = useTeamStore();
+  React.useEffect(() => {
+    const unsubscribe = initializeListener();
+    return () => unsubscribe();
+  }, [initializeListener]);
+  return { teamMembers, isLoading };
+};
+
+export const saveTeamConfig = async (members: TeamMember[]) => {
+  const membersToStore: TeamMemberDTO[] = members.map(member => ({
+    id: member.id,
+    name: member.name,
+    title: member.title,
+    avatarUrl: member.avatarUrl,
+    avatarFallback: member.avatarFallback,
+  }));
+  await setDoc(teamMembersDocRef, { members: membersToStore });
 };

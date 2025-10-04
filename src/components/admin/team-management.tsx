@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -18,12 +19,11 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { MoreHorizontal, PlusCircle, Trash2, UploadCloud, Loader2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, UploadCloud, Loader2, Save } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,47 +36,24 @@ import {
 } from '../ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { toast } from '@/hooks/use-toast';
+import { useTeamConfig, saveTeamConfig, type TeamMember } from '@/lib/menu-store';
 
-const initialTeamMembers = [
-  {
-    id: 1,
-    name: 'Adelia',
-    title: 'Project Manager',
-    avatarUrl: 'https://placehold.co/150x150.png',
-    avatarFallback: 'AD',
-  },
-  {
-    id: 2,
-    name: 'Budi',
-    title: 'Lead Developer',
-    avatarUrl: 'https://placehold.co/150x150.png',
-    avatarFallback: 'BU',
-  },
-  {
-    id: 3,
-    name: 'Citra',
-    title: 'UI/UX Designer',
-    avatarUrl: 'https://placehold.co/150x150.png',
-    avatarFallback: 'CI',
-  },
-  {
-    id: 4,
-    name: 'Dewi',
-    title: 'QA Engineer',
-    avatarUrl: 'https://placehold.co/150x150.png',
-    avatarFallback: 'DE',
-  },
-];
-
-type TeamMember = typeof initialTeamMembers[0];
 
 export function TeamManagement() {
-  const [members, setMembers] = useState(initialTeamMembers);
+  const { teamMembers: initialMembers, isLoading: isLoadingConfig } = useTeamConfig();
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [selectedMember, setSelectedMember] = useState<Partial<TeamMember> | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialMembers) {
+      setMembers(initialMembers);
+    }
+  }, [initialMembers]);
 
   const handleEdit = (member: TeamMember) => {
     setSelectedMember(member);
@@ -89,28 +66,51 @@ export function TeamManagement() {
   };
 
   const confirmDelete = () => {
-    if (selectedMember) {
-      setMembers(members.filter(m => m.id !== selectedMember.id));
+    if (selectedMember?.id) {
+      setMembers(members.filter(m => m.id !== selectedMember!.id));
+      toast({ title: 'Anggota Dihapus', description: 'Perubahan akan diterapkan setelah Anda menyimpan.'});
     }
     setDeleteDialogOpen(false);
     setSelectedMember(null);
   };
 
-  const handleSaveChanges = () => {
-    // NOTE: This is a mock implementation.
-    if (selectedMember) {
-        if (selectedMember.id) { // Edit
-            setMembers(members.map(m => m.id === selectedMember.id ? selectedMember : m));
-        } else { // Add
-             const newMember = {...selectedMember, id: Math.max(...members.map(m => m.id), 0) + 1 };
-             setMembers([...members, newMember]);
-        }
+  const handleDialogSave = () => {
+    if (!selectedMember || !selectedMember.name || !selectedMember.title) {
+        toast({ title: 'Data tidak lengkap', description: 'Nama dan jabatan harus diisi.', variant: 'destructive'});
+        return;
+    }
+
+    if (selectedMember.id) { // Edit
+        setMembers(members.map(m => m.id === selectedMember!.id ? selectedMember as TeamMember : m));
+    } else { // Add
+         const newMember = {
+             ...selectedMember, 
+             id: Math.max(0, ...members.map(m => m.id)) + 1,
+             avatarFallback: selectedMember.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
+         } as TeamMember;
+         setMembers([...members, newMember]);
     }
     setEditDialogOpen(false);
+    setSelectedMember(null);
   };
+  
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+        await saveTeamConfig(members);
+        toast({
+            title: 'Konfigurasi Tim Disimpan',
+            description: 'Data anggota tim telah berhasil diperbarui di database.'
+        });
+    } catch (error) {
+        toast({ title: 'Gagal Menyimpan', variant: 'destructive' });
+    } finally {
+        setIsSaving(false);
+    }
+  }
 
   const handleAddNew = () => {
-      setSelectedMember({id: 0, name: '', title: '', avatarUrl: 'https://placehold.co/150x150.png', avatarFallback: ''});
+      setSelectedMember({ name: '', title: '', avatarUrl: 'https://placehold.co/150x150.png', avatarFallback: ''});
       setEditDialogOpen(true);
   }
 
@@ -119,16 +119,11 @@ export function TeamManagement() {
     if (!file || !selectedMember) return;
 
     if (file.size > 2 * 1024 * 1024) { // 2MB limit
-      toast({
-        title: "Ukuran File Terlalu Besar",
-        description: "Ukuran file avatar tidak boleh melebihi 2MB.",
-        variant: "destructive",
-      });
+      toast({ title: "Ukuran File Terlalu Besar", description: "Ukuran file avatar tidak boleh melebihi 2MB.", variant: "destructive" });
       return;
     }
 
     setIsUploading(true);
-
     try {
         const dataUrl = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -136,33 +131,25 @@ export function TeamManagement() {
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = (error) => reject(error);
         });
-
         setSelectedMember(prev => prev ? { ...prev, avatarUrl: dataUrl } : null);
-        
-        toast({
-          title: "Gambar Diproses",
-          description: "Avatar berhasil diproses. Perubahan belum tersimpan.",
-        });
-
+        toast({ title: "Gambar Diproses", description: "Avatar berhasil diproses. Perubahan belum tersimpan." });
     } catch (error) {
-      toast({
-        title: "Gagal Memproses Gambar",
-        description: "Terjadi kesalahan saat memproses gambar.",
-        variant: "destructive",
-      });
+      toast({ title: "Gagal Memproses Gambar", description: "Terjadi kesalahan saat memproses gambar.", variant: "destructive" });
     } finally {
         setIsUploading(false);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
+        if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
   return (
     <>
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between mb-4">
         <Button onClick={handleAddNew}>
           <PlusCircle className="mr-2 h-4 w-4" /> Tambah Anggota
+        </Button>
+         <Button onClick={handleSaveChanges} disabled={isSaving || isLoadingConfig}>
+          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Save className="mr-2 h-4 w-4" /> Simpan Semua Perubahan
         </Button>
       </div>
       <div className="rounded-md border">
@@ -175,7 +162,13 @@ export function TeamManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {members.map((member) => (
+            {isLoadingConfig ? (
+                <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center">
+                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                    </TableCell>
+                </TableRow>
+            ) : members.map((member) => (
               <TableRow key={member.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
@@ -233,7 +226,7 @@ export function TeamManagement() {
                 <Input id="title" value={selectedMember.title} onChange={(e) => setSelectedMember({...selectedMember, title: e.target.value})} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="avatarUrl">URL Avatar</Label>
+                <Label htmlFor="avatarUrl">URL atau Unggah Avatar</Label>
                  <div className="flex gap-2">
                     <Input id="avatarUrl" value={selectedMember.avatarUrl} onChange={(e) => setSelectedMember({...selectedMember, avatarUrl: e.target.value})} />
                      <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
@@ -258,7 +251,7 @@ export function TeamManagement() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Batal</Button>
-            <Button type="submit" onClick={handleSaveChanges}>Simpan Perubahan</Button>
+            <Button type="submit" onClick={handleDialogSave}>Simpan Perubahan</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -268,7 +261,7 @@ export function TeamManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Anda yakin?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Ini akan menghapus anggota tim secara permanen.
+              Tindakan ini akan menghapus anggota tim dari daftar. Perubahan akan permanen setelah disimpan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
