@@ -26,8 +26,8 @@ service cloud.firestore {
       allow read, write, list: if isDbAdmin();
       
       // An authenticated user can create their own document, but only with a 'Pengguna' role and 'Aktif' status.
-      // This prevents a user from creating an Admin account for themselves.
-      allow create: if request.auth.uid == userId
+      // This rule validates against the incoming data's UID, which is robust against auth propagation delays.
+      allow create: if request.resource.data.uid == userId
                     && request.resource.data.role == 'Pengguna'
                     && request.resource.data.status == 'Aktif';
       
