@@ -110,12 +110,15 @@ export default function RegisterPage() {
             errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
         } else {
             console.error("Registration error:", error);
+            // Don't show permission-denied errors to the user as they are often temporary race conditions.
+            if (error.code !== 'permission-denied') {
+                 toast({
+                    title: 'Pendaftaran Gagal',
+                    description: errorMessage,
+                    variant: 'destructive',
+                });
+            }
         }
-        toast({
-            title: 'Pendaftaran Gagal',
-            description: errorMessage,
-            variant: 'destructive',
-        });
     } finally {
         setIsLoading(false);
     }
