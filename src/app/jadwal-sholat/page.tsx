@@ -1,142 +1,83 @@
-
-'use client';
-
-import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, CalendarClock, MapPin } from 'lucide-react';
+import { CalendarClock, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
-interface City {
-  id: string;
-  nama: string;
+interface PrayerTime {
+  saat: string;
+  vakit: string;
 }
 
-interface PrayerTimes {
-  tanggal: string;
-  imsak: string;
-  subuh: string;
-  terbit: string;
-  dhuha: string;
-  dzuhur: string;
-  ashar: string;
-  maghrib: string;
-  isya: string;
-}
+// Daftar kota di Turki (sebagai pengganti API kota)
+const turkishCities = [
+    { id: 'istanbul', nama: 'Istanbul' },
+    { id: 'ankara', nama: 'Ankara' },
+    { id: 'izmir', nama: 'Izmir' },
+    { id: 'bursa', nama: 'Bursa' },
+    { id: 'adana', nama: 'Adana' },
+    { id: 'gaziantep', nama: 'Gaziantep' },
+    { id: 'konya', nama: 'Konya' },
+    { id: 'antalya', nama: 'Antalya' },
+    { id: 'diyarbakir', nama: 'Diyarbakir' },
+    { id: 'mersin', nama: 'Mersin' },
+    { id: 'kayseri', nama: 'Kayseri' },
+].sort((a, b) => a.nama.localeCompare(b.nama));
 
-export default function JadwalSholatPage() {
-  const [cities, setCities] = React.useState<City[]>([]);
-  const [selectedCityId, setSelectedCityId] = React.useState<string>('');
-  const [dailyPrayerTimes, setDailyPrayerTimes] = React.useState<PrayerTimes | null>(null);
-  const [isLoadingCities, setIsLoadingCities] = React.useState(true);
-  const [isLoadingTimes, setIsLoadingTimes] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [currentDate, setCurrentDate] = React.useState<{ formatted: string; apiDate: { year: string, month: string, day: string } } | null>(null);
 
-  React.useEffect(() => {
-    // This effect runs only on the client, avoiding hydration mismatch.
-    const today = new Date();
-    setCurrentDate({
-      formatted: format(today, 'eeee, dd MMMM yyyy', { locale: id }),
-      apiDate: {
-        year: format(today, 'yyyy'),
-        month: format(today, 'MM'),
-        day: format(today, 'yyyy-MM-dd')
-      }
+async function getPrayerTimes(city: string): Promise<{ result?: PrayerTime[], error?: string }> {
+  const apiKey = process.env.PRAYER_API_TOKEN;
+  if (!apiKey || apiKey === 'your_token') {
+    return { error: 'API Key untuk jadwal sholat belum diatur di server.' };
+  }
+
+  try {
+    const response = await fetch(`https://api.collectapi.com/pray/all?city=${city}`, {
+      headers: {
+        "content-type": "application/json",
+        "authorization": `apikey ${apiKey}`
+      },
+      next: { revalidate: 3600 } // Cache for 1 hour
     });
 
-    const fetchCities = async () => {
-      setIsLoadingCities(true);
-      try {
-        const response = await fetch('https://raw.githubusercontent.com/lakuapik/jadwalsholatorg/master/kota.json');
-        if (!response.ok) {
-          throw new Error('Gagal mengambil daftar kota.');
-        }
-        const data: string[] = await response.json();
-        
-        // Use a Map to handle duplicate IDs and format names correctly
-        const cityMap = new Map<string, string>();
-        data.forEach(cityString => {
-            const parts = cityString.split(':');
-            if (parts.length === 2) {
-                const [id, nama] = parts;
-                if (!cityMap.has(id)) {
-                    const formattedName = nama.charAt(0).toUpperCase() + nama.slice(1).toLowerCase();
-                    cityMap.set(id, formattedName);
-                }
-            }
-        });
-        
-        const parsedCities: City[] = Array.from(cityMap, ([id, nama]) => ({ id, nama }))
-            .sort((a,b) => a.nama.localeCompare(b.nama));
-
-        setCities(parsedCities);
-        
-        const defaultCity = parsedCities.find(c => c.nama.toUpperCase() === 'JAKARTA');
-        if (defaultCity) {
-          setSelectedCityId(defaultCity.id);
-        }
-
-      } catch (e: any) {
-        setError(e.message);
-      } finally {
-        setIsLoadingCities(false);
-      }
-    };
-    fetchCities();
-  }, []);
-
-  React.useEffect(() => {
-    if (selectedCityId && currentDate && cities.length > 0) {
-      const fetchPrayerTimes = async () => {
-        setIsLoadingTimes(true);
-        setDailyPrayerTimes(null);
-        setError(null);
-        try {
-          const { year, month, day } = currentDate.apiDate;
-          // Find the city name from the parsed cities list using the ID
-          const selectedCity = cities.find(c => c.id === selectedCityId);
-          
-          if (!selectedCity) {
-            throw new Error('Kota yang dipilih tidak valid.');
-          }
-          const cityNameForApi = selectedCity.nama.toLowerCase();
-
-          const response = await fetch(`https://raw.githubusercontent.com/lakuapik/jadwalsholatorg/master/adzan/${cityNameForApi}/${year}/${month}.json`);
-          
-          if (!response.ok) {
-            throw new Error(`Gagal mengambil jadwal sholat untuk ${selectedCity.nama}. Data mungkin belum tersedia.`);
-          }
-          const monthlyData: PrayerTimes[] = await response.json();
-          const todaySchedule = monthlyData.find(d => d.tanggal === day);
-
-          if (todaySchedule) {
-            setDailyPrayerTimes(todaySchedule);
-          } else {
-            throw new Error('Jadwal untuk hari ini tidak ditemukan.');
-          }
-        } catch (e: any) {
-          setError(e.message);
-        } finally {
-          setIsLoadingTimes(false);
-        }
-      };
-      fetchPrayerTimes();
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `API request failed with status: ${response.status}`);
     }
-  }, [selectedCityId, currentDate, cities]);
+
+    const data = await response.json();
+    return { result: data.result };
+  } catch (error: any) {
+    console.error('Error fetching prayer times:', error);
+    return { error: `Gagal mengambil data untuk ${city}. Coba kota lain.` };
+  }
+}
+
+export default async function JadwalSholatPage({ searchParams }: { searchParams: { city?: string } }) {
+  const selectedCity = searchParams.city || 'istanbul';
+  const { result: prayerTimes, error } = await getPrayerTimes(selectedCity);
+  const currentDate = format(new Date(), 'eeee, dd MMMM yyyy', { locale: id });
+
+  const prayerScheduleMap: { [key: string]: string } = {
+    'Imsak': 'İmsak',
+    'Subuh': 'Güneş', // Literally "Sun", maps to sunrise
+    'Terbit': 'Öğle', // Literally "Noon", maps to Dhuhr
+    'Dzuhur': 'İkindi', // Literally "Afternoon", maps to Asr
+    'Ashar': 'Akşam', // Literally "Evening", maps to Maghrib
+    'Maghrib': 'Yatsı', // Literally "Night", maps to Isha
+    'Isya': 'Yatsı' // Duplicate for safety, Isha
+  };
   
-  const prayerSchedule = dailyPrayerTimes ? [
-    { name: 'Imsak', time: dailyPrayerTimes.imsak },
-    { name: 'Subuh', time: dailyPrayerTimes.subuh },
-    { name: 'Terbit', time: dailyPrayerTimes.terbit },
-    { name: 'Dzuhur', time: dailyPrayerTimes.dzuhur },
-    { name: 'Ashar', time: dailyPrayerTimes.ashar },
-    { name: 'Maghrib', time: dailyPrayerTimes.maghrib },
-    { name: 'Isya', time: dailyPrayerTimes.isya },
-  ] : [];
+  const schedule = prayerTimes
+    ? Object.entries(prayerScheduleMap).map(([indonesianName, turkishName]) => {
+        const timeData = prayerTimes.find(pt => pt.saat === turkishName);
+        return { name: indonesianName, time: timeData?.vakit || '-' };
+      })
+    : [];
 
   return (
     <div className="flex-1 space-y-6 p-4 pt-6 md:p-8 flex justify-center">
@@ -149,37 +90,36 @@ export default function JadwalSholatPage() {
                 </div>
                 <div>
                    <CardTitle>Jadwal Sholat</CardTitle>
-                   <CardDescription>{currentDate?.formatted || 'Memuat tanggal...'}</CardDescription>
+                   <CardDescription>{currentDate}</CardDescription>
                 </div>
             </div>
-            <div className="space-y-2 pt-4">
-              <Label htmlFor="city-select">Pilih Lokasi Kota</Label>
-              <Select
-                value={selectedCityId}
-                onValueChange={setSelectedCityId}
-                disabled={isLoadingCities}
-              >
-                <SelectTrigger id="city-select">
-                  <SelectValue placeholder={isLoadingCities ? 'Memuat daftar kota...' : 'Pilih kota'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {cities.map((city) => (
-                    <SelectItem key={city.id} value={city.id}>
-                      {city.nama}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <form>
+                <div className="space-y-2 pt-4">
+                <Label htmlFor="city-select">Pilih Lokasi Kota (Turki)</Label>
+                <Select name="city" defaultValue={selectedCity}>
+                    <SelectTrigger id="city-select">
+                        <SelectValue placeholder="Pilih kota" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {turkishCities.map((city) => (
+                        <SelectItem key={city.id} value={city.id}>
+                            {city.nama}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+                 <Button type="submit" className="w-full mt-2">Tampilkan Jadwal</Button>
+                </div>
+            </form>
           </CardHeader>
           <CardContent>
-            {isLoadingTimes ? (
-              <div className="flex h-48 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : error ? (
-              <div className="text-center text-red-500 p-4 bg-red-500/10 rounded-md">{error}</div>
-            ) : dailyPrayerTimes ? (
+            {error ? (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Terjadi Kesalahan</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+             </Alert>
+            ) : prayerTimes ? (
                <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -189,7 +129,7 @@ export default function JadwalSholatPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {prayerSchedule.map(item => (
+                        {schedule.map(item => (
                              <TableRow key={item.name}>
                                 <TableCell className="font-medium">{item.name}</TableCell>
                                 <TableCell className="text-right font-mono text-base">{item.time}</TableCell>
