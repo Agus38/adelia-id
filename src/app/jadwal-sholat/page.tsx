@@ -51,18 +51,24 @@ export default function JadwalSholatPage() {
 
     const fetchCities = async () => {
       try {
-        const response = await fetch('https://jadwalsholat.org/api/v2/kota/semua');
+        const response = await fetch('https://raw.githubusercontent.com/lakuapik/jadwalsholatorg/master/kota.json');
         if (!response.ok) {
           throw new Error('Gagal mengambil daftar kota.');
         }
-        const data = await response.json();
-        if (data.status && data.data) {
-          setCities(data.data);
-          // Set default city to a common one, e.g., Jakarta
-          const defaultCity = data.data.find((c: City) => c.nama.toLowerCase() === 'jakarta');
-          if (defaultCity) {
-            setSelectedCity(defaultCity.id);
-          }
+        const data: string[] = await response.json();
+        
+        const parsedCities = data.map(cityString => {
+          const [id, ...namaParts] = cityString.split(':');
+          const nama = namaParts.join(':');
+          return { id, nama };
+        }).sort((a,b) => a.nama.localeCompare(b.nama));
+
+        setCities(parsedCities);
+        
+        // Set default city to a common one, e.g., Jakarta
+        const defaultCity = parsedCities.find((c: City) => c.nama.toUpperCase() === 'JAKARTA');
+        if (defaultCity) {
+          setSelectedCity(defaultCity.id);
         }
       } catch (e: any) {
         setError(e.message);
