@@ -64,7 +64,7 @@ export default function JadwalSholatPage() {
             if (parts.length === 2) {
                 const [id, nama] = parts;
                 if (!cityMap.has(id)) {
-                    const formattedName = nama.charAt(0).toUpperCase() + nama.slice(1);
+                    const formattedName = nama.charAt(0).toUpperCase() + nama.slice(1).toLowerCase();
                     cityMap.set(id, formattedName);
                 }
             }
@@ -90,23 +90,25 @@ export default function JadwalSholatPage() {
   }, []);
 
   React.useEffect(() => {
-    if (selectedCityId && currentDate) {
+    if (selectedCityId && currentDate && cities.length > 0) {
       const fetchPrayerTimes = async () => {
         setIsLoadingTimes(true);
         setDailyPrayerTimes(null);
         setError(null);
         try {
           const { year, month, day } = currentDate.apiDate;
-          const selectedCityName = cities.find(c => c.id === selectedCityId)?.nama.toLowerCase();
-
-          if (!selectedCityName) {
-            throw new Error('Nama kota tidak ditemukan untuk ID yang dipilih.');
+          // Find the city name from the parsed cities list using the ID
+          const selectedCity = cities.find(c => c.id === selectedCityId);
+          
+          if (!selectedCity) {
+            throw new Error('Kota yang dipilih tidak valid.');
           }
+          const cityNameForApi = selectedCity.nama.toLowerCase();
 
-          const response = await fetch(`https://raw.githubusercontent.com/lakuapik/jadwalsholatorg/master/adzan/${selectedCityName}/${year}/${month}.json`);
+          const response = await fetch(`https://raw.githubusercontent.com/lakuapik/jadwalsholatorg/master/adzan/${cityNameForApi}/${year}/${month}.json`);
           
           if (!response.ok) {
-            throw new Error(`Gagal mengambil jadwal sholat untuk ${selectedCityName}.`);
+            throw new Error(`Gagal mengambil jadwal sholat untuk ${selectedCity.nama}. Data mungkin belum tersedia.`);
           }
           const monthlyData: PrayerTimes[] = await response.json();
           const todaySchedule = monthlyData.find(d => d.tanggal === day);
@@ -176,7 +178,7 @@ export default function JadwalSholatPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : error ? (
-              <div className="text-center text-red-500">{error}</div>
+              <div className="text-center text-red-500 p-4 bg-red-500/10 rounded-md">{error}</div>
             ) : dailyPrayerTimes ? (
                <div className="rounded-md border">
                   <Table>
