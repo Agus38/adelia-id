@@ -50,6 +50,7 @@ export default function JadwalSholatPage() {
     });
 
     const fetchCities = async () => {
+      setIsLoadingCities(true);
       try {
         const response = await fetch('https://raw.githubusercontent.com/lakuapik/jadwalsholatorg/master/kota.json');
         if (!response.ok) {
