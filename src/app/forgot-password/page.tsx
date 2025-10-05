@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
       await sendPasswordResetEmail(auth, email);
       toast({
         title: 'Tautan Terkirim',
-        description: 'Jika email terdaftar, tautan untuk mengatur ulang kata sandi telah dikirim.',
+        description: 'Jika email terdaftar, tautan untuk mengatur ulang kata sandi telah dikirim. Harap periksa juga folder spam Anda.',
       });
     } catch (error: any) {
        toast({
