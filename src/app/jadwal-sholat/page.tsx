@@ -29,7 +29,7 @@ interface PrayerTimes {
 
 export default function JadwalSholatPage() {
   const [cities, setCities] = React.useState<City[]>([]);
-  const [selectedCityId, setSelectedCityId] = React.useState<string>(''); // e.g., 'bandung'
+  const [selectedCityId, setSelectedCityId] = React.useState<string>('');
   const [dailyPrayerTimes, setDailyPrayerTimes] = React.useState<PrayerTimes | null>(null);
   const [isLoadingCities, setIsLoadingCities] = React.useState(true);
   const [isLoadingTimes, setIsLoadingTimes] = React.useState(false);
@@ -57,25 +57,29 @@ export default function JadwalSholatPage() {
         }
         const data: string[] = await response.json();
         
-        const cityMap = new Map<string, City>();
+        // Use a Map to handle duplicate IDs and format names correctly
+        const cityMap = new Map<string, string>();
         data.forEach(cityString => {
             const parts = cityString.split(':');
             if (parts.length === 2) {
                 const [id, nama] = parts;
                 if (!cityMap.has(id)) {
-                    cityMap.set(id, { id: nama.toLowerCase(), nama: nama.charAt(0).toUpperCase() + nama.slice(1) });
+                    const formattedName = nama.charAt(0).toUpperCase() + nama.slice(1);
+                    cityMap.set(id, formattedName);
                 }
             }
         });
+        
+        const parsedCities: City[] = Array.from(cityMap, ([id, nama]) => ({ id, nama }))
+            .sort((a,b) => a.nama.localeCompare(b.nama));
 
-        const parsedCities = Array.from(cityMap.values()).sort((a,b) => a.nama.localeCompare(b.nama));
         setCities(parsedCities);
         
-        // Set default city to a common one, e.g., Jakarta
-        const defaultCity = parsedCities.find((c: City) => c.nama.toUpperCase() === 'JAKARTA');
+        const defaultCity = parsedCities.find(c => c.nama.toUpperCase() === 'JAKARTA');
         if (defaultCity) {
           setSelectedCityId(defaultCity.id);
         }
+
       } catch (e: any) {
         setError(e.message);
       } finally {
@@ -93,9 +97,16 @@ export default function JadwalSholatPage() {
         setError(null);
         try {
           const { year, month, day } = currentDate.apiDate;
-          const response = await fetch(`https://raw.githubusercontent.com/lakuapik/jadwalsholatorg/master/adzan/${selectedCityId}/${year}/${month}.json`);
+          const selectedCityName = cities.find(c => c.id === selectedCityId)?.nama.toLowerCase();
+
+          if (!selectedCityName) {
+            throw new Error('Nama kota tidak ditemukan untuk ID yang dipilih.');
+          }
+
+          const response = await fetch(`https://raw.githubusercontent.com/lakuapik/jadwalsholatorg/master/adzan/${selectedCityName}/${year}/${month}.json`);
+          
           if (!response.ok) {
-            throw new Error(`Gagal mengambil jadwal sholat untuk ${selectedCityId}.`);
+            throw new Error(`Gagal mengambil jadwal sholat untuk ${selectedCityName}.`);
           }
           const monthlyData: PrayerTimes[] = await response.json();
           const todaySchedule = monthlyData.find(d => d.tanggal === day);
@@ -113,7 +124,7 @@ export default function JadwalSholatPage() {
       };
       fetchPrayerTimes();
     }
-  }, [selectedCityId, currentDate]);
+  }, [selectedCityId, currentDate, cities]);
   
   const prayerSchedule = dailyPrayerTimes ? [
     { name: 'Imsak', time: dailyPrayerTimes.imsak },
