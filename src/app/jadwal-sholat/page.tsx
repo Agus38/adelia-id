@@ -1,85 +1,116 @@
+'use client';
+
+import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarClock, MapPin } from 'lucide-react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { CalendarClock, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
-interface PrayerTime {
-  saat: string;
-  vakit: string;
+interface City {
+  id: string;
+  lokasi: string;
 }
 
-// Daftar kota di Turki (sebagai pengganti API kota)
-const turkishCities = [
-    { id: 'istanbul', nama: 'Istanbul' },
-    { id: 'ankara', nama: 'Ankara' },
-    { id: 'izmir', nama: 'Izmir' },
-    { id: 'bursa', nama: 'Bursa' },
-    { id: 'adana', nama: 'Adana' },
-    { id: 'gaziantep', nama: 'Gaziantep' },
-    { id: 'konya', nama: 'Konya' },
-    { id: 'antalya', nama: 'Antalya' },
-    { id: 'diyarbakir', nama: 'Diyarbakir' },
-    { id: 'mersin', nama: 'Mersin' },
-    { id: 'kayseri', nama: 'Kayseri' },
-].sort((a, b) => a.nama.localeCompare(b.nama));
-
-
-async function getPrayerTimes(city: string): Promise<{ result?: PrayerTime[], error?: string }> {
-  const apiKey = process.env.PRAYER_API_TOKEN;
-  if (!apiKey || apiKey === 'your_token') {
-    return { error: 'API Key untuk jadwal sholat belum diatur di server.' };
-  }
-
-  try {
-    const response = await fetch(`https://api.collectapi.com/pray/all?city=${city}`, {
-      headers: {
-        "content-type": "application/json",
-        "authorization": `apikey ${apiKey}`
-      },
-      next: { revalidate: 3600 } // Cache for 1 hour
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `API request failed with status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return { result: data.result };
-  } catch (error: any) {
-    console.error('Error fetching prayer times:', error);
-    return { error: `Gagal mengambil data untuk ${city}. Coba kota lain.` };
-  }
+interface Jadwal {
+  imsak: string;
+  subuh: string;
+  terbit: string;
+  dhuha: string;
+  dzuhur: string;
+  ashar: string;
+  maghrib: string;
+  isya: string;
 }
 
-export default async function JadwalSholatPage({ searchParams }: { searchParams: { city?: string } }) {
-  const selectedCity = searchParams.city || 'istanbul';
-  const { result: prayerTimes, error } = await getPrayerTimes(selectedCity);
-  const currentDate = format(new Date(), 'eeee, dd MMMM yyyy', { locale: id });
+interface PrayerData {
+  lokasi: string;
+  daerah: string;
+  jadwal: Jadwal & { tanggal: string };
+}
 
-  const prayerScheduleMap: { [key: string]: string } = {
-    'Imsak': 'İmsak',
-    'Subuh': 'Güneş', // Literally "Sun", maps to sunrise
-    'Terbit': 'Öğle', // Literally "Noon", maps to Dhuhr
-    'Dzuhur': 'İkindi', // Literally "Afternoon", maps to Asr
-    'Ashar': 'Akşam', // Literally "Evening", maps to Maghrib
-    'Maghrib': 'Yatsı', // Literally "Night", maps to Isha
-    'Isya': 'Yatsı' // Duplicate for safety, Isha
-  };
+const scheduleOrder: (keyof Jadwal)[] = ['imsak', 'subuh', 'terbit', 'dhuha', 'dzuhur', 'ashar', 'maghrib', 'isya'];
+const scheduleLabels: Record<keyof Jadwal, string> = {
+  imsak: 'Imsak',
+  subuh: 'Subuh',
+  terbit: 'Terbit',
+  dhuha: 'Dhuha',
+  dzuhur: 'Dzuhur',
+  ashar: 'Ashar',
+  maghrib: 'Maghrib',
+  isya: 'Isya',
+};
+
+
+export default function JadwalSholatPage() {
+  const [cities, setCities] = React.useState<City[]>([]);
+  const [selectedCity, setSelectedCity] = React.useState<City | null>(null);
+  const [prayerData, setPrayerData] = React.useState<PrayerData | null>(null);
+  const [isLoadingCities, setIsLoadingCities] = React.useState(true);
+  const [isLoadingSchedule, setIsLoadingSchedule] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [comboboxOpen, setComboboxOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        const response = await fetch('https://api.myquran.com/v2/sholat/kota/semua');
+        if (!response.ok) throw new Error('Gagal mengambil daftar kota');
+        const data = await response.json();
+        if (!data.status || !Array.isArray(data.data)) throw new Error('Format data kota tidak valid');
+        
+        const sortedCities = data.data.sort((a: City, b: City) => a.lokasi.localeCompare(b.lokasi));
+        setCities(sortedCities);
+
+        // Set default city to Jakarta
+        const defaultCity = sortedCities.find(c => c.id === '1301');
+        if (defaultCity) {
+          setSelectedCity(defaultCity);
+        }
+
+      } catch (err: any) {
+        setError(err.message || 'Terjadi kesalahan saat memuat kota.');
+      } finally {
+        setIsLoadingCities(false);
+      }
+    };
+    fetchCities();
+  }, []);
+
+  React.useEffect(() => {
+    if (!selectedCity) return;
+
+    const fetchSchedule = async () => {
+      setIsLoadingSchedule(true);
+      setPrayerData(null);
+      setError(null);
+      try {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        const day = today.getDate();
+        
+        const response = await fetch(`https://api.myquran.com/v2/sholat/jadwal/${selectedCity.id}/${year}/${month}/${day}`);
+        if (!response.ok) throw new Error(`Jadwal untuk ${selectedCity.lokasi} tidak tersedia.`);
+        const data = await response.json();
+
+        if (!data.status || !data.data?.jadwal) throw new Error('Format data jadwal tidak valid');
+        setPrayerData(data.data);
+
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoadingSchedule(false);
+      }
+    };
+    
+    fetchSchedule();
+  }, [selectedCity]);
   
-  const schedule = prayerTimes
-    ? Object.entries(prayerScheduleMap).map(([indonesianName, turkishName]) => {
-        const timeData = prayerTimes.find(pt => pt.saat === turkishName);
-        return { name: indonesianName, time: timeData?.vakit || '-' };
-      })
-    : [];
-
   return (
     <div className="flex-1 space-y-6 p-4 pt-6 md:p-8 flex justify-center">
       <div className="w-full max-w-2xl">
@@ -91,36 +122,74 @@ export default async function JadwalSholatPage({ searchParams }: { searchParams:
                 </div>
                 <div>
                    <CardTitle>Jadwal Sholat</CardTitle>
-                   <CardDescription>{currentDate}</CardDescription>
+                   <CardDescription>
+                      {prayerData?.jadwal.tanggal || 'Pilih lokasi untuk melihat jadwal'}
+                   </CardDescription>
                 </div>
             </div>
-            <form>
-                <div className="space-y-2 pt-4">
-                <Label htmlFor="city-select">Pilih Lokasi Kota (Turki)</Label>
-                <Select name="city" defaultValue={selectedCity}>
-                    <SelectTrigger id="city-select">
-                        <SelectValue placeholder="Pilih kota" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    {turkishCities.map((city) => (
-                        <SelectItem key={city.id} value={city.id}>
-                            {city.nama}
-                        </SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
-                 <Button type="submit" className="w-full mt-2">Tampilkan Jadwal</Button>
-                </div>
-            </form>
+            <div className="space-y-2 pt-4">
+                <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={comboboxOpen}
+                            className="w-full justify-between"
+                            disabled={isLoadingCities}
+                        >
+                            {isLoadingCities ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Memuat kota...
+                                </>
+                            ) : selectedCity ? (
+                                selectedCity.lokasi
+                            ) : (
+                                "Pilih kota..."
+                            )}
+                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" style={{width: 'var(--radix-popover-trigger-width)'}}>
+                        <Command>
+                            <CommandInput placeholder="Cari kota..." />
+                            <CommandList>
+                                <CommandEmpty>Kota tidak ditemukan.</CommandEmpty>
+                                <CommandGroup>
+                                    {cities.map((city) => (
+                                        <CommandItem
+                                            key={city.id}
+                                            value={city.lokasi}
+                                            onSelect={() => {
+                                                setSelectedCity(city);
+                                                setComboboxOpen(false);
+                                            }}
+                                        >
+                                            <Check
+                                                className={cn("mr-2 h-4 w-4", selectedCity?.id === city.id ? "opacity-100" : "opacity-0")}
+                                            />
+                                            {city.lokasi}
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
+            </div>
           </CardHeader>
           <CardContent>
-            {error ? (
+            {isLoadingSchedule ? (
+                 <div className="flex h-48 flex-col items-center justify-center text-center text-muted-foreground">
+                    <Loader2 className="h-8 w-8 mb-2 animate-spin"/>
+                    <p>Memuat jadwal untuk {selectedCity?.lokasi}...</p>
+                </div>
+            ) : error ? (
               <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Terjadi Kesalahan</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
              </Alert>
-            ) : prayerTimes ? (
+            ) : prayerData ? (
                <div className="rounded-md border">
                   <Table>
                     <TableHeader>
@@ -130,21 +199,16 @@ export default async function JadwalSholatPage({ searchParams }: { searchParams:
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {schedule.map(item => (
-                             <TableRow key={item.name}>
-                                <TableCell className="font-medium">{item.name}</TableCell>
-                                <TableCell className="text-right font-mono text-base">{item.time}</TableCell>
+                        {scheduleOrder.map(key => (
+                             <TableRow key={key}>
+                                <TableCell className="font-medium">{scheduleLabels[key]}</TableCell>
+                                <TableCell className="text-right font-mono text-base">{prayerData.jadwal[key]}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                   </Table>
                </div>
-            ) : (
-                <div className="flex h-48 flex-col items-center justify-center text-center text-muted-foreground">
-                    <MapPin className="h-8 w-8 mb-2"/>
-                    <p>Silakan pilih kota untuk menampilkan jadwal sholat.</p>
-                </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
       </div>
