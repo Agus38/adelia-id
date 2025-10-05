@@ -78,6 +78,7 @@ import {
   LogIn,
   Megaphone,
   TrendingUp,
+  CalendarClock,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -146,6 +147,14 @@ export const menuItems: MenuItem[] = [
     href: '/ai-assistant',
     icon: Bot,
     requiresAuth: true,
+  },
+   {
+    id: 'jadwal-sholat',
+    title: 'Jadwal Sholat',
+    href: '/jadwal-sholat',
+    icon: CalendarClock,
+    access: 'all',
+    requiresAuth: false,
   },
   {
     id: 'cek-usia',
@@ -495,6 +504,7 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Cake,
   Calculator,
   Calendar,
+  CalendarClock,
   Check,
   ChevronDown,
   ChevronLeft,
