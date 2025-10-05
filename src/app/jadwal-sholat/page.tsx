@@ -16,37 +16,36 @@ interface City {
 }
 
 interface PrayerTimes {
+  tanggal: string;
   imsak: string;
   subuh: string;
   terbit: string;
+  dhuha: string;
   dzuhur: string;
   ashar: string;
   maghrib: string;
   isya: string;
 }
 
-interface ApiResponse {
-  status: boolean;
-  data: {
-    adzan: PrayerTimes;
-  };
-}
-
 export default function JadwalSholatPage() {
   const [cities, setCities] = React.useState<City[]>([]);
-  const [selectedCity, setSelectedCity] = React.useState<string>('');
-  const [prayerTimes, setPrayerTimes] = React.useState<PrayerTimes | null>(null);
+  const [selectedCityId, setSelectedCityId] = React.useState<string>(''); // e.g., 'bandung'
+  const [dailyPrayerTimes, setDailyPrayerTimes] = React.useState<PrayerTimes | null>(null);
   const [isLoadingCities, setIsLoadingCities] = React.useState(true);
   const [isLoadingTimes, setIsLoadingTimes] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [currentDate, setCurrentDate] = React.useState<{ formatted: string; api: string } | null>(null);
+  const [currentDate, setCurrentDate] = React.useState<{ formatted: string; apiDate: { year: string, month: string, day: string } } | null>(null);
 
   React.useEffect(() => {
     // This effect runs only on the client, avoiding hydration mismatch.
     const today = new Date();
     setCurrentDate({
       formatted: format(today, 'eeee, dd MMMM yyyy', { locale: id }),
-      api: format(today, 'yyyy-MM-dd'),
+      apiDate: {
+        year: format(today, 'yyyy'),
+        month: format(today, 'MM'),
+        day: format(today, 'yyyy-MM-dd')
+      }
     });
 
     const fetchCities = async () => {
@@ -58,16 +57,13 @@ export default function JadwalSholatPage() {
         }
         const data: string[] = await response.json();
         
-        // Use a Map to filter out duplicate cities by their ID efficiently
         const cityMap = new Map<string, City>();
         data.forEach(cityString => {
             const parts = cityString.split(':');
-            if (parts.length >= 2) {
-                const id = parts[0];
-                const nama = parts.slice(1).join(':');
-                // Only add if the ID doesn't already exist in the map
+            if (parts.length === 2) {
+                const [id, nama] = parts;
                 if (!cityMap.has(id)) {
-                    cityMap.set(id, { id, nama });
+                    cityMap.set(id, { id: nama.toLowerCase(), nama: nama.charAt(0).toUpperCase() + nama.slice(1) });
                 }
             }
         });
@@ -78,7 +74,7 @@ export default function JadwalSholatPage() {
         // Set default city to a common one, e.g., Jakarta
         const defaultCity = parsedCities.find((c: City) => c.nama.toUpperCase() === 'JAKARTA');
         if (defaultCity) {
-          setSelectedCity(defaultCity.id);
+          setSelectedCityId(defaultCity.id);
         }
       } catch (e: any) {
         setError(e.message);
@@ -90,21 +86,24 @@ export default function JadwalSholatPage() {
   }, []);
 
   React.useEffect(() => {
-    if (selectedCity && currentDate) {
+    if (selectedCityId && currentDate) {
       const fetchPrayerTimes = async () => {
         setIsLoadingTimes(true);
-        setPrayerTimes(null);
+        setDailyPrayerTimes(null);
         setError(null);
         try {
-          const response = await fetch(`https://jadwalsholat.org/api/v2/adzan/kota/${selectedCity}/tanggal/${currentDate.api}`);
+          const { year, month, day } = currentDate.apiDate;
+          const response = await fetch(`https://raw.githubusercontent.com/lakuapik/jadwalsholatorg/master/adzan/${selectedCityId}/${year}/${month}.json`);
           if (!response.ok) {
-            throw new Error('Gagal mengambil jadwal sholat.');
+            throw new Error(`Gagal mengambil jadwal sholat untuk ${selectedCityId}.`);
           }
-          const data: ApiResponse = await response.json();
-          if (data.status && data.data) {
-            setPrayerTimes(data.data.adzan);
+          const monthlyData: PrayerTimes[] = await response.json();
+          const todaySchedule = monthlyData.find(d => d.tanggal === day);
+
+          if (todaySchedule) {
+            setDailyPrayerTimes(todaySchedule);
           } else {
-            throw new Error('Format data jadwal sholat tidak valid.');
+            throw new Error('Jadwal untuk hari ini tidak ditemukan.');
           }
         } catch (e: any) {
           setError(e.message);
@@ -114,16 +113,16 @@ export default function JadwalSholatPage() {
       };
       fetchPrayerTimes();
     }
-  }, [selectedCity, currentDate]);
+  }, [selectedCityId, currentDate]);
   
-  const prayerSchedule = prayerTimes ? [
-    { name: 'Imsak', time: prayerTimes.imsak },
-    { name: 'Subuh', time: prayerTimes.subuh },
-    { name: 'Terbit', time: prayerTimes.terbit },
-    { name: 'Dzuhur', time: prayerTimes.dzuhur },
-    { name: 'Ashar', time: prayerTimes.ashar },
-    { name: 'Maghrib', time: prayerTimes.maghrib },
-    { name: 'Isya', time: prayerTimes.isya },
+  const prayerSchedule = dailyPrayerTimes ? [
+    { name: 'Imsak', time: dailyPrayerTimes.imsak },
+    { name: 'Subuh', time: dailyPrayerTimes.subuh },
+    { name: 'Terbit', time: dailyPrayerTimes.terbit },
+    { name: 'Dzuhur', time: dailyPrayerTimes.dzuhur },
+    { name: 'Ashar', time: dailyPrayerTimes.ashar },
+    { name: 'Maghrib', time: dailyPrayerTimes.maghrib },
+    { name: 'Isya', time: dailyPrayerTimes.isya },
   ] : [];
 
   return (
@@ -143,8 +142,8 @@ export default function JadwalSholatPage() {
             <div className="space-y-2 pt-4">
               <Label htmlFor="city-select">Pilih Lokasi Kota</Label>
               <Select
-                value={selectedCity}
-                onValueChange={setSelectedCity}
+                value={selectedCityId}
+                onValueChange={setSelectedCityId}
                 disabled={isLoadingCities}
               >
                 <SelectTrigger id="city-select">
@@ -167,7 +166,7 @@ export default function JadwalSholatPage() {
               </div>
             ) : error ? (
               <div className="text-center text-red-500">{error}</div>
-            ) : prayerTimes ? (
+            ) : dailyPrayerTimes ? (
                <div className="rounded-md border">
                   <Table>
                     <TableHeader>
