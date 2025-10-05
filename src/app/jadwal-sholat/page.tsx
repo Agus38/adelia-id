@@ -57,23 +57,19 @@ export default function JadwalSholatPage() {
         }
         const data: string[] = await response.json();
         
-        const cityIds = new Set<string>();
-        const parsedCities = data.reduce((acc: City[], cityString: string) => {
+        const cityMap = new Map<string, City>();
+        data.forEach(cityString => {
             const parts = cityString.split(':');
-            if (parts.length < 2) return acc;
-            
-            const id = parts[0];
-            const nama = parts.slice(1).join(':');
-
-            // Only add cities with numeric IDs, and ensure they are unique
-            if (!isNaN(Number(id)) && !cityIds.has(id)) {
-                cityIds.add(id);
-                acc.push({ id, nama });
+            if (parts.length >= 2) {
+                const id = parts[0];
+                const nama = parts.slice(1).join(':');
+                if (!cityMap.has(id)) {
+                    cityMap.set(id, { id, nama });
+                }
             }
-            return acc;
-        }, []).sort((a,b) => a.nama.localeCompare(b.nama));
+        });
 
-
+        const parsedCities = Array.from(cityMap.values()).sort((a,b) => a.nama.localeCompare(b.nama));
         setCities(parsedCities);
         
         // Set default city to a common one, e.g., Jakarta
