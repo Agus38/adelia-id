@@ -39,12 +39,16 @@ export default function JadwalSholatPage() {
   const [isLoadingCities, setIsLoadingCities] = React.useState(true);
   const [isLoadingTimes, setIsLoadingTimes] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  
-  const today = new Date();
-  const formattedDate = format(today, 'eeee, dd MMMM yyyy', { locale: id });
-  const apiDate = format(today, 'yyyy-MM-dd');
+  const [currentDate, setCurrentDate] = React.useState<{ formatted: string; api: string } | null>(null);
 
   React.useEffect(() => {
+    // This effect runs only on the client, avoiding hydration mismatch.
+    const today = new Date();
+    setCurrentDate({
+      formatted: format(today, 'eeee, dd MMMM yyyy', { locale: id }),
+      api: format(today, 'yyyy-MM-dd'),
+    });
+
     const fetchCities = async () => {
       try {
         const response = await fetch('https://jadwalsholat.org/api/v2/kota/semua');
@@ -70,13 +74,13 @@ export default function JadwalSholatPage() {
   }, []);
 
   React.useEffect(() => {
-    if (selectedCity) {
+    if (selectedCity && currentDate) {
       const fetchPrayerTimes = async () => {
         setIsLoadingTimes(true);
         setPrayerTimes(null);
         setError(null);
         try {
-          const response = await fetch(`https://jadwalsholat.org/api/v2/adzan/kota/${selectedCity}/tanggal/${apiDate}`);
+          const response = await fetch(`https://jadwalsholat.org/api/v2/adzan/kota/${selectedCity}/tanggal/${currentDate.api}`);
           if (!response.ok) {
             throw new Error('Gagal mengambil jadwal sholat.');
           }
@@ -94,7 +98,7 @@ export default function JadwalSholatPage() {
       };
       fetchPrayerTimes();
     }
-  }, [selectedCity, apiDate]);
+  }, [selectedCity, currentDate]);
   
   const prayerSchedule = prayerTimes ? [
     { name: 'Imsak', time: prayerTimes.imsak },
@@ -117,7 +121,7 @@ export default function JadwalSholatPage() {
                 </div>
                 <div>
                    <CardTitle>Jadwal Sholat</CardTitle>
-                   <CardDescription>{formattedDate}</CardDescription>
+                   <CardDescription>{currentDate?.formatted || 'Memuat tanggal...'}</CardDescription>
                 </div>
             </div>
             <div className="space-y-2 pt-4">
