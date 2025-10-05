@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -522,7 +521,7 @@ export const saveAdminSidebarMenuConfig = async (items: MenuItem[]) => {
     id: item.id,
     title: item.title,
     href: item.href,
-    iconName: item.iconName || (item.icon && (item.icon as any).displayName) || 'Package',
+    iconName: item.iconName || 'Package',
     access: 'admin',
     comingSoon: item.comingSoon || false,
     badgeText: item.badgeText,
