@@ -225,6 +225,16 @@ export function BannerManagement() {
                   rows={3}
                 />
               </div>
+               <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="url" className="text-right">URL Tautan</Label>
+                <Input
+                  id="url"
+                  value={selectedSlide.url || ''}
+                  onChange={(e) => setSelectedSlide({...selectedSlide, url: e.target.value})}
+                  className="col-span-3"
+                  placeholder="Contoh: /digital-products"
+                />
+              </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="imageUrl" className="text-right">URL Gambar</Label>
                  <div className="col-span-3 flex gap-2">

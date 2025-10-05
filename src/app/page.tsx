@@ -16,6 +16,7 @@ import * as React from "react"
 import { useBannerConfig } from "@/lib/menu-store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PromoPopup } from "@/components/promo-popup";
+import Link from "next/link";
 
 
 export default function Home() {
@@ -68,9 +69,9 @@ export default function Home() {
             onMouseLeave={plugin.current.reset}
             >
             <CarouselContent>
-                {visibleSlides.map((slide, index) => (
-                <CarouselItem key={index}>
-                    <div className="relative w-full h-28 md:h-36 rounded-lg overflow-hidden shadow-lg">
+                {visibleSlides.map((slide, index) => {
+                  const slideContent = (
+                     <div className="relative w-full h-28 md:h-36 rounded-lg overflow-hidden shadow-lg">
                         <Image
                         src={slide.image}
                         alt={slide.title}
@@ -83,8 +84,20 @@ export default function Home() {
                         <p className="text-center mt-2 md:text-lg">{slide.description}</p>
                         </div>
                     </div>
-                </CarouselItem>
-                ))}
+                  );
+                  
+                  return (
+                    <CarouselItem key={index}>
+                      {slide.url ? (
+                        <Link href={slide.url} className="block">
+                          {slideContent}
+                        </Link>
+                      ) : (
+                        <div>{slideContent}</div>
+                      )}
+                    </CarouselItem>
+                  )
+                })}
             </CarouselContent>
             </Carousel>
         )}

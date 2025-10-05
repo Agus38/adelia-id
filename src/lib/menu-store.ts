@@ -46,6 +46,7 @@ interface BannerSlideDTO {
   image: string;
   hint: string;
   visible: boolean;
+  url?: string;
 }
 
 interface BrandingConfigDTO {
@@ -134,6 +135,7 @@ export interface BannerSlide {
   image: string;
   hint: string;
   visible: boolean;
+  url?: string;
 }
 
 export interface BrandingConfig {
@@ -239,6 +241,7 @@ const defaultBannerSlides: BannerSlide[] = [
     image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvbW90aW9uYWwlMjBiYW5uZXJ8ZW58MHx8fHwxNzU1NTUwMzk2fDA',
     hint: 'promotional banner',
     visible: true,
+    url: '/',
   },
   {
     id: 2,
@@ -247,6 +250,7 @@ const defaultBannerSlides: BannerSlide[] = [
     image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZGF0YSUyMGFuYWx5dGljc3xlbnwwfHx8fDE3NTU1NTAzOTZ8MA',
     hint: 'data analytics',
     visible: true,
+    url: '/analytics',
   },
   {
     id: 3,
@@ -255,6 +259,7 @@ const defaultBannerSlides: BannerSlide[] = [
     image: 'https://images.unsplash.com/photo-1620712943543-285f716a8ae6?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8YXJ0aWZpY2lhbCUyMGludGVsbGlnZW5jZXxlbnwwfHx8fDE3NTU1NTAzOTV8MA',
     hint: 'artificial intelligence',
     visible: true,
+    url: '/ai-assistant',
   }
 ];
 
@@ -518,16 +523,18 @@ export const useAdminSidebarMenuConfig = () => {
 };
 
 export const saveAdminSidebarMenuConfig = async (items: MenuItem[]) => {
-    const itemsToStore: MenuItemDTO[] = items.map(item => {
-        // Create a new object by spreading `item` but omitting the `icon` property.
-        const { icon, ...rest } = item;
-        return {
-            ...rest,
-            iconName: item.iconName || 'Package', // Ensure iconName is always present
-            access: 'admin', // Ensure access is always admin for this config
-        };
-    });
-    await setDoc(adminSidebarMenuConfigDocRef, { items: itemsToStore });
+  const itemsToStore = items.map((item) => {
+    const { icon, ...rest } = item;
+    return {
+      ...rest,
+      id: item.id,
+      title: item.title,
+      href: item.href,
+      iconName: item.iconName || 'Package',
+      access: 'admin',
+    };
+  });
+  await setDoc(adminSidebarMenuConfigDocRef, { items: itemsToStore });
 };
 
 
@@ -576,6 +583,7 @@ export const saveBannerConfig = async (slides: BannerSlide[]) => {
         image: slide.image,
         hint: slide.hint,
         visible: slide.visible,
+        url: slide.url || '',
     }));
     await setDoc(bannerConfigDocRef, { slides: slidesToStore });
 }
