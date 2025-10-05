@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -517,18 +518,16 @@ export const useAdminSidebarMenuConfig = () => {
 };
 
 export const saveAdminSidebarMenuConfig = async (items: MenuItem[]) => {
-  const itemsToStore: MenuItemDTO[] = items.map((item) => ({
-    id: item.id,
-    title: item.title,
-    href: item.href,
-    iconName: item.iconName || 'Package',
-    access: 'admin',
-    comingSoon: item.comingSoon || false,
-    badgeText: item.badgeText,
-    isUnderMaintenance: item.isUnderMaintenance,
-    requiresAuth: item.requiresAuth,
-  }));
-  await setDoc(adminSidebarMenuConfigDocRef, { items: itemsToStore });
+    const itemsToStore: MenuItemDTO[] = items.map(item => {
+        // Create a new object by spreading `item` but omitting the `icon` property.
+        const { icon, ...rest } = item;
+        return {
+            ...rest,
+            iconName: item.iconName || 'Package', // Ensure iconName is always present
+            access: 'admin', // Ensure access is always admin for this config
+        };
+    });
+    await setDoc(adminSidebarMenuConfigDocRef, { items: itemsToStore });
 };
 
 
