@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, CalendarClock, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { Label } from '@/components/ui/label';
 
 interface City {
   id: string;
