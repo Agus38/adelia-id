@@ -57,12 +57,14 @@ export default function JadwalSholatPage() {
         }
         const data: string[] = await response.json();
         
+        // Use a Map to filter out duplicate cities by their ID efficiently
         const cityMap = new Map<string, City>();
         data.forEach(cityString => {
             const parts = cityString.split(':');
             if (parts.length >= 2) {
                 const id = parts[0];
                 const nama = parts.slice(1).join(':');
+                // Only add if the ID doesn't already exist in the map
                 if (!cityMap.has(id)) {
                     cityMap.set(id, { id, nama });
                 }
