@@ -57,11 +57,17 @@ export default function JadwalSholatPage() {
         }
         const data: string[] = await response.json();
         
-        const parsedCities = data.map(cityString => {
-          const [id, ...namaParts] = cityString.split(':');
-          const nama = namaParts.join(':');
-          return { id, nama };
-        }).sort((a,b) => a.nama.localeCompare(b.nama));
+        const cityIds = new Set<string>();
+        const parsedCities = data.reduce((acc: City[], cityString: string) => {
+            const [id, ...namaParts] = cityString.split(':');
+            const nama = namaParts.join(':');
+            if (!cityIds.has(id)) {
+                cityIds.add(id);
+                acc.push({ id, nama });
+            }
+            return acc;
+        }, []).sort((a,b) => a.nama.localeCompare(b.nama));
+
 
         setCities(parsedCities);
         
