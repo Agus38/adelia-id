@@ -1,4 +1,5 @@
 
+
 import {
   MessageSquare,
   Package,
@@ -206,6 +207,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
+  // --- User & Access Management ---
   {
     id: 'user-management',
     title: 'Manajemen Pengguna',
@@ -224,16 +226,17 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
-   {
-    id: 'team-management',
-    title: 'Manajemen Tim',
-    href: '/admin/tim',
-    icon: Users2,
-    description: 'Kelola anggota tim yang ditampilkan.',
+  {
+    id: 'session-management',
+    title: 'Manajemen Sesi',
+    href: '/admin/sessions',
+    icon: Lock,
+    description: 'Kelola sesi pengguna yang aktif.',
     access: 'admin',
     requiresAuth: true,
   },
-   {
+  // --- Data & Content Management ---
+  {
     id: 'daily-report-management',
     title: 'Laporan Harian',
     href: '/admin/daily-reports',
@@ -251,15 +254,6 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
-   {
-    id: 'age-calculation-management',
-    title: 'Manajemen Kalkulator Usia',
-    href: '/admin/age-calculations',
-    icon: Cake,
-    description: 'Lihat data penggunaan dari fitur kalkulator usia.',
-    access: 'admin',
-    requiresAuth: true,
-  },
   {
     id: 'budgetflow-management',
     title: 'Manajemen BudgetFlow',
@@ -269,6 +263,16 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
+    {
+    id: 'age-calculation-management',
+    title: 'Manajemen Kalkulator Usia',
+    href: '/admin/age-calculations',
+    icon: Cake,
+    description: 'Lihat data penggunaan dari fitur kalkulator usia.',
+    access: 'admin',
+    requiresAuth: true,
+  },
+  // --- Product & Integration Management ---
    {
     id: 'digital-product-management',
     title: 'Manajemen Produk',
@@ -287,6 +291,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
+  // --- Appearance & UI Settings ---
   {
     id: 'menu-management',
     title: 'Manajemen Menu',
@@ -314,7 +319,16 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
-    {
+  {
+    id: 'branding-settings',
+    title: 'Pengaturan Tampilan',
+    href: '/admin/branding',
+    icon: Palette,
+    description: 'Sesuaikan logo, nama, dan ikon aplikasi.',
+    access: 'admin',
+    requiresAuth: true,
+  },
+  {
     id: 'banner-management',
     title: 'Manajemen Banner',
     href: '/admin/banner',
@@ -332,21 +346,22 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
-  {
-    id: 'branding-settings',
-    title: 'Pengaturan Tampilan',
-    href: '/admin/branding',
-    icon: Palette,
-    description: 'Sesuaikan logo, nama, dan ikon aplikasi.',
-    access: 'admin',
-    requiresAuth: true,
-  },
    {
     id: 'auth-pages-settings',
     title: 'Halaman Autentikasi',
     href: '/admin/auth-pages',
     icon: UserPlus,
     description: 'Kelola gambar di halaman login & registrasi.',
+    access: 'admin',
+    requiresAuth: true,
+  },
+  // --- Pages & Info Management ---
+    {
+    id: 'team-management',
+    title: 'Manajemen Tim',
+    href: '/admin/tim',
+    icon: Users2,
+    description: 'Kelola anggota tim yang ditampilkan.',
     access: 'admin',
     requiresAuth: true,
   },
@@ -368,15 +383,7 @@ export const defaultAdminMenuItems: MenuItem[] = [
     access: 'admin',
     requiresAuth: true,
   },
-  {
-    id: 'session-management',
-    title: 'Manajemen Sesi',
-    href: '/admin/sessions',
-    icon: Lock,
-    description: 'Kelola sesi pengguna yang aktif.',
-    access: 'admin',
-    requiresAuth: true,
-  },
+  // --- System & Advanced ---
   {
     id: 'routes-list',
     title: 'Daftar Rute',
