@@ -7,6 +7,7 @@ import { id } from 'date-fns/locale';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface PrayerTime {
   saat: string;
