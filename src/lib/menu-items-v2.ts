@@ -181,14 +181,6 @@ export const menuItems: MenuItem[] = [
     requiresAuth: false,
   },
   {
-    id: 'convert',
-    title: 'Konversi',
-    href: '/convert',
-    icon: Repeat,
-    comingSoon: true,
-    requiresAuth: false,
-  },
-  {
     id: 'diskon',
     title: 'Diskon',
     href: '/diskon',

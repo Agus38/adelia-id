@@ -1,4 +1,3 @@
-
 'use client';
 
 import { AgeCalculator } from "@/components/cek-usia/age-calculator";
