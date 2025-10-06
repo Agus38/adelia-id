@@ -6,7 +6,7 @@ import { useBudgetflowStore, addDebt, updateDebt, deleteDebt, recordDebtPayment,
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
-import { PlusCircle, MoreVertical, Edit, Trash2, ArrowUp, ArrowDown, HandCoins } from 'lucide-react';
+import { PlusCircle, MoreVertical, Edit, Trash2, ArrowUp, ArrowDown, HandCoins, PiggyBank } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -215,83 +215,56 @@ function DebtFormDialog({ open, onOpenChange, debtToEdit }: { open: boolean, onO
     );
 }
 
-function DebtTable({ title, debts, type }: { title: string, debts: Debt[], type: DebtType }) {
+function DebtCard({ debt }: { debt: Debt }) {
     const [isFormOpen, setFormOpen] = React.useState(false);
     const [isPaymentOpen, setPaymentOpen] = React.useState(false);
     const [isDeleteOpen, setDeleteOpen] = React.useState(false);
-    const [selectedDebt, setSelectedDebt] = React.useState<Debt | null>(null);
 
-    const handleEdit = (debt: Debt) => { setSelectedDebt(debt); setFormOpen(true); };
-    const handlePayment = (debt: Debt) => { setSelectedDebt(debt); setPaymentOpen(true); };
-    const handleDelete = (debt: Debt) => { setSelectedDebt(debt); setDeleteOpen(true); };
+    const progress = (debt.paidAmount / debt.totalAmount) * 100;
+    const remainingAmount = debt.totalAmount - debt.paidAmount;
 
     return (
         <>
-            <Card>
-                <CardHeader>
-                    <CardTitle>{title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Deskripsi</TableHead>
-                                    <TableHead>Sisa</TableHead>
-                                    <TableHead className="text-right">Aksi</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {debts.length > 0 ? debts.map(debt => (
-                                    <TableRow key={debt.id}>
-                                        <TableCell>
-                                            <p className="font-medium">{debt.name}</p>
-                                            <p className="text-xs text-muted-foreground">Total: {formatCurrency(debt.totalAmount)}</p>
-                                        </TableCell>
-                                        <TableCell className={cn("font-semibold", type === 'debt' ? 'text-red-500' : 'text-green-500')}>
-                                            {formatCurrency(debt.totalAmount - debt.paidAmount)}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                             <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => handlePayment(debt)}><HandCoins className="mr-2 h-4 w-4"/> Catat Pembayaran</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleEdit(debt)}><Edit className="mr-2 h-4 w-4"/> Edit</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleDelete(debt)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4"/> Hapus</DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                )) : (
-                                    <TableRow><TableCell colSpan={3} className="text-center h-24">Tidak ada data</TableCell></TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+            <div className="border rounded-lg p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className="font-semibold">{debt.name}</p>
+                        <p className="text-xs text-muted-foreground">Total: {formatCurrency(debt.totalAmount)}</p>
                     </div>
-                </CardContent>
-            </Card>
-
-            {selectedDebt && <DebtFormDialog open={isFormOpen} onOpenChange={setFormOpen} debtToEdit={selectedDebt} />}
-            {selectedDebt && <DebtRecordPaymentDialog open={isPaymentOpen} onOpenChange={setPaymentOpen} debt={selectedDebt} />}
-            {selectedDebt && (
-                 <AlertDialog open={isDeleteOpen} onOpenChange={setDeleteOpen}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Hapus Data?</AlertDialogTitle>
-                            <AlertDialogDescription>Data "{selectedDebt.name}" akan dihapus permanen.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Batal</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteDebt(selectedDebt.id)}>Hapus</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            )}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setPaymentOpen(true)}><HandCoins className="mr-2 h-4 w-4"/> Catat Pembayaran</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setFormOpen(true)}><Edit className="mr-2 h-4 w-4"/> Edit</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDeleteOpen(true)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4"/> Hapus</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+                <div>
+                     <p className="text-sm font-medium">Sisa: <span className={cn(debt.type === 'debt' ? 'text-red-500' : 'text-green-500')}>{formatCurrency(remainingAmount)}</span></p>
+                    <Progress value={progress} className="h-2 mt-1" />
+                </div>
+            </div>
+            <DebtFormDialog open={isFormOpen} onOpenChange={setFormOpen} debtToEdit={debt} />
+            <DebtRecordPaymentDialog open={isPaymentOpen} onOpenChange={setPaymentOpen} debt={debt} />
+            <AlertDialog open={isDeleteOpen} onOpenChange={setDeleteOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus Data?</AlertDialogTitle>
+                        <AlertDialogDescription>Data "{debt.name}" akan dihapus permanen.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteDebt(debt.id)}>Hapus</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }
+
 
 export function DebtsView() {
     const { debts } = useBudgetflowStore();
@@ -310,8 +283,20 @@ export function DebtsView() {
                 </Button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <DebtTable title="Daftar Hutang Saya" debts={myDebts} type="debt" />
-                <DebtTable title="Daftar Piutang Saya" debts={myReceivables} type="receivable" />
+                <Card>
+                    <CardHeader><CardTitle>Daftar Hutang Saya</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                        {myDebts.length > 0 ? myDebts.map(debt => <DebtCard key={debt.id} debt={debt} />)
+                            : <p className="text-muted-foreground text-sm">Tidak ada hutang aktif.</p>}
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader><CardTitle>Daftar Piutang Saya</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                         {myReceivables.length > 0 ? myReceivables.map(debt => <DebtCard key={debt.id} debt={debt} />)
+                            : <p className="text-muted-foreground text-sm">Tidak ada piutang aktif.</p>}
+                    </CardContent>
+                </Card>
             </div>
             {paidOff.length > 0 && (
                 <Card>
@@ -336,3 +321,4 @@ export function DebtsView() {
         </div>
     );
 }
+
