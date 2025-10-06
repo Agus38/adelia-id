@@ -6,14 +6,13 @@ import { getStorage } from "firebase/storage";
 import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  // Ensure the databaseURL is constructed correctly and dynamically
-  databaseURL: `https://` + process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID + `.firebaseio.com`,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyC10C4bxdN5FIwFmMoW6OBVFVpsEHG09Gk",
+  authDomain: "aeromenu.firebaseapp.com",
+  projectId: "aeromenu",
+  storageBucket: "aeromenu.appspot.com",
+  messagingSenderId: "491818232587",
+  appId: "1:491818232587:web:af39ef2223418f1f3f900e",
+  databaseURL: "https://aeromenu.firebaseio.com"
 };
 
 // Initialize Firebase
