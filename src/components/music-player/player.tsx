@@ -14,7 +14,7 @@ import { Skeleton } from '../ui/skeleton';
 interface Track {
     videoId: string;
     title: string;
-    artists: { name: string }[];
+    artists?: { name: string }[];
     thumbnailUrl: string;
     url: string;
 }
@@ -28,27 +28,22 @@ export function MusicPlayer() {
     const audioRef = React.useRef<HTMLAudioElement>(null);
     const { toast } = useToast();
     
-    React.useEffect(() => {
-        handleSearch();
-    }, []);
-
-    React.useEffect(() => {
-        if (audioRef.current && playlist.length > 0) {
-            audioRef.current.src = playlist[currentTrackIndex].url;
-            if (isPlaying) {
-                audioRef.current.play().catch(e => console.error("Playback error:", e));
-            }
-        }
-    }, [currentTrackIndex, playlist]);
-    
-    const handleSearch = async () => {
+    const handleSearch = React.useCallback(async () => {
         if (!query.trim()) return;
         setIsLoading(true);
         setPlaylist([]);
         try {
             const result = await searchMusic({ query });
-            setPlaylist(result.tracks);
-            setCurrentTrackIndex(0);
+            if (result.tracks && result.tracks.length > 0) {
+                setPlaylist(result.tracks);
+                setCurrentTrackIndex(0);
+            } else {
+                toast({
+                    title: "Tidak Ada Hasil",
+                    description: `Tidak ada musik yang ditemukan untuk "${query}".`,
+                    variant: "destructive"
+                });
+            }
         } catch (error) {
             toast({
                 title: "Gagal Mencari Musik",
@@ -59,8 +54,21 @@ export function MusicPlayer() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [query, toast]);
+    
+    React.useEffect(() => {
+        handleSearch();
+    }, []);
 
+    React.useEffect(() => {
+        if (audioRef.current && playlist.length > 0 && playlist[currentTrackIndex]?.url) {
+            audioRef.current.src = playlist[currentTrackIndex].url;
+            if (isPlaying) {
+                audioRef.current.play().catch(e => console.error("Playback error:", e));
+            }
+        }
+    }, [currentTrackIndex, playlist, isPlaying]);
+    
     const togglePlayPause = () => {
         if (!audioRef.current) return;
         if (isPlaying) {
@@ -72,13 +80,15 @@ export function MusicPlayer() {
     };
     
     const playNext = () => {
+        if (playlist.length === 0) return;
         setCurrentTrackIndex((prev) => (prev + 1) % playlist.length);
-        setIsPlaying(true);
+        if (!isPlaying) setIsPlaying(true);
     };
 
     const playPrev = () => {
+        if (playlist.length === 0) return;
         setCurrentTrackIndex((prev) => (prev - 1 + playlist.length) % playlist.length);
-        setIsPlaying(true);
+        if (!isPlaying) setIsPlaying(true);
     };
 
     const currentTrack = playlist[currentTrackIndex];
@@ -97,8 +107,8 @@ export function MusicPlayer() {
                 </Button>
             </div>
             
-            <Card className="rounded-3xl shadow-neumorphic-light p-6">
-                <CardContent className="p-0 flex flex-col items-center gap-6">
+            <Card className="rounded-3xl shadow-neumorphic-light p-4 sm:p-6">
+                <CardContent className="p-0 flex flex-col items-center gap-4 sm:gap-6">
                     <div className="relative w-48 h-48 sm:w-56 sm:h-56">
                        {isLoading ? (
                            <Skeleton className="w-full h-full rounded-2xl" />
@@ -117,7 +127,7 @@ export function MusicPlayer() {
                        )}
                     </div>
                     
-                    <div className="text-center">
+                    <div className="text-center h-14">
                          {isLoading ? (
                             <div className="space-y-2">
                                  <Skeleton className="h-6 w-48" />
@@ -125,8 +135,8 @@ export function MusicPlayer() {
                             </div>
                         ) : currentTrack ? (
                              <>
-                                <h2 className="text-xl font-bold truncate">{currentTrack.title}</h2>
-                                <p className="text-muted-foreground text-sm truncate">{currentTrack.artists.map(a => a.name).join(', ')}</p>
+                                <h2 className="text-xl font-bold truncate px-2">{currentTrack.title}</h2>
+                                <p className="text-muted-foreground text-sm truncate px-2">{currentTrack.artists?.map(a => a.name).join(', ')}</p>
                              </>
                         ) : (
                             <>
@@ -136,20 +146,20 @@ export function MusicPlayer() {
                         )}
                     </div>
 
-                    <div className="w-full flex items-center justify-center gap-4">
-                        <Button variant="neumorphic" size="icon" className="w-12 h-12 rounded-full" disabled>
+                    <div className="w-full flex items-center justify-center gap-2 sm:gap-4">
+                        <Button variant="neumorphic" size="icon" className="w-12 h-12 rounded-full hidden sm:flex" disabled>
                            <Shuffle className="h-5 w-5" />
                         </Button>
                         <Button variant="neumorphic" size="icon" className="w-12 h-12 rounded-full" onClick={playPrev} disabled={playlist.length === 0}>
                            <SkipBack className="h-5 w-5" />
                         </Button>
-                         <Button variant="neumorphic" size="icon" className="w-20 h-20 rounded-full bg-primary text-primary-foreground" onClick={togglePlayPause} disabled={playlist.length === 0}>
-                            {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
+                         <Button variant="neumorphic" size="icon" className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary text-primary-foreground" onClick={togglePlayPause} disabled={playlist.length === 0}>
+                            {isPlaying ? <Pause className="h-6 sm:h-8 w-6 sm:w-8" /> : <Play className="h-6 sm:h-8 w-6 sm:w-8" />}
                         </Button>
                          <Button variant="neumorphic" size="icon" className="w-12 h-12 rounded-full" onClick={playNext} disabled={playlist.length === 0}>
                            <SkipForward className="h-5 w-5" />
                         </Button>
-                        <Button variant="neumorphic" size="icon" className="w-12 h-12 rounded-full" disabled>
+                        <Button variant="neumorphic" size="icon" className="w-12 h-12 rounded-full hidden sm:flex" disabled>
                            <Repeat className="h-5 w-5" />
                         </Button>
                     </div>

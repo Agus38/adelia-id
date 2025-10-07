@@ -19,7 +19,7 @@ const SearchMusicInputSchema = z.object({
 const TrackSchema = z.object({
     videoId: z.string(),
     title: z.string(),
-    artists: z.array(z.object({ name: z.string() })),
+    artists: z.array(z.object({ name: z.string() })).optional(),
     thumbnailUrl: z.string().url(),
     url: z.string().url().describe("Direct streamable URL for the music."),
 });
@@ -67,18 +67,18 @@ const searchMusicFlow = ai.defineFlow(
 
     const result = await response.json();
     
-    if (!result.tracks || !Array.isArray(result.tracks)) {
+    if (!result.results?.tracks?.items || !Array.isArray(result.results.tracks.items)) {
         console.error('Unexpected response format from API:', result);
         return { tracks: [] };
     }
 
-    const tracks = result.tracks.map((track: any) => ({
+    const tracks = result.results.tracks.items.map((track: any) => ({
         videoId: track.videoId,
         title: track.title,
         artists: track.artists || [],
         thumbnailUrl: track.thumbnailUrl,
-        url: track.url,
-    }));
+        url: track.audioUrl,
+    })).filter((track: any) => track.url); // Ensure only tracks with an audio URL are included
     
     return { tracks };
   }
