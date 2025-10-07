@@ -53,8 +53,8 @@ const searchMusicFlow = ai.defineFlow(
       throw new Error('RapidAPI key is not configured in .env file.');
     }
 
-    // Step 1: Search for tracks to get their video IDs
-    const searchUrl = `https://youtube-music-api3.p.rapidapi.com/search?q=${encodeURIComponent(query)}`;
+    // Step 1: Search for tracks to get their video IDs, ensuring we search for songs specifically.
+    const searchUrl = `https://youtube-music-api3.p.rapidapi.com/search?q=${encodeURIComponent(query)}&type=song`;
     
     const searchResponse = await fetch(searchUrl, {
         method: 'GET',
