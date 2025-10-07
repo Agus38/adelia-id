@@ -1,5 +1,4 @@
 
-
 import {
   MessageSquare,
   Package,
@@ -79,6 +78,7 @@ import {
   Megaphone,
   TrendingUp,
   CalendarClock,
+  Music,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -133,6 +133,14 @@ export const menuItems: MenuItem[] = [
     href: '/budgetflow',
     icon: TrendingUp,
     requiresAuth: true,
+  },
+   {
+    id: 'music-player',
+    title: 'Pemutar Musik',
+    href: '/music-player',
+    icon: Music,
+    access: 'all',
+    requiresAuth: false,
   },
   {
     id: 'smw-manyar',
@@ -531,6 +539,7 @@ export const allIcons: { [key: string]: LucideIcon } = {
   Menu,
   Megaphone,
   Moon,
+  Music,
   Package,
   Palette,
   PanelLeft,
