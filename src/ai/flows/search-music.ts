@@ -21,6 +21,10 @@ const TrackSchema = z.object({
     title: z.string(),
     artists: z.array(z.object({ name: z.string() })).optional(),
     thumbnailUrl: z.string().url(),
+    duration: z.object({
+        totalSeconds: z.number(),
+        label: z.string(),
+    }),
     url: z.string().url().describe("Direct streamable URL for the music."),
 });
 
@@ -49,9 +53,10 @@ const searchMusicFlow = ai.defineFlow(
       throw new Error('RapidAPI key is not configured in .env file.');
     }
 
+    // Step 1: Search for tracks to get their video IDs
     const searchUrl = `https://youtube-music-api3.p.rapidapi.com/search?q=${encodeURIComponent(query)}`;
     
-    const response = await fetch(searchUrl, {
+    const searchResponse = await fetch(searchUrl, {
         method: 'GET',
         headers: {
             'x-rapidapi-key': apiKey,
@@ -59,27 +64,58 @@ const searchMusicFlow = ai.defineFlow(
         }
     });
 
-    if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("RapidAPI Error:", errorBody);
-        throw new Error(`YouTube Music API request failed with status: ${response.status}`);
+    if (!searchResponse.ok) {
+        const errorBody = await searchResponse.text();
+        console.error("RapidAPI Search Error:", errorBody);
+        throw new Error(`YouTube Music API search request failed with status: ${searchResponse.status}`);
     }
 
-    const result = await response.json();
+    const searchResult = await searchResponse.json();
     
-    if (!result.results?.tracks?.items || !Array.isArray(result.results.tracks.items)) {
-        console.error('Unexpected response format from API:', result);
+    if (!searchResult.results?.songs?.items || !Array.isArray(searchResult.results.songs.items)) {
+        console.error('Unexpected search response format from API:', searchResult);
         return { tracks: [] };
     }
 
-    const tracks = result.results.tracks.items.map((track: any) => ({
-        videoId: track.videoId,
-        title: track.title,
-        artists: track.artists || [],
-        thumbnailUrl: track.thumbnailUrl,
-        url: track.audioUrl,
-    })).filter((track: any) => track.url); // Ensure only tracks with an audio URL are included
+    const foundTracks = searchResult.results.songs.items;
     
-    return { tracks };
+    // Step 2: For each track, get the download URL
+    const tracksWithUrls = await Promise.all(foundTracks.slice(0, 5).map(async (track: any) => { // Limit to 5 for performance
+        const downloadUrl = `https://youtube-music-api3.p.rapidapi.com/download?videoId=${track.videoId}`;
+        const downloadResponse = await fetch(downloadUrl, {
+            method: 'GET',
+            headers: {
+                'x-rapidapi-key': apiKey,
+                'x-rapidapi-host': 'youtube-music-api3.p.rapidapi.com'
+            }
+        });
+
+        if (!downloadResponse.ok) {
+            console.error(`Failed to get download URL for videoId: ${track.videoId}`);
+            return null;
+        }
+
+        const downloadResult = await downloadResponse.json();
+        
+        if (downloadResult.status !== 'OK' || !downloadResult.audioUrl) {
+            return null;
+        }
+
+        return {
+            videoId: track.videoId,
+            title: track.title,
+            artists: track.artists || [],
+            thumbnailUrl: track.thumbnailUrl,
+            duration: {
+                totalSeconds: track.duration?.totalSeconds || 0,
+                label: track.duration?.label || '0:00'
+            },
+            url: downloadResult.audioUrl,
+        };
+    }));
+    
+    const validTracks = tracksWithUrls.filter(Boolean) as z.infer<typeof TrackSchema>[];
+    
+    return { tracks: validTracks };
   }
 );

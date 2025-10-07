@@ -16,6 +16,10 @@ interface Track {
     title: string;
     artists?: { name: string }[];
     thumbnailUrl: string;
+    duration: {
+        totalSeconds: number;
+        label: string;
+    },
     url: string;
 }
 
@@ -101,6 +105,7 @@ export function MusicPlayer() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    disabled={isLoading}
                 />
                 <Button onClick={handleSearch} size="icon" disabled={isLoading}>
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="h-4 w-4"/>}
@@ -119,6 +124,7 @@ export function MusicPlayer() {
                                 fill
                                 className="rounded-2xl object-cover shadow-lg"
                                 data-ai-hint="album cover"
+                                unoptimized
                             />
                        ) : (
                            <div className="w-full h-full rounded-2xl bg-muted flex items-center justify-center">
