@@ -134,14 +134,6 @@ export const menuItems: MenuItem[] = [
     icon: TrendingUp,
     requiresAuth: true,
   },
-   {
-    id: 'music-player',
-    title: 'Pemutar Musik',
-    href: '/music-player',
-    icon: Music,
-    access: 'all',
-    requiresAuth: false,
-  },
   {
     id: 'smw-manyar',
     title: 'SMW Manyar',
