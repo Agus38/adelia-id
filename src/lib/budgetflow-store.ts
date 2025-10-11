@@ -52,8 +52,8 @@ export interface Category {
     type: TransactionType;
 }
 
-export const defaultIncomeCategories: ComboboxOption[] = ['Gaji', 'Bonus', 'Investasi', 'Hadiah', 'Lainnya'].map(c => ({ value: c, label: c }));
-export const defaultExpenseCategories: ComboboxOption[] = ['Makanan & Minuman', 'Transportasi', 'Tagihan', 'Hiburan', 'Belanja', 'Kesehatan', 'Pendidikan', 'Keluarga', 'Lainnya'].map(c => ({ value: c, label: c }));
+export const defaultIncomeCategories: ComboboxOption[] = ['Gaji', 'Bonus', 'Investasi', 'Hadiah', 'Dari Tabungan', 'Lainnya'].map(c => ({ value: c, label: c }));
+export const defaultExpenseCategories: ComboboxOption[] = ['Makanan & Minuman', 'Transportasi', 'Tagihan', 'Hiburan', 'Belanja', 'Kesehatan', 'Pendidikan', 'Keluarga', 'Tabungan', 'Bayar Hutang', 'Lainnya'].map(c => ({ value: c, label: c }));
 
 // --- Zustand Store ---
 interface BudgetflowState {
@@ -206,14 +206,18 @@ export const adjustGoalAmount = async (goalId: string, amount: number, descripti
         const newCurrentAmount = goalDoc.data().currentAmount + amount;
         transaction.update(goalDocRef, { currentAmount: newCurrentAmount });
 
-        const transactionType = amount > 0 ? 'income' : 'expense';
-        const transactionDescription = amount > 0 ? `Tabungan: ${description}` : `Ambil dari tabungan: ${description}`;
+        // If adding money to savings, it's an 'expense' from your available cash.
+        // If taking money from savings, it's an 'income' to your available cash.
+        const transactionType = amount > 0 ? 'expense' : 'income';
+        const transactionDescription = amount > 0 ? `Menabung untuk "${description}"` : `Ambil dari tabungan "${description}"`;
+        const category = amount > 0 ? 'Tabungan' : 'Dari Tabungan';
+        
         const transactionData = {
             userId,
             type: transactionType,
             description: transactionDescription,
             amount: Math.abs(amount),
-            category: 'Tabungan',
+            category: category,
             date: new Date(),
             createdAt: serverTimestamp(),
         };
@@ -248,14 +252,17 @@ export const recordDebtPayment = async (debtId: string, amount: number, descript
         const isPaid = newPaidAmount >= debtData.totalAmount;
         transaction.update(debtDocRef, { paidAmount: newPaidAmount, isPaid });
 
+        // Paying off your debt is an 'expense'. Receiving payment for a receivable is an 'income'.
         const transactionType = debtData.type === 'debt' ? 'expense' : 'income';
         const transactionDescription = debtData.type === 'debt' ? `Bayar hutang: ${description}` : `Terima piutang: ${description}`;
+        const category = debtData.type === 'debt' ? 'Bayar Hutang' : 'Piutang';
+
         const transactionData = {
             userId,
             type: transactionType,
             description: transactionDescription,
             amount: amount,
-            category: debtData.type === 'debt' ? 'Bayar Hutang' : 'Piutang',
+            category: category,
             date: new Date(),
             createdAt: serverTimestamp(),
         };
