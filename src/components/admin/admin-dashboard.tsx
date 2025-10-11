@@ -23,6 +23,8 @@ import {
   Link as LinkIcon,
   TrendingUp,
   TrendingDown,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -33,6 +35,16 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { db } from '@/lib/firebase';
@@ -41,6 +53,8 @@ import { format, formatDistanceToNow, startOfToday, endOfToday, startOfYesterday
 import { id } from 'date-fns/locale';
 import { useUserStore } from '@/lib/user-store';
 import { cn } from '@/lib/utils';
+import { deleteActivityLogs } from '@/ai/flows/delete-activity-logs';
+import { toast } from '@/hooks/use-toast';
 
 interface ActivityLog {
   id: string;
@@ -145,6 +159,30 @@ export function AdminDashboard() {
   const [loadingStats, setLoadingStats] = React.useState(true);
   const [recentActivities, setRecentActivities] = React.useState<ActivityLog[]>([]);
   const [loadingActivities, setLoadingActivities] = React.useState(true);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const handleDeleteLogs = async (period: 'all' | 'today' | 'old') => {
+    setIsDeleting(true);
+    try {
+      const result = await deleteActivityLogs({ period });
+      if (result.success) {
+        toast({
+          title: "Log Berhasil Dihapus",
+          description: `${result.deletedCount} log aktivitas telah dihapus.`,
+        });
+      } else {
+        throw new Error(result.error || "Terjadi kesalahan yang tidak diketahui.");
+      }
+    } catch (error: any) {
+       toast({
+        title: "Gagal Menghapus Log",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
 
   React.useEffect(() => {
@@ -355,11 +393,67 @@ export function AdminDashboard() {
 
         {/* Recent Activity */}
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Aktivitas Terbaru</CardTitle>
-            <CardDescription>
-              Log tindakan terbaru yang dilakukan di aplikasi.
-            </CardDescription>
+          <CardHeader className="flex justify-between items-center">
+            <div>
+              <CardTitle>Aktivitas Terbaru</CardTitle>
+              <CardDescription>
+                Log tindakan terbaru yang dilakukan di aplikasi.
+              </CardDescription>
+            </div>
+             <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Hapus Log
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Hapus Log Aktivitas</DialogTitle>
+                        <DialogDescription>
+                            Pilih opsi di bawah untuk menghapus log aktivitas secara permanen. Tindakan ini tidak dapat dibatalkan.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <Card>
+                            <CardHeader className="flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-base">Hapus Log Lama</CardTitle>
+                                <Button variant="destructive" size="sm" onClick={() => handleDeleteLogs('old')} disabled={isDeleting}>
+                                    {isDeleting ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Hapus'}
+                                </Button>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground">Hapus semua log aktivitas kecuali yang dibuat hari ini.</p>
+                            </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader className="flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-base">Hapus Log Hari Ini</CardTitle>
+                                <Button variant="destructive" size="sm" onClick={() => handleDeleteLogs('today')} disabled={isDeleting}>
+                                    {isDeleting ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Hapus'}
+                                </Button>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground">Hanya hapus log aktivitas yang dibuat hari ini.</p>
+                            </CardContent>
+                        </Card>
+                         <Card className="border-red-500/50 bg-red-500/10">
+                            <CardHeader className="flex-row items-center justify-between pb-2">
+                                <div className="flex items-center gap-2">
+                                    <AlertTriangle className="h-5 w-5 text-destructive"/>
+                                    <CardTitle className="text-base text-destructive">Hapus Semua Log</CardTitle>
+                                </div>
+                                <Button variant="destructive" onClick={() => handleDeleteLogs('all')} disabled={isDeleting}>
+                                    {isDeleting ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Hapus Semua'}
+                                </Button>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-destructive/80">Tindakan ini akan menghapus seluruh riwayat aktivitas tanpa terkecuali.</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </DialogContent>
+            </Dialog>
           </CardHeader>
           <CardContent>
             <Table>
