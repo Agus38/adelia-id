@@ -3,17 +3,104 @@
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, BarChart2, Table, PiggyBank, Scale, Landmark } from 'lucide-react';
+import { Loader2, TrendingUp, BarChart2, Table, PiggyBank, Scale, Landmark, Trash2 } from 'lucide-react';
 import { usePageAccess } from "@/hooks/use-page-access";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BudgetFlowDashboard } from '@/components/budgetflow/dashboard';
 import { DataTable } from '@/components/budgetflow/data-table';
-import { BudgetsView } from '@/components/budgetflow/budgets-view';
 import { SavingsView } from '@/components/budgetflow/savings-view';
 import { DebtsView } from '@/components/budgetflow/debts-view';
 import { DateRangePicker } from '@/components/budgetflow/date-range-picker';
 import { type DateRange } from 'react-day-picker';
 import { subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { resetBudgetflowData } from '@/ai/flows/reset-budgetflow-data';
+
+
+function ResetDataDialog() {
+  const [open, setOpen] = React.useState(false);
+  const [confirmationText, setConfirmationText] = React.useState('');
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const { toast } = useToast();
+  const CONFIRMATION_WORD = "HAPUS";
+
+  const handleReset = async () => {
+    setIsDeleting(true);
+    try {
+        const result = await resetBudgetflowData();
+        if(result.success) {
+            toast({
+                title: "Data Direset",
+                description: "Semua data BudgetFlow Anda telah berhasil dihapus.",
+            });
+        } else {
+            throw new Error(result.error || "Gagal mereset data.");
+        }
+    } catch(error: any) {
+        toast({
+            title: "Gagal Mereset Data",
+            description: error.message || "Terjadi kesalahan yang tidak diketahui.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsDeleting(false);
+        setConfirmationText('');
+        setOpen(false);
+    }
+  }
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive" size="icon">
+          <Trash2 className="h-4 w-4" />
+          <span className="sr-only">Reset Data</span>
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Anda Yakin Ingin Mereset Semua Data?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tindakan ini tidak dapat dibatalkan. Semua data transaksi, tabungan, dan hutang/piutang Anda akan dihapus secara permanen.
+             Untuk melanjutkan, ketik <strong className="text-foreground">{CONFIRMATION_WORD}</strong> di bawah ini.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="space-y-2">
+            <Label htmlFor="confirmation-input" className="sr-only">Ketik untuk konfirmasi</Label>
+            <Input 
+                id="confirmation-input"
+                value={confirmationText}
+                onChange={(e) => setConfirmationText(e.target.value)}
+                placeholder={`Ketik "${CONFIRMATION_WORD}"`}
+            />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setConfirmationText('')}>Batal</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={handleReset} 
+            disabled={confirmationText !== CONFIRMATION_WORD || isDeleting}
+          >
+            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+            Ya, Hapus Semua Data
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
 
 export default function BudgetFlowPage() {
   const { hasAccess, isLoading } = usePageAccess('budgetflow');
@@ -58,7 +145,10 @@ export default function BudgetFlowPage() {
               </p>
             </div>
           </div>
-           <DateRangePicker date={date} setDate={setDate} presetRanges={presetRanges} />
+           <div className="flex items-center gap-2">
+            <DateRangePicker date={date} setDate={setDate} presetRanges={presetRanges} />
+            <ResetDataDialog />
+           </div>
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full">

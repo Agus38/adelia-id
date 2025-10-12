@@ -23,6 +23,7 @@ import {
   Link as LinkIcon,
   TrendingUp,
   TrendingDown,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -33,15 +34,27 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { Button } from '../ui/button';
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { collection, onSnapshot, query, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { formatDistanceToNow, startOfToday, endOfToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useUserStore } from '@/lib/user-store';
 import { cn } from '@/lib/utils';
 import { getDocs } from 'firebase/firestore';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from '../ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { deleteActivityLogs } from '@/ai/flows/delete-activity-logs';
 
 
 interface ActivityLog {
@@ -65,6 +78,76 @@ interface SmwReport {
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 };
+
+function DeleteLogsDialog({ onActionComplete }: { onActionComplete: () => void }) {
+  const [open, setOpen] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const { toast } = useToast();
+
+  const handleDelete = async (filter: 'all' | 'today' | 'older') => {
+    setIsDeleting(true);
+    try {
+      const authToken = await auth.currentUser?.getIdToken();
+      if (!authToken) {
+        throw new Error("Autentikasi pengguna tidak ditemukan.");
+      }
+
+      const result = await deleteActivityLogs({ filter, authToken });
+
+      if (result.success) {
+        toast({
+          title: "Log Berhasil Dihapus",
+          description: `${result.deletedCount || 0} log telah dihapus.`,
+        });
+        onActionComplete();
+      } else {
+        throw new Error(result.error || "Gagal menghapus log.");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Gagal Menghapus Log",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setOpen(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="icon" className="h-8 w-8">
+          <Trash2 className="h-4 w-4" />
+          <span className="sr-only">Hapus Log</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Hapus Log Aktivitas</DialogTitle>
+          <DialogDescription>
+            Pilih opsi di bawah ini untuk membersihkan log aktivitas. Tindakan ini tidak dapat dibatalkan.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col space-y-4 py-4">
+          <Button onClick={() => handleDelete('all')} variant="destructive" disabled={isDeleting}>
+            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Hapus Semua Log
+          </Button>
+          <Button onClick={() => handleDelete('today')} variant="outline" disabled={isDeleting}>
+            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Hapus Log Hari Ini
+          </Button>
+          <Button onClick={() => handleDelete('older')} variant="outline" disabled={isDeleting}>
+            {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Hapus Log Lama (sebelum hari ini)
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 
 const managementLinks = [
@@ -147,6 +230,11 @@ export function AdminDashboard() {
   const [loadingStats, setLoadingStats] = React.useState(true);
   const [recentActivities, setRecentActivities] = React.useState<ActivityLog[]>([]);
   const [loadingActivities, setLoadingActivities] = React.useState(true);
+  const [activityLogKey, setActivityLogKey] = React.useState(0);
+
+  const refreshActivities = () => {
+    setActivityLogKey(prev => prev + 1);
+  }
 
   React.useEffect(() => {
     if (isLoadingUser || user?.role !== 'Admin') {
@@ -234,7 +322,7 @@ export function AdminDashboard() {
     fetchStats();
 
     return () => unsubscribeActivities();
-  }, [isLoadingUser, user]);
+  }, [isLoadingUser, user, activityLogKey]);
 
   return (
     <div className="space-y-6">
@@ -363,6 +451,7 @@ export function AdminDashboard() {
                 Log tindakan terbaru yang dilakukan di aplikasi.
               </CardDescription>
             </div>
+             <DeleteLogsDialog onActionComplete={refreshActivities} />
           </CardHeader>
           <CardContent>
             <Table>

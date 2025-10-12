@@ -22,7 +22,7 @@ export const useUserStore = create<UserState>((set) => ({
   initializeUserListener: () => {
     let firestoreUnsubscribe: (() => void) | null = null;
     
-    const authUnsubscribe = onAuthStateChanged(auth, (authUser) => {
+    const authUnsubscribe = onAuthStateChanged(auth, async (authUser) => {
       // Unsubscribe from any previous Firestore listeners
       if (firestoreUnsubscribe) firestoreUnsubscribe();
       
@@ -36,13 +36,14 @@ export const useUserStore = create<UserState>((set) => ({
             const userData = userDoc.data();
 
             if (userData.status === 'Diblokir') {
-              toast({
-                title: 'Akses Diblokir',
-                description: 'Akun Anda telah diblokir oleh administrator. Anda akan dikeluarkan secara otomatis.',
-                variant: 'destructive',
-                duration: 5000,
+              signOut(auth).then(() => {
+                toast({
+                  title: 'Akses Diblokir',
+                  description: 'Akun Anda telah diblokir oleh administrator. Anda akan dikeluarkan secara otomatis.',
+                  variant: 'destructive',
+                  duration: 5000,
+                });
               });
-              signOut(auth);
               return; 
             }
 
@@ -53,6 +54,8 @@ export const useUserStore = create<UserState>((set) => ({
             };
             set({ user: fullUserProfile, loading: false });
           } else {
+            // This might happen if Firestore doc creation fails after registration
+            // We still set a basic profile to keep the user logged in
             const basicProfile: UserProfile = {
                 uid: authUser.uid, email: authUser.email, id: authUser.uid,
                 fullName: authUser.displayName, avatarUrl: authUser.photoURL, role: undefined,
