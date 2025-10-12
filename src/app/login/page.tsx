@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, LogIn, Loader2, AlertTriangle } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { signInWithEmailAndPassword, signOut, sendEmailVerification } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, sendEmailVerification, isSignInWithEmailLink, signInWithEmailLink } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
@@ -21,30 +21,77 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
   const [isResending, setIsResending] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: userLoading, setUserProfile } = useUserStore();
   const { loginPageConfig, isLoading: isLoadingConfig } = useLoginPageConfig();
   
   useEffect(() => {
+    // Handle email verification link
+    const handleVerification = async () => {
+        if (isSignInWithEmailLink(auth, window.location.href)) {
+            let emailFromStorage = window.localStorage.getItem('emailForSignIn');
+            if (!emailFromStorage) {
+                // If email is not in storage, prompt the user for it
+                // This is a fallback and less ideal UX
+                emailFromStorage = window.prompt('Please provide your email for confirmation');
+            }
+
+            if (emailFromStorage) {
+                try {
+                    // Sign in is just to confirm the user, we sign out immediately
+                    await signInWithEmailLink(auth, emailFromStorage, window.location.href);
+                    // The onAuthStateChanged listener will now see the user as emailVerified
+                    setSuccess("Verifikasi email berhasil! Anda sekarang dapat masuk.");
+                    setEmail(emailFromStorage);
+                    window.localStorage.removeItem('emailForSignIn');
+                    // Clean the URL
+                    router.replace('/login');
+                } catch (linkError) {
+                    setError("Tautan verifikasi tidak valid atau telah kedaluwarsa.");
+                }
+            } else {
+                 setError("Gagal memverifikasi email. Email tidak ditemukan.");
+            }
+        }
+        setIsVerifying(false);
+    };
+    
+    handleVerification();
+
     if (!userLoading && user) {
       router.push('/');
     }
-  }, [user, userLoading, router]);
+  }, []);
+
+  useEffect(() => {
+    if (!userLoading && user) {
+        // If user logs in while on login page, redirect them away
+        const redirectPath = searchParams.get('redirect') || '/';
+        router.push(redirectPath);
+    }
+  }, [user, userLoading, router, searchParams]);
 
 
   const handleResendVerification = async () => {
     setIsResending(true);
     setError(null);
     try {
-      // We need to sign in the user temporarily to resend verification
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       if (userCredential.user && !userCredential.user.emailVerified) {
-        await sendEmailVerification(userCredential.user);
+        const actionCodeSettings = {
+            url: `${window.location.origin}/login`,
+            handleCodeInApp: true,
+        };
+        await sendEmailVerification(userCredential.user, actionCodeSettings);
+        window.localStorage.setItem('emailForSignIn', email);
         toast({
           title: 'Email Verifikasi Terkirim',
           description: 'Email verifikasi baru telah dikirimkan. Harap periksa kotak masuk dan folder spam Anda.',
@@ -63,6 +110,7 @@ export default function LoginPage() {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
 
     let userCredential;
     try {
@@ -128,11 +176,9 @@ export default function LoginPage() {
             description: `Selamat datang kembali, ${userData.fullName || authUser.displayName || 'Pengguna'}!`,
         });
 
-        if (userData.role === 'Admin') {
-            router.push('/admin');
-        } else {
-            router.push('/');
-        }
+        const redirectPath = searchParams.get('redirect') || (userData.role === 'Admin' ? '/admin' : '/');
+        router.push(redirectPath);
+
       } else {
         await signOut(auth);
         setError('Gagal memverifikasi data pengguna. Akun mungkin tidak terdaftar dengan benar. Hubungi administrator.');
@@ -146,7 +192,7 @@ export default function LoginPage() {
     }
   };
   
-  if (userLoading || user) {
+  if (userLoading || isVerifying) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -186,6 +232,13 @@ export default function LoginPage() {
                   )}
                 </AlertDescription>
               </Alert>
+            )}
+             {success && (
+                <Alert variant="default" className="border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400 [&>svg]:text-green-500">
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertTitle className="text-sm sm:text-base text-green-800 dark:text-green-300">Verifikasi Berhasil</AlertTitle>
+                    <AlertDescription className="text-xs sm:text-sm">{success}</AlertDescription>
+                </Alert>
             )}
            <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-2">
