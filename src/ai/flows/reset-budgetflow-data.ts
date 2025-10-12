@@ -11,8 +11,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getAuth } from "firebase-admin/auth";
-import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getFirestore, WriteBatch } from "firebase-admin/firestore";
+import { initializeApp, getApps, cert, type App } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 
 // Define the output schema for the flow
 const ResetBudgetflowOutputSchema = z.object({
@@ -22,15 +22,21 @@ const ResetBudgetflowOutputSchema = z.object({
 });
 export type ResetBudgetflowOutput = z.infer<typeof ResetBudgetflowOutputSchema>;
 
-// Initialize Firebase Admin SDK
-const serviceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG
-  ? JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG)
-  : undefined;
-
-const adminApp = getApps().find(app => app.name === 'budgetflow-reset') || initializeApp({
-    credential: serviceAccount ? cert(serviceAccount) : undefined,
-    projectId: serviceAccount ? undefined : 'aeromenu',
-}, 'budgetflow-reset');
+let adminApp: App;
+try {
+  // Use a unique name for the admin app instance to avoid conflicts
+  adminApp = getApps().find(app => app.name === 'budgetflow-reset') || initializeApp({
+    credential: process.env.FIREBASE_ADMIN_SDK_CONFIG ? cert(JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG)) : undefined,
+    projectId: process.env.FIREBASE_ADMIN_SDK_CONFIG ? undefined : 'aeromenu',
+  }, 'budgetflow-reset');
+} catch (e: any) {
+  // Fallback for environments where ADC might not be set up but default is expected
+  if (!getApps().length) {
+     adminApp = initializeApp({ projectId: 'aeromenu' }, 'budgetflow-reset');
+  } else {
+     adminApp = getApps().find(app => app.name === 'budgetflow-reset')!;
+  }
+}
 
 const adminDb = getFirestore(adminApp);
 
@@ -77,14 +83,10 @@ async function deleteQueryBatch(db: FirebaseFirestore.Firestore, query: Firebase
 const resetBudgetflowDataFlow = ai.defineFlow(
   {
     name: 'resetBudgetflowDataFlow',
-    inputSchema: z.string().optional(), // Auth token is optional for now
+    inputSchema: z.string().optional(), // Auth token
     outputSchema: ResetBudgetflowOutputSchema,
   },
   async (authToken) => {
-    // NOTE: In a production environment with strict security, you would verify the auth token
-    // to get the UID. For this context, we will get UID from a more direct source if possible.
-    // This part of the code needs to be adapted based on how user auth is managed in Genkit flows.
-    // For now, let's assume we get a UID. This is a placeholder for a secure UID retrieval.
     let uid: string;
     try {
         if (!authToken) {
@@ -94,7 +96,7 @@ const resetBudgetflowDataFlow = ai.defineFlow(
         uid = decodedToken.uid;
     } catch (authError: any) {
         console.error("Auth token verification failed:", authError);
-        return { success: false, deletedCollections: [], error: 'Authentication failed. Unable to identify user.' };
+        return { success: false, deletedCollections: [], error: 'Authentication failed. ' + authError.message };
     }
 
     if (!uid) {
