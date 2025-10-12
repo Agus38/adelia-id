@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -64,7 +64,10 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const authUser = userCredential.user;
 
-      // 2. Update basic profile in Firebase Authentication.
+      // 2. Send email verification
+      await sendEmailVerification(authUser);
+
+      // 3. Update basic profile in Firebase Authentication.
       await updateProfile(authUser, {
         displayName: name,
         photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
@@ -72,7 +75,7 @@ export default function RegisterPage() {
       
       const userDocRef = doc(db, "users", authUser.uid);
 
-      // 3. Create user document in Firestore.
+      // 4. Create user document in Firestore.
       await setDoc(userDocRef, {
         uid: authUser.uid,
         email: authUser.email,
@@ -83,7 +86,7 @@ export default function RegisterPage() {
         createdAt: serverTimestamp(),
       });
       
-      // 4. Add user to the default group (if configured)
+      // 5. Add user to the default group (if configured)
       const defaultGroupConfigDoc = await getDoc(doc(db, 'app-settings', 'defaultUserGroup'));
       if (defaultGroupConfigDoc.exists()) {
           const { groupId } = defaultGroupConfigDoc.data();
@@ -95,10 +98,10 @@ export default function RegisterPage() {
           }
       }
       
-      // 5. Show success toast and redirect to home.
+      // 6. Show success toast and redirect to home.
       toast({
         title: 'Pendaftaran Berhasil!',
-        description: `Selamat datang, ${name}!`,
+        description: `Selamat datang, ${name}! Email verifikasi telah dikirim.`,
       });
       router.push('/');
 
@@ -115,7 +118,7 @@ export default function RegisterPage() {
         // We still proceed to the success part because the user is already created in Auth.
         toast({
           title: 'Pendaftaran Berhasil!',
-          description: `Selamat datang, ${name}!`,
+          description: `Selamat datang, ${name}! Email verifikasi telah dikirim.`,
         });
         router.push('/');
         setIsLoading(false);
