@@ -13,14 +13,18 @@ import { getFirestore, Timestamp as AdminTimestamp } from 'firebase-admin/firest
 import { getAuth } from 'firebase-admin/auth';
 import { startOfToday } from 'date-fns';
 
-const serviceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG 
-  ? JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG) 
-  : undefined;
-
+// Initialize Firebase Admin SDK
 if (getApps().length === 0) {
+  const serviceAccountString = process.env.FIREBASE_ADMIN_SDK_CONFIG;
+  if (serviceAccountString) {
+    const serviceAccount = JSON.parse(serviceAccountString);
     initializeApp({
-        credential: serviceAccount ? cert(serviceAccount) : undefined,
+      credential: cert(serviceAccount),
     });
+  } else {
+    // This will work in Google Cloud environments like App Hosting
+    initializeApp();
+  }
 }
 
 const adminDb = getFirestore();
