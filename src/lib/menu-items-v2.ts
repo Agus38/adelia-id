@@ -79,6 +79,7 @@ import {
   TrendingUp,
   CalendarClock,
   Music,
+  CloudSun,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -153,6 +154,14 @@ export const menuItems: MenuItem[] = [
     title: 'Jadwal Sholat',
     href: '/jadwal-sholat',
     icon: CalendarClock,
+    access: 'all',
+    requiresAuth: false,
+  },
+  {
+    id: 'cuaca',
+    title: 'Prakiraan Cuaca',
+    href: '/cuaca',
+    icon: CloudSun,
     access: 'all',
     requiresAuth: false,
   },
@@ -503,6 +512,7 @@ export const allIcons: { [key: string]: LucideIcon } = {
   ChevronRight,
   ChevronUp,
   Clock,
+  CloudSun,
   Code,
   Copy,
   CreditCard,
