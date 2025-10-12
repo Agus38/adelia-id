@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,8 @@ service cloud.firestore {
     // Rules for user profiles
     match /users/{userId} {
       // Admin can manage any user profile.
-      allow read, write, list: if isDbAdmin();
+      allow read, write: if isDbAdmin();
+      allow list: if isDbAdmin();
       
       // An authenticated user can create their own document, but only with a 'Pengguna' role and 'Aktif' status.
       // This rule validates against the incoming data's UID, which is robust against auth propagation delays.
@@ -44,7 +44,8 @@ service cloud.firestore {
     // Rules for user groups
     match /userGroups/{groupId} {
         // Authenticated users can read the list of groups (for access checks).
-        allow list, read: if request.auth != null;
+        allow read: if request.auth != null;
+        allow list: if request.auth != null;
         // ONLY Admin can create, write, or delete user groups.
         allow create, write, delete: if isDbAdmin();
     }
@@ -90,10 +91,11 @@ service cloud.firestore {
 
     // Rules for activity logs
     match /activityLogs/{logId} {
-      // Allow any authenticated user to create a log entry.
       allow create: if request.auth != null;
-      // Only Admin can read, update, or delete logs.
-      allow read, update, delete, list: if isDbAdmin();
+      allow read, update, delete: if isDbAdmin();
+    }
+    match /activityLogs {
+      allow list: if isDbAdmin();
     }
     
     // Rules for age calculation logs
@@ -107,7 +109,8 @@ service cloud.firestore {
     // Rules for digital products synced from Digiflazz
     match /products/{productId} {
       // Anyone can read the product list.
-      allow read, list: if true;
+      allow read: if true;
+      allow list: if true;
       // ONLY Admin can write/update/delete products. This is secure.
       allow write: if isDbAdmin();
     }
@@ -120,7 +123,8 @@ service cloud.firestore {
       allow write: if isDbAdmin();
     }
   }
-}`;
+}
+`;
 
 export default function FirestoreRulesPage() {
   const { toast } = useToast();
@@ -204,4 +208,3 @@ export default function FirestoreRulesPage() {
     </div>
   );
 }
-
