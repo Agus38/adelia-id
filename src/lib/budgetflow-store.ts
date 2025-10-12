@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { create } from 'zustand';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, serverTimestamp, Timestamp, getDocs, runTransaction } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, serverTimestamp, Timestamp, getDocs, runTransaction, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 import { useUserStore } from './user-store';
 import type { ComboboxOption } from '@/components/ui/combobox';
@@ -280,4 +280,22 @@ export const addCategory = async (userId: string, name: string, type: Transactio
         type,
         createdAt: serverTimestamp(),
     });
+};
+
+// Reset All Data (Client-side)
+export const resetBudgetflowData = async () => {
+    const userId = getUserId();
+    const collectionsToDelete = ['transactions', 'goals', 'debts', 'categories'];
+
+    const batch = writeBatch(db);
+
+    for (const collectionName of collectionsToDelete) {
+        const collectionPath = `budgetflow/${userId}/${collectionName}`;
+        const snapshot = await getDocs(collection(db, collectionPath));
+        snapshot.docs.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+    }
+
+    await batch.commit();
 };

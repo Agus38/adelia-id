@@ -27,8 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { resetBudgetflowData } from '@/ai/flows/reset-budgetflow-data';
-import { auth } from '@/lib/firebase';
+import { resetBudgetflowData } from '@/lib/budgetflow-store';
 
 
 function ResetDataDialog() {
@@ -41,21 +40,12 @@ function ResetDataDialog() {
   const handleReset = async () => {
     setIsDeleting(true);
     try {
-        const authToken = await auth.currentUser?.getIdToken();
-        if (!authToken) {
-            throw new Error("Autentikasi pengguna tidak ditemukan.");
-        }
-
-        const result = await resetBudgetflowData(authToken);
-        if(result.success) {
-            toast({
-                title: "Data Direset",
-                description: "Semua data BudgetFlow Anda telah berhasil dihapus.",
-            });
-            // You might want to trigger a data refresh here
-        } else {
-            throw new Error(result.error || "Gagal mereset data.");
-        }
+        await resetBudgetflowData();
+        toast({
+            title: "Data Direset",
+            description: "Semua data BudgetFlow Anda telah berhasil dihapus.",
+        });
+        // Data will automatically refresh due to store listeners
     } catch(error: any) {
         toast({
             title: "Gagal Mereset Data",
