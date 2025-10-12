@@ -12,7 +12,7 @@ const firebaseConfig = {
   storageBucket: "aeromenu.appspot.com",
   messagingSenderId: "491818232587",
   appId: "1:491818232587:web:af39ef2223418f1f3f900e",
-  databaseURL: "https://aeromenu.firebaseio.com"
+  databaseURL: "https://aeromenu-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
 
 // Initialize Firebase
