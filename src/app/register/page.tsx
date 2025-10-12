@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -97,13 +97,17 @@ export default function RegisterPage() {
               });
           }
       }
+
+      // 6. Sign out the user immediately so they have to log in after verification.
+      await signOut(auth);
       
-      // 6. Show success toast and redirect to home.
+      // 7. Show success toast and redirect to login page.
       toast({
         title: 'Pendaftaran Berhasil!',
-        description: `Selamat datang, ${name}! Email verifikasi telah dikirim.`,
+        description: `Silakan periksa email Anda untuk melakukan verifikasi sebelum masuk.`,
+        duration: 8000,
       });
-      router.push('/');
+      router.push('/login');
 
     } catch (error: any) {
       let errorMessage = 'Terjadi kesalahan saat pendaftaran. Silakan coba lagi.';
@@ -111,18 +115,6 @@ export default function RegisterPage() {
         errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.';
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
-      } else if (error.code === 'permission-denied') {
-        // This can be a temporary race condition. We will ignore it for the user
-        // and let the success flow continue, but log it for debugging.
-        console.error("Registration permission error (likely temporary):", error);
-        // We still proceed to the success part because the user is already created in Auth.
-        toast({
-          title: 'Pendaftaran Berhasil!',
-          description: `Selamat datang, ${name}! Email verifikasi telah dikirim.`,
-        });
-        router.push('/');
-        setIsLoading(false);
-        return; // Exit here to prevent showing another toast.
       }
       
       console.error("Registration error:", error);
@@ -137,7 +129,7 @@ export default function RegisterPage() {
     }
   };
   
-  const isSubmitDisabled = isLoading || !name || !email || !password || !confirmPassword;
+  const isSubmitDisabled = isLoading || !name || !email || !password || !confirmPassword || !termsAccepted;
 
   if (userLoading || user) {
     return (

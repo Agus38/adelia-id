@@ -29,6 +29,15 @@ export const useUserStore = create<UserState>((set) => ({
       firestoreUnsubscribe = null;
 
       if (authUser) {
+        // Immediately check for email verification. If not verified, treat as logged out.
+        if (!authUser.emailVerified) {
+          // This ensures that even if there's a lingering auth session,
+          // an unverified user cannot access the app state.
+          // The login page logic will handle signing them out officially.
+          set({ user: null, loading: false });
+          return;
+        }
+
         const userDocRef = doc(db, 'users', authUser.uid);
         
         firestoreUnsubscribe = onSnapshot(userDocRef, (userDoc) => {
@@ -44,6 +53,7 @@ export const useUserStore = create<UserState>((set) => ({
                   duration: 5000,
                 });
               });
+              // State is cleared by the onAuthStateChanged listener recursively
               return; 
             }
 
@@ -54,17 +64,15 @@ export const useUserStore = create<UserState>((set) => ({
             };
             set({ user: fullUserProfile, loading: false });
           } else {
-            // This might happen if Firestore doc creation fails after registration
-            // We still set a basic profile to keep the user logged in
-            const basicProfile: UserProfile = {
-                uid: authUser.uid, email: authUser.email, id: authUser.uid,
-                fullName: authUser.displayName, avatarUrl: authUser.photoURL, role: undefined,
-            };
-            set({ user: basicProfile, loading: false });
+            // User exists in Auth but not Firestore. This is an invalid state.
+            // Log them out.
+            signOut(auth);
+            set({ user: null, loading: false });
           }
         }, (error) => {
            console.error("Error with onSnapshot for user:", error);
            set({ loading: false });
+           signOut(auth); // Sign out on error to be safe
         });
 
       } else {

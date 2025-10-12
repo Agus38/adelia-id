@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, sendEmailVerification } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +35,28 @@ export default function LoginPage() {
       router.push('/');
     }
   }, [user, userLoading, router]);
+
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    setError(null);
+    try {
+      // We need to sign in the user temporarily to resend verification
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      if (userCredential.user && !userCredential.user.emailVerified) {
+        await sendEmailVerification(userCredential.user);
+        toast({
+          title: 'Email Verifikasi Terkirim',
+          description: 'Email verifikasi baru telah dikirimkan. Harap periksa kotak masuk dan folder spam Anda.',
+        });
+      }
+      await signOut(auth); // Sign out immediately
+    } catch (authError: any) {
+      setError('Gagal mengirim ulang verifikasi. Pastikan email dan kata sandi benar.');
+    } finally {
+      setIsResending(false);
+    }
+  };
 
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -69,10 +92,18 @@ export default function LoginPage() {
       return;
     }
 
-    const user = userCredential.user;
+    const authUser = userCredential.user;
+    
+    // **CRITICAL CHECK**: Enforce email verification
+    if (!authUser.emailVerified) {
+      await signOut(auth);
+      setError('Email Anda belum diverifikasi. Silakan periksa kotak masuk Anda atau kirim ulang email verifikasi.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      const userDocRef = doc(db, 'users', user.uid);
+      const userDocRef = doc(db, 'users', authUser.uid);
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
@@ -86,19 +117,17 @@ export default function LoginPage() {
 
         const fullUserProfile = {
             id: userDoc.id,
-            uid: user.uid,
+            uid: authUser.uid,
             ...userData,
         };
         
-        // **CRITICAL FIX**: Explicitly set the full user profile in the store BEFORE navigating.
         setUserProfile(fullUserProfile as any);
 
         toast({
             title: 'Login Berhasil!',
-            description: `Selamat datang kembali, ${userData.fullName || user.displayName || 'Pengguna'}!`,
+            description: `Selamat datang kembali, ${userData.fullName || authUser.displayName || 'Pengguna'}!`,
         });
 
-        // Now that the store is updated, proceed with navigation.
         if (userData.role === 'Admin') {
             router.push('/admin');
         } else {
@@ -144,6 +173,17 @@ export default function LoginPage() {
                 <AlertTitle className="text-sm sm:text-base">Login Gagal</AlertTitle>
                 <AlertDescription className="text-xs sm:text-sm">
                   {error}
+                   {error.includes('verifikasi') && (
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto mt-2 text-xs"
+                      onClick={handleResendVerification}
+                      disabled={isResending}
+                    >
+                      {isResending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+                      Kirim ulang email verifikasi
+                    </Button>
+                  )}
                 </AlertDescription>
               </Alert>
             )}
