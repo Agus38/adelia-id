@@ -9,12 +9,27 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { collection, query, where, getDocs, writeBatch, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore, Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import { startOfToday } from 'date-fns';
+
+const serviceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG 
+  ? JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG) 
+  : undefined;
+
+if (getApps().length === 0) {
+    initializeApp({
+        credential: serviceAccount ? cert(serviceAccount) : undefined,
+    });
+}
+
+const adminDb = getFirestore();
+const adminAuth = getAuth();
 
 const DeleteLogsInputSchema = z.object({
   period: z.enum(['all', 'today', 'old']),
+  idToken: z.string(),
 });
 
 const DeleteLogsOutputSchema = z.object({
@@ -38,28 +53,37 @@ const deleteActivityLogsFlow = ai.defineFlow(
     inputSchema: DeleteLogsInputSchema,
     outputSchema: DeleteLogsOutputSchema,
   },
-  async ({ period }) => {
+  async ({ period, idToken }) => {
     try {
-      const logsCollection = collection(db, 'activityLogs');
-      let logsQuery;
+      // 1. Verify the user's token
+      const decodedToken = await adminAuth.verifyIdToken(idToken);
+      
+      // 2. Check if the user is an Admin
+      if (decodedToken.role !== 'Admin') {
+          throw new Error('Hanya administrator yang dapat menghapus log.');
+      }
+      
+      // 3. Proceed with deletion logic
+      const logsCollection = adminDb.collection('activityLogs');
+      let query;
 
       if (period === 'all') {
-        logsQuery = logsCollection;
+        query = logsCollection;
       } else {
-        const todayStart = Timestamp.fromDate(startOfToday());
+        const todayStart = AdminTimestamp.fromDate(startOfToday());
         if (period === 'today') {
-            logsQuery = query(logsCollection, where('timestamp', '>=', todayStart));
+            query = logsCollection.where('timestamp', '>=', todayStart);
         } else { // 'old'
-            logsQuery = query(logsCollection, where('timestamp', '<', todayStart));
+            query = logsCollection.where('timestamp', '<', todayStart);
         }
       }
 
-      const snapshot = await getDocs(logsQuery);
+      const snapshot = await query.get();
       if (snapshot.empty) {
         return { success: true, deletedCount: 0 };
       }
       
-      const batch = writeBatch(db);
+      const batch = adminDb.batch();
       snapshot.docs.forEach(doc => {
         batch.delete(doc.ref);
       });

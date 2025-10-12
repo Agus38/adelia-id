@@ -47,7 +47,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from "../ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { collection, getDocs, onSnapshot, query, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { format, formatDistanceToNow, startOfToday, endOfToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -164,15 +164,22 @@ export function AdminDashboard() {
   const handleDeleteLogs = async (period: 'all' | 'today' | 'old') => {
     setIsDeleting(true);
     try {
-      const result = await deleteActivityLogs({ period });
-      if (result.success) {
-        toast({
-          title: "Log Berhasil Dihapus",
-          description: `${result.deletedCount} log aktivitas telah dihapus.`,
-        });
-      } else {
-        throw new Error(result.error || "Terjadi kesalahan yang tidak diketahui.");
-      }
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            throw new Error("Anda harus login untuk melakukan tindakan ini.");
+        }
+
+        const idToken = await currentUser.getIdToken();
+      
+        const result = await deleteActivityLogs({ period, idToken });
+        if (result.success) {
+            toast({
+            title: "Log Berhasil Dihapus",
+            description: `${result.deletedCount} log aktivitas telah dihapus.`,
+            });
+        } else {
+            throw new Error(result.error || "Terjadi kesalahan yang tidak diketahui.");
+        }
     } catch (error: any) {
        toast({
         title: "Gagal Menghapus Log",
@@ -393,7 +400,7 @@ export function AdminDashboard() {
 
         {/* Recent Activity */}
         <Card className="lg:col-span-2">
-          <CardHeader className="flex justify-between items-center">
+          <CardHeader className="flex flex-row justify-between items-center">
             <div>
               <CardTitle>Aktivitas Terbaru</CardTitle>
               <CardDescription>

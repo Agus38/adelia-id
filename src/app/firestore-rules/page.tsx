@@ -16,15 +16,15 @@ service cloud.firestore {
   match /databases/{database}/documents {
   
     // Helper function to check if the user is an Admin by reading their user document.
-    function isDbAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    function isDbAdmin(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role == 'Admin';
     }
 
     // Rules for user profiles
     match /users/{userId} {
       // Admin can manage any user profile.
-      allow read, write: if isDbAdmin();
-      allow list: if isDbAdmin();
+      allow read, write: if request.auth != null && isDbAdmin(request.auth.uid);
+      allow list: if request.auth != null && isDbAdmin(request.auth.uid);
       
       // An authenticated user can create their own document, but only with a 'Pengguna' role and 'Aktif' status.
       // This rule validates against the incoming data's UID, which is robust against auth propagation delays.
@@ -48,7 +48,7 @@ service cloud.firestore {
         allow read: if request.auth != null;
         allow list: if request.auth != null;
         // ONLY Admin can create, write, or delete user groups.
-        allow create, write, delete: if isDbAdmin();
+        allow create, write, delete: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
     // Rules for daily financial reports
@@ -56,26 +56,26 @@ service cloud.firestore {
       // Allow authenticated users to create a report if the userId in the report data matches their own uid.
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       // Allow users to read/update their own reports, and Admin to read/update any report.
-      allow read, update: if isDbAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow read, update: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);
       // Only Admin can delete or list all reports.
-      allow delete, list: if isDbAdmin();
+      allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
     // Rules for stock reports
     match /stockReports/{reportId} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       // Admin can read any report. Regular users can only read their own.
-      allow read: if isDbAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
-      allow update: if isDbAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow read: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow update: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);
       // Only Admin can list/delete reports
-      allow delete, list: if isDbAdmin();
+      allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
     }
     
     // Rules for BudgetFlow feature
     match /budgetflow/{userId}/{document=**} {
     	// Users can only access their own data within their folder.
       // Admin can read data from any user's folder.
-      allow read: if isDbAdmin() || request.auth.uid == userId;
+      allow read: if (request.auth != null && isDbAdmin(request.auth.uid)) || request.auth.uid == userId;
       allow write, delete, create: if request.auth.uid == userId;
     }
 
@@ -85,21 +85,16 @@ service cloud.firestore {
       allow create, update: if request.auth != null && request.resource.data.userId == request.auth.uid;
       
       // Admin can read any report. Regular users can only read their own.
-      allow read: if isDbAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow read: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);
       // Only Admin can list/delete reports
-      allow delete, list: if isDbAdmin();
+      allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
     // Rules for activity logs
+    // Admin can perform any operation on the collection.
+    // This is required for the server-side batch delete flow.
     match /activityLogs/{logId} {
-      allow create: if request.auth != null;
-      // Only Admin can perform read, update, delete on individual logs.
-      allow read, update, delete: if isDbAdmin();
-    }
-    
-    match /activityLogs {
-      // Only Admin can list (query) the collection, which is required for batch deletion.
-      allow list: if isDbAdmin();
+      allow read, write, create, update, delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
     }
     
     // Rules for age calculation logs
@@ -107,7 +102,7 @@ service cloud.firestore {
       // Allow anyone to create an entry (public feature)
       allow create: if true;
       // Only Admin can read or list entries
-      allow read, list, delete: if isDbAdmin();
+      allow read, list, delete: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
     // Rules for digital products synced from Digiflazz
@@ -116,7 +111,7 @@ service cloud.firestore {
       allow read: if true;
       allow list: if true;
       // ONLY Admin can write/update/delete products. This is secure.
-      allow write: if isDbAdmin();
+      allow write: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
     // Rules for general app settings
@@ -124,7 +119,7 @@ service cloud.firestore {
       // Anyone can read app settings (e.g., menu configuration).
       allow read: if true;
       // ONLY Admin can write/update app settings. This is secure.
-      allow write: if isDbAdmin();
+      allow write: if request.auth != null && isDbAdmin(request.auth.uid);
     }
   }
 }
@@ -174,7 +169,7 @@ export default function FirestoreRulesPage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>PERINGATAN KEAMANAN: Aturan Diperbarui!</AlertTitle>
           <AlertDescription>
-            Aturan keamanan telah diperbarui secara signifikan untuk menutup celah keamanan pada proses pendaftaran pengguna. Anda <strong>WAJIB</strong> menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan keamanan aplikasi Anda.
+            Aturan keamanan telah diperbarui secara signifikan untuk menutup celah keamanan pada proses pendaftaran pengguna dan memperbaiki izin hapus log. Anda <strong>WAJIB</strong> menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan keamanan aplikasi Anda.
           </AlertDescription>
        </Alert>
        
@@ -182,7 +177,7 @@ export default function FirestoreRulesPage() {
           <Info className="h-4 w-4" />
           <AlertTitle>Logika Verifikasi Admin Berubah!</AlertTitle>
           <AlertDescription>
-            Sistem verifikasi Admin sekarang menggunakan pembacaan langsung ke dokumen pengguna di Firestore, bukan lagi custom claims. Ini lebih andal dan mudah dikelola.
+            Fungsi helper `isDbAdmin` sekarang menerima `uid` sebagai argumen untuk verifikasi yang lebih aman di berbagai konteks aturan.
           </AlertDescription>
        </Alert>
 
