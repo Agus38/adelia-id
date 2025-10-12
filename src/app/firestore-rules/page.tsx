@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -92,9 +93,12 @@ service cloud.firestore {
     // Rules for activity logs
     match /activityLogs/{logId} {
       allow create: if request.auth != null;
+      // Only Admin can perform read, update, delete on individual logs.
       allow read, update, delete: if isDbAdmin();
     }
+    
     match /activityLogs {
+      // Only Admin can list (query) the collection, which is required for batch deletion.
       allow list: if isDbAdmin();
     }
     

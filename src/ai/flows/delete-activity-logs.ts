@@ -9,19 +9,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { collection, query, where, getDocs, writeBatch, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { startOfToday } from 'date-fns';
-
-// Initialize Firebase Admin SDK if not already initialized
-if (!getApps().length) {
-    // In a production environment, use application default credentials
-    // by not passing any argument to initializeApp().
-    // For local development, you might use a service account key.
-    initializeApp();
-}
-
-const adminDb = getFirestore();
 
 const DeleteLogsInputSchema = z.object({
   period: z.enum(['all', 'today', 'old']),
@@ -50,7 +40,7 @@ const deleteActivityLogsFlow = ai.defineFlow(
   },
   async ({ period }) => {
     try {
-      const logsCollection = adminDb.collection('activityLogs');
+      const logsCollection = collection(db, 'activityLogs');
       let logsQuery;
 
       if (period === 'all') {
@@ -58,18 +48,18 @@ const deleteActivityLogsFlow = ai.defineFlow(
       } else {
         const todayStart = Timestamp.fromDate(startOfToday());
         if (period === 'today') {
-            logsQuery = logsCollection.where('timestamp', '>=', todayStart);
+            logsQuery = query(logsCollection, where('timestamp', '>=', todayStart));
         } else { // 'old'
-            logsQuery = logsCollection.where('timestamp', '<', todayStart);
+            logsQuery = query(logsCollection, where('timestamp', '<', todayStart));
         }
       }
 
-      const snapshot = await logsQuery.get();
+      const snapshot = await getDocs(logsQuery);
       if (snapshot.empty) {
         return { success: true, deletedCount: 0 };
       }
       
-      const batch = adminDb.batch();
+      const batch = writeBatch(db);
       snapshot.docs.forEach(doc => {
         batch.delete(doc.ref);
       });
