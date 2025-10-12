@@ -23,20 +23,34 @@ const ResetBudgetflowOutputSchema = z.object({
 export type ResetBudgetflowOutput = z.infer<typeof ResetBudgetflowOutputSchema>;
 
 let adminApp: App;
-try {
-  // Use a unique name for the admin app instance to avoid conflicts
-  adminApp = getApps().find(app => app.name === 'budgetflow-reset') || initializeApp({
-    credential: process.env.FIREBASE_ADMIN_SDK_CONFIG ? cert(JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG)) : undefined,
-    projectId: process.env.FIREBASE_ADMIN_SDK_CONFIG ? undefined : 'aeromenu',
-  }, 'budgetflow-reset');
-} catch (e: any) {
-  // Fallback for environments where ADC might not be set up but default is expected
-  if (!getApps().length) {
-     adminApp = initializeApp({ projectId: 'aeromenu' }, 'budgetflow-reset');
-  } else {
-     adminApp = getApps().find(app => app.name === 'budgetflow-reset')!;
+if (!getApps().some(app => app.name === 'budgetflow-reset')) {
+  try {
+    const serviceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG
+      ? JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG)
+      : null;
+
+    if (serviceAccount) {
+      adminApp = initializeApp({
+        credential: cert(serviceAccount),
+        projectId: 'aeromenu',
+      }, 'budgetflow-reset');
+    } else {
+      // Fallback for environments where ADC is available (like App Hosting)
+      adminApp = initializeApp({ projectId: 'aeromenu' }, 'budgetflow-reset');
+    }
+  } catch (e: any) {
+    console.error("Firebase Admin initialization failed:", e);
+    // Provide a fallback if even the default init fails, though this is unlikely in a deployed env.
+    if (!getApps().length) {
+       adminApp = initializeApp({ projectId: 'aeromenu' });
+    } else {
+       adminApp = getApp();
+    }
   }
+} else {
+  adminApp = getApps().find(app => app.name === 'budgetflow-reset')!;
 }
+
 
 const adminDb = getFirestore(adminApp);
 
