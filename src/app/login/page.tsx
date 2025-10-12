@@ -46,16 +46,30 @@ export default function LoginPage() {
 
             if (emailFromStorage) {
                 try {
-                    // Sign in is just to confirm the user, we sign out immediately
                     await signInWithEmailLink(auth, emailFromStorage, window.location.href);
-                    // The onAuthStateChanged listener will now see the user as emailVerified
-                    setSuccess("Verifikasi email berhasil! Anda sekarang dapat masuk.");
-                    setEmail(emailFromStorage);
+                    // The user is now signed in and their email is verified.
+                    // We can now fetch their full profile.
+                    const userCredential = auth.currentUser;
+                    if (userCredential) {
+                        const userDocRef = doc(db, 'users', userCredential.uid);
+                        const userDoc = await getDoc(userDocRef);
+                        if (userDoc.exists()) {
+                            const userData = userDoc.data();
+                            const fullUserProfile = { id: userDoc.id, uid: userCredential.uid, ...userData };
+                            setUserProfile(fullUserProfile as any);
+                            toast({ title: 'Login Berhasil!', description: `Selamat datang, ${userData.fullName}!` });
+                            const redirectPath = searchParams.get('redirect') || (userData.role === 'Admin' ? '/admin' : '/');
+                            router.push(redirectPath);
+                        } else {
+                           throw new Error("User document not found in Firestore.");
+                        }
+                    } else {
+                        throw new Error("Failed to get current user after email link sign in.");
+                    }
                     window.localStorage.removeItem('emailForSignIn');
-                    // Clean the URL
-                    router.replace('/login');
                 } catch (linkError) {
                     setError("Tautan verifikasi tidak valid atau telah kedaluwarsa.");
+                    if(auth.currentUser) await signOut(auth);
                 }
             } else {
                  setError("Gagal memverifikasi email. Email tidak ditemukan.");
@@ -142,20 +156,21 @@ export default function LoginPage() {
 
     const authUser = userCredential.user;
     
-    // **CRITICAL CHECK**: Enforce email verification
-    if (!authUser.emailVerified) {
-      await signOut(auth);
-      setError('Email Anda belum diverifikasi. Silakan periksa kotak masuk Anda atau kirim ulang email verifikasi.');
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const userDocRef = doc(db, 'users', authUser.uid);
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
         const userData = userDoc.data();
+        
+        // **CRITICAL CHECK**: Enforce email verification for non-Admins
+        if (!authUser.emailVerified && userData.role !== 'Admin') {
+            await signOut(auth);
+            setError('Email Anda belum diverifikasi. Silakan periksa kotak masuk Anda atau kirim ulang email verifikasi.');
+            setIsLoading(false);
+            return;
+        }
+
         if (userData.status === 'Diblokir') {
           await signOut(auth);
           setError('Akun Anda telah diblokir. Silakan hubungi administrator.');
