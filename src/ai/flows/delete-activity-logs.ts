@@ -16,14 +16,22 @@ import { startOfToday } from 'date-fns';
 // Initialize Firebase Admin SDK
 if (getApps().length === 0) {
   const serviceAccountString = process.env.FIREBASE_ADMIN_SDK_CONFIG;
+  const firebaseConfig = {
+      projectId: 'aeromenu',
+      // Add other config from service account if available, but projectId is key
+  };
+
   if (serviceAccountString) {
     const serviceAccount = JSON.parse(serviceAccountString);
     initializeApp({
       credential: cert(serviceAccount),
+      projectId: 'aeromenu', // Explicitly set project ID
     });
   } else {
     // This will work in Google Cloud environments like App Hosting
-    initializeApp();
+    initializeApp({
+        projectId: 'aeromenu', // Explicitly set project ID
+    });
   }
 }
 
