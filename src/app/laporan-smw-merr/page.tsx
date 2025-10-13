@@ -65,6 +65,8 @@ export default function DailyReportPage() {
   const [isFetchingReport, setIsFetchingReport] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDirty, setIsDirty] = React.useState(false);
+  const [isExistingReport, setIsExistingReport] = React.useState(false);
+
 
   const { toast } = useToast();
   const { UnsavedChangesDialog } = useUnsavedChangesWarning(isDirty);
@@ -165,8 +167,10 @@ export default function DailyReportPage() {
         const report = await getReport(date, shift, currentUser.uid);
         if (report) {
           populateForm(report);
+          setIsExistingReport(true);
         } else {
           resetForm();
+          setIsExistingReport(false);
         }
       } catch (error) {
          toast({
@@ -175,6 +179,7 @@ export default function DailyReportPage() {
           variant: 'destructive',
         });
         resetForm();
+        setIsExistingReport(false);
       } finally {
         setIsFetchingReport(false);
       }
@@ -273,6 +278,7 @@ export default function DailyReportPage() {
           description: 'Laporan keuangan harian telah berhasil disimpan di database.',
         });
         setIsDirty(false);
+        setIsExistingReport(true); // After saving, it becomes an existing report
     } catch(error) {
         toast({
           title: 'Gagal Menyimpan',
@@ -438,6 +444,7 @@ ${pemasukanText}
     return null; // The hook handles redirection
   }
 
+  const showUpdateButton = isExistingReport && isDirty;
 
   return (
     <>
@@ -597,19 +604,19 @@ ${pemasukanText}
             <Button
               className={cn(
                 "flex-1 text-white",
-                isDirty ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
+                showUpdateButton ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
               )}
               onClick={handleSaveReport}
               disabled={isSaving}
             >
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Save className="mr-2 h-4 w-4" />
-              {isDirty ? 'Update' : 'Simpan'}
+              {showUpdateButton ? 'Update' : 'Simpan'}
             </Button>
             <Button 
               className="flex-1 bg-green-600 text-white hover:bg-green-700"
               onClick={handleSendWhatsApp}
-              disabled={!modalAwal && !omsetBersih}
+              disabled={(!modalAwal && !omsetBersih) || isDirty}
             >
               <Send className="mr-2 h-4 w-4" />
               Kirim WA
@@ -635,3 +642,4 @@ ${pemasukanText}
     </>
   );
 }
+
