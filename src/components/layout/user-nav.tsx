@@ -23,13 +23,13 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users, Loader2, Info } from 'lucide-react';
+import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users, Loader2, Info, X } from 'lucide-react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/lib/user-store';
 import { Badge } from '../ui/badge';
-import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 export function UserNav() {
   const router = useRouter();
@@ -167,12 +167,33 @@ export function UserNav() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <DialogContent className="sm:max-w-xs">
-          <DialogHeader className="items-center text-center">
-             <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={user.avatarUrl || user.photoURL || undefined} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
-                <AvatarFallback className="text-4xl">{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
-            </Avatar>
+      <DialogContent className="sm:max-w-xs p-0 border-0">
+         <div className="flex flex-col items-center text-center p-6 pb-4">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Avatar className="h-24 w-24 mb-4 cursor-zoom-in transition-transform hover:scale-105">
+                    <AvatarImage src={user.avatarUrl || user.photoURL || undefined} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
+                    <AvatarFallback className="text-4xl">{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
+                </Avatar>
+              </DialogTrigger>
+              <DialogContent className="p-0 border-none max-w-md bg-transparent shadow-none">
+                  <DialogHeader className="sr-only">
+                      <DialogTitle>Foto Profil {user.fullName}</DialogTitle>
+                      <DialogDescription>Tampilan foto profil yang diperbesar.</DialogDescription>
+                  </DialogHeader>
+                  <Image 
+                      src={user.avatarUrl || user.photoURL || "https://placehold.co/800x800.png"} 
+                      alt={user.fullName || "User Avatar"} 
+                      width={800} 
+                      height={800}
+                      className="rounded-lg object-contain w-full h-auto"
+                  />
+                  <DialogClose className="absolute -top-2 -right-2 rounded-full p-1 bg-background text-muted-foreground opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+                      <X className="h-5 w-5" />
+                      <span className="sr-only">Tutup</span>
+                  </DialogClose>
+              </DialogContent>
+            </Dialog>
             <DialogTitle className="text-2xl">{user.fullName || 'Pengguna'}</DialogTitle>
              {user.role && (
                 <Badge key={user.role} variant={roleBadgeVariant[user.role] || 'secondary'} className="w-fit mx-auto">
@@ -180,19 +201,18 @@ export function UserNav() {
                 </Badge>
             )}
             <DialogDescription className="pt-2">{user.email}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="grid grid-cols-2 gap-2 pt-4">
+          </div>
+          <DialogFooter className="grid grid-cols-2 gap-0 pt-4 border-t">
              <DialogClose asChild>
-                <Button variant="outline">Tutup</Button>
+                <Button variant="ghost" className="rounded-none rounded-bl-lg">Tutup</Button>
             </DialogClose>
             <DialogClose asChild>
-                 <Button asChild>
+                 <Button asChild variant="ghost" className="rounded-none rounded-br-lg">
                     <Link href="/profile">Kelola Akun</Link>
                 </Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>
-
     </Dialog>
   );
 }
