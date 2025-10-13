@@ -63,9 +63,9 @@ export function useSessionManager() {
     const checkSession = () => {
       const lastActivity = localStorage.getItem(LAST_ACTIVITY_KEY);
       if (!lastActivity) {
-        if (auth.currentUser) {
-            handleSignOut();
-        }
+        // If there's no activity recorded yet, simply reset it and wait for the next check.
+        // This prevents logout on first load or when opening a new tab.
+        resetActivityTimer();
         return;
       }
 
