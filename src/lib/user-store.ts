@@ -29,17 +29,20 @@ export const useUserStore = create<UserState>((set) => ({
       firestoreUnsubscribe = null;
 
       if (authUser) {
-        // Immediately check for email verification. If not verified, treat as logged out.
-        if (!authUser.emailVerified) {
-          // This ensures that even if there's a lingering auth session,
-          // an unverified user cannot access the app state.
-          // The login page logic will handle signing them out officially.
+        const userDocRef = doc(db, 'users', authUser.uid);
+        
+        // We use getDoc here initially to quickly decide if a user is an admin
+        // This helps solve race conditions with email verification
+        const initialUserDoc = await getDoc(userDocRef);
+
+        // Immediately handle unverified users who are not admins
+        if (!authUser.emailVerified && initialUserDoc.exists() && initialUserDoc.data().role !== 'Admin') {
+          // Don't sign out here, as the login page logic handles it.
+          // Just ensure the app state treats them as logged out.
           set({ user: null, loading: false });
           return;
         }
 
-        const userDocRef = doc(db, 'users', authUser.uid);
-        
         firestoreUnsubscribe = onSnapshot(userDocRef, (userDoc) => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
