@@ -8,7 +8,7 @@ import { Code, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useDeveloperInfoConfig } from '@/lib/menu-store';
 import { allIcons } from '@/lib/menu-items-v2';
-import { Dialog, DialogContent, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogClose, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 
 export default function DeveloperPage() {
@@ -49,6 +49,10 @@ export default function DeveloperPage() {
                 </div>
              </DialogTrigger>
              <DialogContent className="p-0 border-none max-w-lg bg-transparent shadow-none">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>Foto Profil {developerInfo.name}</DialogTitle>
+                    <DialogDescription>Tampilan foto profil yang diperbesar.</DialogDescription>
+                </DialogHeader>
                 <Image 
                     src={developerInfo.avatarUrl} 
                     alt={developerInfo.name} 
