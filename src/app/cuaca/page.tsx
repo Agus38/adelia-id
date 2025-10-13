@@ -40,38 +40,42 @@ interface ForecastData {
 }
 
 const API_KEY = '2c22f1e55ce0ba542652c2b4164b47eb';
+const DEFAULT_CITY = 'Jakarta';
 
 export default function WeatherPage() {
     const [city, setCity] = React.useState('');
     const [weather, setWeather] = React.useState<WeatherData | null>(null);
     const [forecast, setForecast] = React.useState<ForecastData | null>(null);
-    const [isLoading, setIsLoading] = React.useState(false);
+    const [isLoading, setIsLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
-    const [lastSearchedCity, setLastSearchedCity] = React.useState('Jakarta');
+    const [lastSearchedQuery, setLastSearchedQuery] = React.useState<string | { lat: number, lon: number }>(DEFAULT_CITY);
 
-    const fetchWeatherData = React.useCallback(async (targetCity: string) => {
-        if (!targetCity) return;
+    const fetchWeatherData = React.useCallback(async (query: string | { lat: number, lon: number }) => {
+        if (!query) return;
         setIsLoading(true);
         setError(null);
         setWeather(null);
         setForecast(null);
 
+        const weatherParams = typeof query === 'string'
+            ? `q=${query}`
+            : `lat=${query.lat}&lon=${query.lon}`;
+
         try {
-            const weatherResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${targetCity}&appid=${API_KEY}&units=metric&lang=id`);
+            const weatherResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?${weatherParams}&appid=${API_KEY}&units=metric&lang=id`);
             if (!weatherResponse.ok) {
-                if (weatherResponse.status === 404) throw new Error(`Kota "${targetCity}" tidak ditemukan.`);
+                if (weatherResponse.status === 404) throw new Error(`Kota "${typeof query === 'string' ? query : 'lokasi Anda'}" tidak ditemukan.`);
                 throw new Error('Gagal mengambil data cuaca saat ini.');
             }
             const weatherData: WeatherData = await weatherResponse.json();
             setWeather(weatherData);
 
-            const forecastResponse = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${targetCity}&appid=${API_KEY}&units=metric&lang=id`);
-             if (!forecastResponse.ok) throw new Error('Gagal mengambil data prakiraan cuaca.');
+            const forecastParams = `lat=${weatherData.coord.lat}&lon=${weatherData.coord.lon}`;
+            const forecastResponse = await fetch(`https://api.openweathermap.org/data/2.5/forecast?${forecastParams}&appid=${API_KEY}&units=metric&lang=id`);
+            if (!forecastResponse.ok) throw new Error('Gagal mengambil data prakiraan cuaca.');
             const forecastData: ForecastData = await forecastResponse.json();
             setForecast(forecastData);
             
-            setLastSearchedCity(weatherData.name);
-
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -80,14 +84,28 @@ export default function WeatherPage() {
     }, []);
 
     React.useEffect(() => {
-        fetchWeatherData(lastSearchedCity);
-    }, [fetchWeatherData, lastSearchedCity]);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                setLastSearchedQuery({ lat: latitude, lon: longitude });
+            },
+            (err) => {
+                console.warn(`Geolocation error (${err.code}): ${err.message}`);
+                setLastSearchedQuery(DEFAULT_CITY);
+            },
+            { timeout: 10000 }
+        );
+    }, []);
+
+    React.useEffect(() => {
+        fetchWeatherData(lastSearchedQuery);
+    }, [fetchWeatherData, lastSearchedQuery]);
 
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         if (city.trim()) {
-            fetchWeatherData(city);
+            setLastSearchedQuery(city);
         }
     };
     
@@ -150,7 +168,7 @@ export default function WeatherPage() {
         {isLoading && (
              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-10 text-center text-muted-foreground animate-pulse">
                 <Loader2 className="h-10 w-10 animate-spin mb-4 text-primary"/>
-                <p>Memuat data cuaca untuk {city || lastSearchedCity}...</p>
+                <p>Memuat data cuaca...</p>
              </div>
         )}
         

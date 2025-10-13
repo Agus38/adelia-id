@@ -1,9 +1,10 @@
+
 'use client';
 
 import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarClock, Loader2, Search } from 'lucide-react';
+import { CalendarClock, Loader2, Search, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -45,6 +46,8 @@ const scheduleLabels: Record<keyof Jadwal, string> = {
   isya: 'Isya',
 };
 
+const OPENWEATHERMAP_API_KEY = '2c22f1e55ce0ba542652c2b4164b47eb';
+const DEFAULT_CITY_ID = '1301'; // Jakarta
 
 export default function JadwalSholatPage() {
   const [cities, setCities] = React.useState<City[]>([]);
@@ -55,6 +58,7 @@ export default function JadwalSholatPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [comboboxOpen, setComboboxOpen] = React.useState(false);
 
+  // Fetch all cities on initial mount
   React.useEffect(() => {
     const fetchCities = async () => {
       try {
@@ -65,20 +69,52 @@ export default function JadwalSholatPage() {
         
         const sortedCities = data.data.sort((a: City, b: City) => a.lokasi.localeCompare(b.lokasi));
         setCities(sortedCities);
-
-        // Set default city to Jakarta
-        const defaultCity = sortedCities.find(c => c.id === '1301');
-        if (defaultCity) {
-          setSelectedCity(defaultCity);
-        }
+        return sortedCities;
 
       } catch (err: any) {
         setError(err.message || 'Terjadi kesalahan saat memuat kota.');
+        return [];
       } finally {
         setIsLoadingCities(false);
       }
     };
-    fetchCities();
+
+    const initializeLocation = async () => {
+        const allCities = await fetchCities();
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                try {
+                    // Get city name from OpenWeatherMap
+                    const geoResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHERMAP_API_KEY}&units=metric`);
+                    const geoData = await geoResponse.json();
+                    const cityName = geoData.name;
+
+                    // Find the best match in MyQuran city list
+                    const foundCity = allCities.find(c => c.lokasi.toLowerCase() === cityName.toLowerCase());
+                    if (foundCity) {
+                        setSelectedCity(foundCity);
+                    } else {
+                        // Fallback to default if city not found in list
+                        setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
+                    }
+                } catch (e) {
+                    // Fallback to default on API error
+                    setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
+                }
+            },
+            (err) => {
+                console.warn(`Geolocation error (${err.code}): ${err.message}`);
+                // Fallback to default on permission denial
+                setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
+            },
+            { timeout: 10000 }
+        );
+    }
+    
+    initializeLocation();
+
   }, []);
 
   React.useEffect(() => {
@@ -137,13 +173,16 @@ export default function JadwalSholatPage() {
                             className="w-full justify-between"
                             disabled={isLoadingCities}
                         >
-                            {isLoadingCities ? (
+                            {isLoadingCities && !selectedCity ? (
                                 <>
                                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                   Memuat kota...
                                 </>
                             ) : selectedCity ? (
-                                selectedCity.lokasi
+                                <>
+                                  <MapPin className="mr-2 h-4 w-4 shrink-0" />
+                                  {selectedCity.lokasi}
+                                </>
                             ) : (
                                 "Pilih kota..."
                             )}
