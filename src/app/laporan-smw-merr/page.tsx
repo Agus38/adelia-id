@@ -126,9 +126,9 @@ export default function DailyReportPage() {
   }, []);
 
   const populateForm = React.useCallback((report: any) => {
-    setModalAwal(report.details.modalAwal);
-    setOmsetBersih(report.omsetBersih);
-    setPajak(report.details.pajak);
+    setModalAwal(report.details.modalAwal || 0);
+    setOmsetBersih(report.omsetBersih || 0);
+    setPajak(report.details.pajak || 0);
     
     const pemasukanMap = new Map(report.details.pemasukan.map((p: any) => [p.name, p.value]));
     setGoFood(pemasukanMap.get('GoFood') || 0);
@@ -148,9 +148,14 @@ export default function DailyReportPage() {
 
     setExtraPemasukan(report.details.pemasukan.filter((p: any) => !['GoFood', 'GrabFood', 'ShopeeFood', 'Qris Mandiri', 'Qris Bri', 'Debit Mandiri', 'Debit Bri'].includes(p.name)).map((p: any) => ({...p, id: Math.random()})));
     setExtraPengeluaran(report.details.pengeluaran.filter((p: any) => !['Transport', 'GoSend', 'Iuran Bulanan', 'Bonus', 'Lembur'].includes(p.name)).map((p: any) => ({...p, id: Math.random()})));
-    setIsDirty(false);
+    setIsDirty(false); // Reset dirty state after populating
   }, []);
 
+  React.useEffect(() => {
+    if (!date || !currentUser) return;
+    setIsDirty(true); // Mark as dirty when date or shift changes, prompting a save
+  }, [date, shift, currentUser]);
+  
   React.useEffect(() => {
     if (!date || !currentUser) return;
 
@@ -604,7 +609,7 @@ ${pemasukanText}
             <Button 
               className="flex-1 bg-green-600 text-white hover:bg-green-700"
               onClick={handleSendWhatsApp}
-              disabled={!modalAwal || !omsetBersih}
+              disabled={!modalAwal && !omsetBersih}
             >
               <Send className="mr-2 h-4 w-4" />
               Kirim WA
