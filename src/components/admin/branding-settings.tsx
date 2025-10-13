@@ -147,7 +147,7 @@ export function BrandingSettings() {
         <CardHeader>
           <CardTitle>Identitas Aplikasi</CardTitle>
           <CardDescription>
-            Atur nama dan logo aplikasi yang akan ditampilkan di header.
+            Atur nama, logo, dan teks footer aplikasi Anda.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -230,6 +230,16 @@ export function BrandingSettings() {
                     <span>{localConfig.appName}</span>
                 </div>
             </div>
+          </div>
+          
+           <div className="space-y-2">
+            <Label htmlFor="footerText">Teks Footer</Label>
+            <Input
+              id="footerText"
+              value={localConfig.footerText || ''}
+              onChange={(e) => setLocalConfig({...localConfig, footerText: e.target.value})}
+              placeholder="© 2025 Nama Aplikasi Anda"
+            />
           </div>
         </CardContent>
         <CardFooter>

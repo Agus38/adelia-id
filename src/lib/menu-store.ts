@@ -54,6 +54,7 @@ interface BrandingConfigDTO {
   logoType: 'icon' | 'image';
   iconName?: string;
   imageUrl?: string;
+  footerText?: string;
 }
 
 interface LoginPageConfigDTO {
@@ -144,6 +145,7 @@ export interface BrandingConfig {
   icon?: LucideIcon;
   iconName?: string;
   imageUrl?: string;
+  footerText?: string;
 }
 
 export interface LoginPageConfig {
@@ -268,7 +270,8 @@ const defaultBrandingConfig: BrandingConfig = {
   logoType: 'icon',
   icon: Logo,
   iconName: 'Logo',
-  imageUrl: ''
+  imageUrl: '',
+  footerText: '© 2025 Adelia-ID | Enterprise Business Solution'
 };
 
 const defaultLoginPageConfig: LoginPageConfig = {
@@ -610,6 +613,7 @@ const useBrandingStore = create<BrandingStoreState>((set) => ({
                     icon: getIconComponent(dto.iconName),
                     iconName: dto.iconName,
                     imageUrl: dto.imageUrl,
+                    footerText: dto.footerText
                 };
                 set({ brandingConfig: hydratedConfig, isLoading: false, error: null });
             } else {
@@ -635,9 +639,10 @@ export const useBrandingConfig = () => {
 export const saveBrandingConfig = async (config: BrandingConfig) => {
     const configToStore: BrandingConfigDTO = {
         appName: config.appName,
-        logoType: config.imageUrl ? 'image' : config.logoType,
+        logoType: config.logoType,
         iconName: config.iconName,
         imageUrl: config.imageUrl,
+        footerText: config.footerText,
     };
     await setDoc(brandingConfigDocRef, configToStore);
 };
