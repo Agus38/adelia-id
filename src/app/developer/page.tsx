@@ -4,10 +4,12 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Code, Loader2 } from 'lucide-react';
+import { Code, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useDeveloperInfoConfig } from '@/lib/menu-store';
 import { allIcons } from '@/lib/menu-items-v2';
+import { Dialog, DialogContent, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import Image from 'next/image';
 
 export default function DeveloperPage() {
   const { developerInfo, isLoading } = useDeveloperInfoConfig();
@@ -34,15 +36,32 @@ export default function DeveloperPage() {
            </CardDescription>
          </CardHeader>
          <CardContent className="flex flex-col md:flex-row items-center gap-8 pt-4">
-           <div className="flex-shrink-0 relative">
-             <Avatar className="h-32 w-32 border-4 border-primary/20">
-               <AvatarImage src={developerInfo.avatarUrl} alt={developerInfo.name} data-ai-hint="developer portrait" />
-               <AvatarFallback>{getAvatarFallback(developerInfo.name)}</AvatarFallback>
-             </Avatar>
-              <div className="absolute bottom-1 right-1 bg-background p-1.5 rounded-full shadow-md">
-                <Code className="h-4 w-4 text-primary" />
-              </div>
-           </div>
+           <Dialog>
+             <DialogTrigger asChild>
+                <div className="flex-shrink-0 relative cursor-zoom-in group">
+                  <Avatar className="h-32 w-32 border-4 border-primary/20 transition-transform group-hover:scale-105">
+                    <AvatarImage src={developerInfo.avatarUrl} alt={developerInfo.name} data-ai-hint="developer portrait" />
+                    <AvatarFallback>{getAvatarFallback(developerInfo.name)}</AvatarFallback>
+                  </Avatar>
+                  <div className="absolute bottom-1 right-1 bg-background p-1.5 rounded-full shadow-md">
+                    <Code className="h-4 w-4 text-primary" />
+                  </div>
+                </div>
+             </DialogTrigger>
+             <DialogContent className="p-0 border-none max-w-lg bg-transparent shadow-none">
+                <Image 
+                    src={developerInfo.avatarUrl} 
+                    alt={developerInfo.name} 
+                    width={800} 
+                    height={800}
+                    className="rounded-lg object-contain w-full h-auto"
+                />
+                 <DialogClose className="absolute -top-2 -right-2 rounded-full p-1 bg-background text-muted-foreground opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+                    <X className="h-5 w-5" />
+                    <span className="sr-only">Tutup</span>
+                </DialogClose>
+             </DialogContent>
+           </Dialog>
            <div className="text-center md:text-left">
              <h2 className="text-2xl font-bold">{developerInfo.name}</h2>
              <p className="text-primary font-medium">{developerInfo.title}</p>
