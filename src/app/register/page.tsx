@@ -64,9 +64,8 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const authUser = userCredential.user;
       
-      const appUrl = window.location.origin;
       const actionCodeSettings = {
-          url: `${appUrl}/login`,
+          url: `${window.location.origin}/login`,
           handleCodeInApp: true,
       };
 
