@@ -64,8 +64,9 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const authUser = userCredential.user;
       
+      const appUrl = process.env.NEXT_PUBLIC_URL || window.location.origin;
       const actionCodeSettings = {
-          url: `${window.location.origin}/login`,
+          url: `${appUrl}/login`,
           handleCodeInApp: true,
       };
 
@@ -123,6 +124,8 @@ export default function RegisterPage() {
         errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.';
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
+      } else if (error.code === 'auth/unauthorized-continue-uri') {
+        errorMessage = 'Domain aplikasi belum diizinkan. Hubungi administrator untuk menambahkan domain ke daftar resmi Firebase.';
       }
       
       console.error("Registration error:", error);

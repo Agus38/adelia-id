@@ -41,7 +41,7 @@ export default function LoginPage() {
             if (!emailFromStorage) {
                 // If email is not in storage, prompt the user for it
                 // This is a fallback and less ideal UX
-                emailFromStorage = window.prompt('Please provide your email for confirmation');
+                emailFromStorage = window.prompt('Harap berikan email Anda untuk konfirmasi');
             }
 
             if (emailFromStorage) {
@@ -100,8 +100,9 @@ export default function LoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       if (userCredential.user && !userCredential.user.emailVerified) {
+        const appUrl = process.env.NEXT_PUBLIC_URL || window.location.origin;
         const actionCodeSettings = {
-            url: `${window.location.origin}/login`,
+            url: `${appUrl}/login`,
             handleCodeInApp: true,
         };
         await sendEmailVerification(userCredential.user, actionCodeSettings);
