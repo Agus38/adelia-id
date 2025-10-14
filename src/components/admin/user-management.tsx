@@ -176,7 +176,7 @@ export function UserManagement() {
   };
 
   const handleDelete = (user: User) => {
-    setBulkAction('delete');
+    setBulkAction(null); // Ensure this is not a bulk action
     setSelectedUser(user);
     setDeleteDialogOpen(true);
   };
@@ -237,6 +237,21 @@ export function UserManagement() {
     setBlockUnblockDialogOpen(true);
   };
   
+  const confirmSingleDelete = async () => {
+    if (!selectedUser) return;
+    try {
+      const userDocRef = doc(db, 'users', selectedUser.id);
+      await deleteDoc(userDocRef);
+      toast({ title: `Pengguna ${selectedUser.fullName} Dihapus`, description: "Pengguna telah berhasil dihapus." });
+      fetchUsers();
+    } catch (error) {
+       toast({ title: "Gagal Menghapus", description: "Terjadi kesalahan saat menghapus pengguna.", variant: "destructive" });
+    } finally {
+        setDeleteDialogOpen(false);
+        setSelectedUser(null);
+    }
+  };
+
   const confirmBulkDelete = async () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
     const usersToDelete = selectedRows.map(row => row.original).filter(user => user.uid !== currentUser?.uid);
@@ -663,7 +678,9 @@ export function UserManagement() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmBulkDelete}>Lanjutkan</AlertDialogAction>
+            <AlertDialogAction onClick={numSelected > 0 ? confirmBulkDelete : confirmSingleDelete}>
+              Lanjutkan
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
