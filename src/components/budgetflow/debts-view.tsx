@@ -6,7 +6,7 @@ import { useBudgetflowStore, addDebt, updateDebt, deleteDebt, recordDebtPayment,
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
-import { PlusCircle, MoreVertical, Edit, Trash2, ArrowUp, ArrowDown, HandCoins, PiggyBank } from 'lucide-react';
+import { PlusCircle, MoreVertical, Edit, Trash2, ArrowUp, ArrowDown, HandCoins, PiggyBank, Scale, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -265,10 +265,38 @@ function DebtCard({ debt }: { debt: Debt }) {
     );
 }
 
+const SummaryCard = ({ title, value, icon: Icon, colorClass }: { title: string, value: string, icon: React.ElementType, colorClass: string }) => (
+    <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+            <Icon className={`h-4 w-4 text-muted-foreground ${colorClass}`} />
+        </CardHeader>
+        <CardContent>
+            <div className={`text-2xl font-bold ${colorClass}`}>{value}</div>
+        </CardContent>
+    </Card>
+);
 
 export function DebtsView() {
     const { debts } = useBudgetflowStore();
     const [isAddDialogOpen, setAddDialogOpen] = React.useState(false);
+
+    const summary = React.useMemo(() => {
+        const totalDebt = debts.filter(d => d.type === 'debt').reduce((acc, curr) => acc + curr.totalAmount, 0);
+        const paidDebt = debts.filter(d => d.type === 'debt').reduce((acc, curr) => acc + curr.paidAmount, 0);
+        
+        const totalReceivable = debts.filter(d => d.type === 'receivable').reduce((acc, curr) => acc + curr.totalAmount, 0);
+        const receivedReceivable = debts.filter(d => d.type === 'receivable').reduce((acc, curr) => acc + curr.paidAmount, 0);
+
+        return {
+            totalDebt,
+            paidDebt,
+            remainingDebt: totalDebt - paidDebt,
+            totalReceivable,
+            receivedReceivable,
+            remainingReceivable: totalReceivable - receivedReceivable
+        };
+    }, [debts]);
 
     const myDebts = debts.filter(d => d.type === 'debt' && !d.isPaid);
     const myReceivables = debts.filter(d => d.type === 'receivable' && !d.isPaid);
@@ -282,6 +310,29 @@ export function DebtsView() {
                     Tambah Data Baru
                 </Button>
             </div>
+            
+             {/* Summary Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                 <SummaryCard 
+                    title="Total Sisa Hutang"
+                    value={formatCurrency(summary.remainingDebt)}
+                    icon={TrendingDown}
+                    colorClass="text-red-500"
+                />
+                 <SummaryCard 
+                    title="Total Sisa Piutang"
+                    value={formatCurrency(summary.remainingReceivable)}
+                    icon={TrendingUp}
+                    colorClass="text-green-500"
+                />
+                 <SummaryCard 
+                    title="Sudah Dibayar/Diterima"
+                    value={formatCurrency(summary.paidDebt + summary.receivedReceivable)}
+                    icon={Wallet}
+                    colorClass="text-primary"
+                />
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader><CardTitle>Daftar Hutang Saya</CardTitle></CardHeader>
@@ -321,4 +372,3 @@ export function DebtsView() {
         </div>
     );
 }
-
