@@ -147,7 +147,7 @@ function DebtFormDialog({ open, onOpenChange, debtToEdit }: { open: boolean, onO
         }
         try {
             const amount = parseFloat(totalAmount);
-            const data: any = { name, totalAmount: amount, type, dueDate };
+            const data: any = { name, totalAmount: amount, type, dueDate: dueDate || null };
             if (debtToEdit) {
                 await updateDebt(debtToEdit.id, data);
                 toast({ title: "Data diperbarui" });
