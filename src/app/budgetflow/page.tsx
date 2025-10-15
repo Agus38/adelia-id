@@ -149,16 +149,16 @@ export default function BudgetFlowPage() {
            </div>
         </div>
 
-        <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-auto">
+        <Tabs defaultValue="dashboard" className="flex flex-col flex-1">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
             <TabsTrigger value="dashboard"><BarChart2 className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Dasbor</span></TabsTrigger>
             <TabsTrigger value="transactions"><Table className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Transaksi</span></TabsTrigger>
             <TabsTrigger value="savings"><PiggyBank className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Tabungan</span></TabsTrigger>
             <TabsTrigger value="debts"><Scale className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Hutang</span></TabsTrigger>
-            <TabsTrigger value="ai-consultant"><Bot className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Konsultan AI</span></TabsTrigger>
+            <TabsTrigger value="ai-consultant" className="sm:col-span-2 md:col-span-1"><Bot className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Konsultan AI</span></TabsTrigger>
           </TabsList>
           
-          <div className="mt-6">
+          <div className="mt-6 flex-1 flex flex-col">
              <TabsContent value="dashboard">
                 <BudgetFlowDashboard dateRange={date}/>
             </TabsContent>
@@ -171,7 +171,7 @@ export default function BudgetFlowPage() {
              <TabsContent value="debts">
                 <DebtsView />
             </TabsContent>
-            <TabsContent value="ai-consultant">
+            <TabsContent value="ai-consultant" className="flex-1 flex flex-col">
                 <FinancialChatInterface dateRange={date} />
             </TabsContent>
           </div>

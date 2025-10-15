@@ -145,14 +145,14 @@ export function FinancialChatInterface({ dateRange }: FinancialChatInterfaceProp
 
    if (loadingData) {
       return (
-      <div className="flex h-64 items-center justify-center rounded-lg border border-dashed">
+      <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
       );
   }
 
   return (
-    <div className="flex flex-col flex-1 bg-background rounded-2xl border shadow-neumorphic-light min-h-[60vh]">
+    <div className="flex flex-col flex-1 bg-background rounded-2xl border shadow-neumorphic-light">
       <header className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-3">
               <div className="relative">
