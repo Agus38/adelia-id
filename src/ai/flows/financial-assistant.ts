@@ -20,7 +20,7 @@ const TransactionSchema = z.object({
     description: z.string(),
     amount: z.number(),
     category: z.string(),
-    date: z.date(),
+    date: z.string().describe("The date of the transaction in ISO 8601 format."),
 });
 
 const GoalSchema = z.object({
@@ -72,7 +72,7 @@ const formatFinancialData = (data: FinancialAssistantInput['financialData']) => 
     const formatCurrency = (num: number) => `Rp${num.toLocaleString('id-ID')}`;
 
     const transactions = data.transactions.slice(0, 20).map(t => 
-        `- ${t.description} (${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}) on ${t.date.toLocaleDateString('id-ID')}`
+        `- ${t.description} (${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}) on ${new Date(t.date).toLocaleDateString('id-ID')}`
     ).join('\n');
 
     const goals = data.goals.map(g => 

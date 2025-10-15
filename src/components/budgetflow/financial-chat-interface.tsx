@@ -99,10 +99,19 @@ export function FinancialChatInterface({ dateRange }: FinancialChatInterfaceProp
           return acc;
       }, { totalIncome: 0, totalExpenses: 0 });
 
+      // Convert Date/Timestamp objects to ISO strings for server action
+      const serializableTransactions = filteredTransactions.map(t => ({
+        ...t,
+        date: (t.date instanceof Date ? t.date : t.date.toDate()).toISOString(),
+      }));
+      const serializableGoals = goals.map(g => ({...g}));
+      const serializableDebts = debts.map(d => ({...d}));
+
+
       const financialData = {
-          transactions: filteredTransactions.map(t => ({...t, date: t.date instanceof Date ? t.date : t.date.toDate()})),
-          goals: goals,
-          debts: debts,
+          transactions: serializableTransactions,
+          goals: serializableGoals,
+          debts: serializableDebts,
           summary: {
               ...summary,
               netFlow: summary.totalIncome - summary.totalExpenses,
