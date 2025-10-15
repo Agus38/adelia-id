@@ -78,7 +78,6 @@ export function FinancialChatInterface({ dateRange }: FinancialChatInterfaceProp
 
     const userMessage: Message = { role: 'user', content: currentInput };
     
-    // Add user message and set isPending immediately
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
 
@@ -99,11 +98,13 @@ export function FinancialChatInterface({ dateRange }: FinancialChatInterfaceProp
           return acc;
       }, { totalIncome: 0, totalExpenses: 0 });
 
-      // Convert complex objects (Date, Timestamp) to simple values for the server action.
       const serializableTransactions = filteredTransactions.map(t => ({
-        ...t,
+        id: t.id,
+        type: t.type,
+        description: t.description,
+        amount: t.amount,
+        category: t.category,
         date: (t.date instanceof Date ? t.date : t.date.toDate()).toISOString(),
-        createdAt: undefined, // Remove timestamp
       }));
 
       const serializableGoals = goals.map(g => ({
@@ -151,7 +152,7 @@ export function FinancialChatInterface({ dateRange }: FinancialChatInterfaceProp
   }
 
   return (
-    <div className="flex flex-col h-[70vh] bg-background rounded-2xl border shadow-neumorphic-light">
+    <div className="flex flex-col flex-1 bg-background rounded-2xl border shadow-neumorphic-light min-h-[60vh]">
       <header className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-3">
               <div className="relative">
