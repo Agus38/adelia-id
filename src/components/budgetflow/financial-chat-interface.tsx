@@ -99,13 +99,27 @@ export function FinancialChatInterface({ dateRange }: FinancialChatInterfaceProp
           return acc;
       }, { totalIncome: 0, totalExpenses: 0 });
 
-      // Convert Date/Timestamp objects to ISO strings for server action
+      // Convert complex objects (Date, Timestamp) to simple values for the server action.
       const serializableTransactions = filteredTransactions.map(t => ({
         ...t,
         date: (t.date instanceof Date ? t.date : t.date.toDate()).toISOString(),
+        createdAt: undefined, // Remove timestamp
       }));
-      const serializableGoals = goals.map(g => ({...g}));
-      const serializableDebts = debts.map(d => ({...d}));
+
+      const serializableGoals = goals.map(g => ({
+        id: g.id,
+        name: g.name,
+        targetAmount: g.targetAmount,
+        currentAmount: g.currentAmount,
+      }));
+      
+      const serializableDebts = debts.map(d => ({
+        id: d.id,
+        name: d.name,
+        type: d.type,
+        totalAmount: d.totalAmount,
+        paidAmount: d.paidAmount,
+      }));
 
 
       const financialData = {
