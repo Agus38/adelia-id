@@ -128,7 +128,7 @@ export function DataTable({ dateRange }: DataTableProps) {
       cell: ({ row }) => {
         const date = row.original.date;
         const formattedDate = date instanceof Date ? date : date.toDate();
-        return <div>{format(formattedDate, 'd MMM yyyy', { locale: id })}</div>;
+        return <div className="text-xs text-muted-foreground">{format(formattedDate, 'd MMM yyyy', { locale: id })}</div>;
       },
     },
     {
@@ -176,7 +176,7 @@ export function DataTable({ dateRange }: DataTableProps) {
                 {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="p-2 md:p-4">
+                    <TableHead key={header.id} className="p-2 sm:p-4">
                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                     ))}
@@ -190,7 +190,7 @@ export function DataTable({ dateRange }: DataTableProps) {
                 table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="p-2 md:p-4">{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                        <TableCell key={cell.id} className="p-2 sm:p-4">{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                     ))}
                     </TableRow>
                 ))

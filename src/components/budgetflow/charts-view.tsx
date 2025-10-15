@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Bar, BarChart, XAxis, YAxis, Pie, PieChart, Cell } from 'recharts';
+import { Bar, BarChart, Pie, PieChart, Cell } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -132,7 +132,7 @@ export function ChartsView({ dateRange }: ChartsViewProps) {
            {barChartData.length > 0 ? (
                 <ChartContainer config={{
                     income: { label: "Pemasukan", color: "hsl(var(--chart-2))" },
-                    expense: { label: "Pengeluaran", color: "hsl(var(--chart-3))" },
+                    expense: { label: "Pengeluaran", color: "hsl(var(--chart-1))" },
                 }} className="h-[300px] w-full">
                 <BarChart data={barChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                     <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => new Date(value + '-02').toLocaleDateString('id-ID', { month: 'short' })} />

@@ -150,15 +150,15 @@ export default function BudgetFlowPage() {
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-5 h-auto">
-            <TabsTrigger value="dashboard"><BarChart2 className="w-4 h-4 mr-2"/>Dasbor</TabsTrigger>
-            <TabsTrigger value="transactions"><Table className="w-4 h-4 mr-2"/>Transaksi</TabsTrigger>
-            <TabsTrigger value="savings"><PiggyBank className="w-4 h-4 mr-2"/>Tabungan</TabsTrigger>
-            <TabsTrigger value="debts"><Scale className="w-4 h-4 mr-2"/>Hutang/Piutang</TabsTrigger>
-             <TabsTrigger value="ai-consultant"><Bot className="w-4 h-4 mr-2"/>Konsultasi AI</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 h-auto">
+            <TabsTrigger value="dashboard"><BarChart2 className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Dasbor</span></TabsTrigger>
+            <TabsTrigger value="transactions"><Table className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Transaksi</span></TabsTrigger>
+            <TabsTrigger value="savings"><PiggyBank className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Tabungan</span></TabsTrigger>
+            <TabsTrigger value="debts"><Scale className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Hutang</span></TabsTrigger>
+            <TabsTrigger value="ai-consultant"><Bot className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Konsultan AI</span></TabsTrigger>
           </TabsList>
           
-          <div className="mt-6 overflow-x-auto">
+          <div className="mt-6">
              <TabsContent value="dashboard">
                 <BudgetFlowDashboard dateRange={date}/>
             </TabsContent>
