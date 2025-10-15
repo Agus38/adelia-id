@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, BarChart2, Table, PiggyBank, Scale, Landmark, Trash2 } from 'lucide-react';
+import { Loader2, TrendingUp, BarChart2, Table, PiggyBank, Scale, Landmark, Trash2, Bot } from 'lucide-react';
 import { usePageAccess } from "@/hooks/use-page-access";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BudgetFlowDashboard } from '@/components/budgetflow/dashboard';
@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { resetBudgetflowData } from '@/lib/budgetflow-store';
+import { FinancialChatInterface } from '@/components/budgetflow/financial-chat-interface';
 
 
 function ResetDataDialog() {
@@ -149,11 +150,12 @@ export default function BudgetFlowPage() {
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+          <TabsList className="grid w-full grid-cols-5 h-auto">
             <TabsTrigger value="dashboard"><BarChart2 className="w-4 h-4 mr-2"/>Dasbor</TabsTrigger>
             <TabsTrigger value="transactions"><Table className="w-4 h-4 mr-2"/>Transaksi</TabsTrigger>
             <TabsTrigger value="savings"><PiggyBank className="w-4 h-4 mr-2"/>Tabungan</TabsTrigger>
             <TabsTrigger value="debts"><Scale className="w-4 h-4 mr-2"/>Hutang/Piutang</TabsTrigger>
+             <TabsTrigger value="ai-consultant"><Bot className="w-4 h-4 mr-2"/>Konsultasi AI</TabsTrigger>
           </TabsList>
           
           <div className="mt-6 overflow-x-auto">
@@ -168,6 +170,9 @@ export default function BudgetFlowPage() {
             </TabsContent>
              <TabsContent value="debts">
                 <DebtsView />
+            </TabsContent>
+            <TabsContent value="ai-consultant">
+                <FinancialChatInterface dateRange={date} />
             </TabsContent>
           </div>
         </Tabs>
