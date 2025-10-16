@@ -152,8 +152,8 @@ export function FinancialChatInterface({ dateRange }: FinancialChatInterfaceProp
   }
 
   return (
-    <div className="flex flex-col flex-1 bg-background rounded-lg w-full">
-      <header className="p-4 border-b flex items-center justify-between">
+    <div className="flex h-full flex-col bg-background rounded-lg">
+      <header className="p-4 border-b flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
               <div className="relative">
                  <Avatar>
@@ -259,7 +259,7 @@ export function FinancialChatInterface({ dateRange }: FinancialChatInterfaceProp
          <div ref={messagesEndRef} />
       </main>
 
-      <footer className="border-t p-2 sm:p-4">
+      <footer className="border-t p-2 sm:p-4 flex-shrink-0">
         <form ref={formRef} onSubmit={handleSubmit} className="flex w-full items-center gap-2">
           <Input
             value={input}
