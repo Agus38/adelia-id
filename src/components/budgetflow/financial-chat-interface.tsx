@@ -49,6 +49,18 @@ export function FinancialChatInterface({ dateRange }: FinancialChatInterfaceProp
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    try {
+        const savedMessages = sessionStorage.getItem('budgetflow-chat-history');
+        if (savedMessages) {
+            setMessages(JSON.parse(savedMessages));
+        }
+    } catch (error) {
+        console.error("Failed to parse chat history from sessionStorage", error);
+        sessionStorage.removeItem('budgetflow-chat-history');
+    }
+  }, []);
+
+  useEffect(() => {
       if (messages.length > 0) {
           sessionStorage.setItem('budgetflow-chat-history', JSON.stringify(messages));
       } else {
