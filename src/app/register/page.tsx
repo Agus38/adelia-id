@@ -64,17 +64,9 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const authUser = userCredential.user;
       
-      const actionCodeSettings = {
-          url: `${window.location.origin}/login`,
-          handleCodeInApp: true,
-      };
-
-      // 2. Send email verification
-      await sendEmailVerification(authUser, actionCodeSettings);
+      // 2. Send email verification using Firebase's default flow.
+      await sendEmailVerification(authUser);
       
-      // Store email in local storage to retrieve it on the login page after verification
-      window.localStorage.setItem('emailForSignIn', email);
-
       // 3. Update basic profile in Firebase Authentication.
       await updateProfile(authUser, {
         displayName: name,
