@@ -17,7 +17,7 @@ service cloud.firestore {
   
     // Helper function to check if the user is an Admin by reading their user document.
     function isDbAdmin(uid) {
-      return get(/databases/$(database)/documents/users/$(uid)).data.role == 'Admin';
+      return get(/databases/\\$(database)/documents/users/\\$(uid)).data.role == 'Admin';
     }
 
     // Rules for user profiles
@@ -45,10 +45,13 @@ service cloud.firestore {
     // Rules for user groups
     match /userGroups/{groupId} {
         // Authenticated users can read the list of groups (for access checks).
-        allow read: if request.auth != null;
-        allow list: if request.auth != null;
-        // ONLY Admin can create, write, or delete user groups.
-        allow create, write, delete: if request.auth != null && isDbAdmin(request.auth.uid);
+        allow read, list: if request.auth != null;
+
+        // Allow authenticated users to update memberIds (required for registration to default group).
+        allow update: if request.auth != null;
+
+        // ONLY Admin can create or delete user groups.
+        allow create, delete: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
     // Rules for daily financial reports
@@ -124,8 +127,6 @@ service cloud.firestore {
   }
 }
 `;
-
-export default function FirestoreRulesPage() {
   const { toast } = useToast();
   const [lastUpdated, setLastUpdated] = useState('');
 
@@ -169,7 +170,7 @@ export default function FirestoreRulesPage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>PERINGATAN KEAMANAN: Aturan Diperbarui!</AlertTitle>
           <AlertDescription>
-            Aturan keamanan telah diperbarui secara signifikan untuk menutup celah keamanan pada proses pendaftaran pengguna dan memperbaiki izin hapus log. Anda <strong>WAJIB</strong> menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan keamanan aplikasi Anda.
+            Aturan keamanan telah diperbarui secara signifikan untuk mengizinkan pengguna baru mendaftar ke grup default. Anda <strong>WAJIB</strong> menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan fungsionalitas registrasi berjalan lancar.
           </AlertDescription>
        </Alert>
        
@@ -207,5 +208,3 @@ export default function FirestoreRulesPage() {
     </div>
   );
 }
-
-    

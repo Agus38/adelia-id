@@ -59,12 +59,13 @@ export default function RegisterPage() {
     }
     setIsLoading(true);
 
+    let authUser;
     try {
       // 1. Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const authUser = userCredential.user;
+      authUser = userCredential.user;
       
-      // 2. Send email verification using Firebase's default flow.
+      // 2. Send email verification
       await sendEmailVerification(authUser);
       
       // 3. Update basic profile in Firebase Authentication.
@@ -73,9 +74,8 @@ export default function RegisterPage() {
         photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
       });
       
-      const userDocRef = doc(db, "users", authUser.uid);
-
       // 4. Create user document in Firestore.
+      const userDocRef = doc(db, "users", authUser.uid);
       await setDoc(userDocRef, {
         uid: authUser.uid,
         email: authUser.email,
@@ -87,15 +87,20 @@ export default function RegisterPage() {
       });
       
       // 5. Add user to the default group (if configured)
-      const defaultGroupConfigDoc = await getDoc(doc(db, 'app-settings', 'defaultUserGroup'));
-      if (defaultGroupConfigDoc.exists()) {
-          const { groupId } = defaultGroupConfigDoc.data();
-          if (groupId) {
-              const groupDocRef = doc(db, 'userGroups', groupId);
-              await updateDoc(groupDocRef, {
-                  memberIds: arrayUnion(authUser.uid)
-              });
-          }
+      try {
+        const defaultGroupConfigDoc = await getDoc(doc(db, 'app-settings', 'defaultUserGroup'));
+        if (defaultGroupConfigDoc.exists()) {
+            const { groupId } = defaultGroupConfigDoc.data();
+            if (groupId) {
+                const groupDocRef = doc(db, 'userGroups', groupId);
+                await updateDoc(groupDocRef, {
+                    memberIds: arrayUnion(authUser.uid)
+                });
+            }
+        }
+      } catch (groupError) {
+          console.warn("Could not add user to default group:", groupError);
+          // Don't block registration if this fails, just log it.
       }
 
       // 6. Sign out the user immediately so they have to log in after verification.
@@ -119,10 +124,17 @@ export default function RegisterPage() {
         errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
       } else if (error.code === 'auth/unauthorized-continue-uri' || error.code === 'auth/invalid-continue-uri') {
         errorMessage = 'Domain aplikasi belum diizinkan. Hubungi administrator untuk menambahkan domain ke daftar resmi Firebase.';
+      } else if (error.code === 'permission-denied') {
+        errorMessage = 'Izin ditolak oleh aturan keamanan Firestore. Pastikan aturan Anda sudah benar.';
       }
       
       console.error("Registration error:", error);
       
+      // If user was created in Auth but Firestore failed, delete the auth user
+      if (authUser) {
+          await authUser.delete();
+      }
+
       toast({
         title: 'Pendaftaran Gagal',
         description: errorMessage,
@@ -268,5 +280,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-    
