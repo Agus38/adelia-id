@@ -15,122 +15,80 @@ const firestoreRules = `rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Helper function to check if the user is an Admin by reading their user document.
     function isDbAdmin(uid) {
-      return get(/databases/${''}{database}/documents/users/${''}{uid}).data.role == 'Admin';
+      return get(/databases/\\${database}/documents/users/\\${uid}).data.role == 'Admin';
     }
 
-    // Rules for user profiles
     match /users/{userId} {
-      // Admin can manage any user profile.
       allow read, write: if request.auth != null && isDbAdmin(request.auth.uid);
       allow list: if request.auth != null && isDbAdmin(request.auth.uid);
-      
-      // An authenticated user can create their own document, but only with a 'Pengguna' role and 'Aktif' status.
       allow create: if request.auth.uid == userId 
                     && request.resource.data.uid == userId
                     && request.resource.data.role == 'Pengguna'
                     && request.resource.data.status == 'Aktif';
-      
-      // An authenticated user can read their own profile.
       allow read: if request.auth.uid == userId;
-
-      // An authenticated user can update their own profile,
-      // but CANNOT change their role or status.
       allow update: if request.auth.uid == userId
                     && (!('role' in request.resource.data) || request.resource.data.role == resource.data.role)
                     && (!('status' in request.resource.data) || request.resource.data.status == resource.data.status);
     }
     
-    // Rules for user groups
     match /userGroups/{groupId} {
-        // Authenticated users can read the list of groups (for access checks).
         allow read, list: if request.auth != null;
-
-        // Allow authenticated users to update memberIds (required for registration to default group).
-        allow update: if request.auth != null;
-
-        // ONLY Admin can create or delete user groups.
+        allow write: if request.auth != null; // Allow any authenticated user to write (for registration)
         allow create, delete: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
-    // Rules for daily financial reports
     match /dailyReports/{reportId} {
-      // Allow authenticated users to create a report if the userId in the report data matches their own uid.
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      // Allow users to read/update their own reports, and Admin to read/update any report.
       allow read, update: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);
-      // Only Admin can delete or list all reports.
       allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
-    // Rules for stock reports
     match /stockReports/{reportId} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      // Admin can read any report. Regular users can only read their own.
       allow read: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);
       allow update: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);
-      // Only Admin can list/delete reports
       allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
     }
     
-    // Rules for BudgetFlow feature
     match /budgetflow/{userId}/{document=**} {
-    	// Users can only access their own data within their folder.
-      // Admin can read data from any user's folder.
       allow read: if (request.auth != null && isDbAdmin(request.auth.uid)) || request.auth.uid == userId;
       allow write, delete, create: if request.auth.uid == userId;
     }
 
-    // Rules for SMW Manyar reports
     match /smwManyarReports/{reportId} {
-      // Allow users to create or update their own reports.
       allow create, update: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      
-      // Admin can read any report. Regular users can only read their own.
       allow read: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);
-      // Only Admin can list/delete reports
       allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
-    // Rules for activity logs
-    // Admin can perform any operation on the collection.
-    // This is required for the server-side batch delete flow.
     match /activityLogs/{logId} {
       allow read, write, create, update, delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
     }
     
-    // Rules for age calculation logs
     match /ageCalculations/{calculationId} {
-      // Allow anyone to create an entry (public feature)
       allow create: if true;
-      // Only Admin can read or list entries
       allow read, list, delete: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
-    // Rules for digital products synced from Digiflazz
     match /products/{productId} {
-      // Anyone can read the product list.
       allow read: if true;
       allow list: if true;
-      // ONLY Admin can write/update/delete products. This is secure.
       allow write: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
-    // Rules for general app settings
     match /app-settings/{setting} {
-      // Anyone can read app settings (e.g., menu configuration).
       allow read: if true;
-      // ONLY Admin can write/update app settings. This is secure.
       allow write: if request.auth != null && isDbAdmin(request.auth.uid);
     }
   }
 }`;
+
+export default function FirestoreRulesPage() {
   const { toast } = useToast();
   const [lastUpdated, setLastUpdated] = useState('');
 
   useEffect(() => {
-    // This runs on the client-side, ensuring the date is current for the user.
     const now = new Date();
     const formattedDate = now.toLocaleDateString('id-ID', {
         day: '2-digit',
