@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useBudgetflowStore, type Transaction } from '@/lib/budgetflow-store';
+import { useBudgetflowStore, type Transaction, type Goal, type Debt } from '@/lib/budgetflow-store';
 import type { DateRange } from 'react-day-picker';
 import { endOfDay } from 'date-fns';
 
@@ -107,21 +107,21 @@ export function FinancialChatInterface({ dateRange }: FinancialChatInterfaceProp
         date: (t.date instanceof Date ? t.date : t.date.toDate()).toISOString(),
       }));
 
-      const serializableGoals = goals.map(g => ({
-        id: g.id,
-        name: g.name,
-        targetAmount: g.targetAmount,
-        currentAmount: g.currentAmount,
-      }));
+       const serializableGoals = goals.map(g => {
+        const { createdAt, ...rest } = g;
+        return {
+            ...rest,
+            userId: undefined, // Don't send userId
+        };
+      });
       
-      const serializableDebts = debts.map(d => ({
-        id: d.id,
-        name: d.name,
-        type: d.type,
-        totalAmount: d.totalAmount,
-        paidAmount: d.paidAmount,
-      }));
-
+      const serializableDebts = debts.map(d => {
+        const { createdAt, dueDate, ...rest } = d;
+        return {
+            ...rest,
+            userId: undefined, // Don't send userId
+        };
+      });
 
       const financialData = {
           transactions: serializableTransactions,
