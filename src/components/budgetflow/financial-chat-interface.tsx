@@ -152,7 +152,7 @@ export function FinancialChatInterface({ dateRange }: FinancialChatInterfaceProp
   }
 
   return (
-    <div className="flex flex-col flex-1 bg-background rounded-2xl border shadow-neumorphic-light">
+    <div className="flex flex-col flex-1 bg-background rounded-2xl border shadow-neumorphic-light w-full">
       <header className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-3">
               <div className="relative">
