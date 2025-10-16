@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -26,8 +27,8 @@ service cloud.firestore {
       allow list: if request.auth != null && isDbAdmin(request.auth.uid);
       
       // An authenticated user can create their own document, but only with a 'Pengguna' role and 'Aktif' status.
-      // This rule validates against the incoming data's UID, which is robust against auth propagation delays.
-      allow create: if request.resource.data.uid == userId
+      allow create: if request.auth.uid == userId 
+                    && request.resource.data.uid == userId
                     && request.resource.data.role == 'Pengguna'
                     && request.resource.data.status == 'Aktif';
       
@@ -206,3 +207,5 @@ export default function FirestoreRulesPage() {
     </div>
   );
 }
+
+    
