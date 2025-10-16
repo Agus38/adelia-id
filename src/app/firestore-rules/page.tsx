@@ -22,8 +22,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if request.auth != null && isDbAdmin(request.auth.uid);
       allow list: if request.auth != null && isDbAdmin(request.auth.uid);
-      allow create: if request.auth.uid == userId 
-                    && request.resource.data.uid == userId
+      allow create: if request.resource.data.uid == userId
                     && request.resource.data.role == "Pengguna"
                     && request.resource.data.status == "Aktif";
       allow read: if request.auth.uid == userId;
@@ -34,7 +33,7 @@ service cloud.firestore {
     
     match /userGroups/{groupId} {
         allow read, list: if request.auth != null;
-        allow write: if request.auth != null; // Allow any authenticated user to write (for registration)
+        allow write: if request.auth != null;
         allow create, delete: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
@@ -127,7 +126,7 @@ export default function FirestoreRulesPage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>PERINGATAN KEAMANAN: Aturan Diperbarui!</AlertTitle>
           <AlertDescription>
-            Aturan keamanan telah diperbarui secara signifikan untuk mengizinkan pengguna baru mendaftar ke grup default. Anda <strong>WAJIB</strong> menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan fungsionalitas registrasi berjalan lancar.
+            Aturan keamanan telah diperbarui untuk memperbaiki error "permission denied" saat registrasi. Anda <strong>WAJIB</strong> menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan fungsionalitas registrasi berjalan lancar.
           </AlertDescription>
        </Alert>
        
