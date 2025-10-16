@@ -195,6 +195,10 @@ export default function BudgetFlowPage() {
             </Tooltip>
           </TooltipProvider>
            <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0 gap-0">
+             <DialogHeader className="sr-only">
+               <DialogTitle>Konsultan Keuangan AI</DialogTitle>
+               <DialogDescription>Antarmuka chat untuk berinteraksi dengan asisten keuangan AI.</DialogDescription>
+             </DialogHeader>
              <FinancialChatInterface dateRange={date} />
            </DialogContent>
         </Dialog>
