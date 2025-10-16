@@ -17,7 +17,7 @@ service cloud.firestore {
   
     // Helper function to check if the user is an Admin by reading their user document.
     function isDbAdmin(uid) {
-      return get(/databases/\\$(database)/documents/users/\\$(uid)).data.role == 'Admin';
+      return get(/databases/${''}{database}/documents/users/${''}{uid}).data.role == 'Admin';
     }
 
     // Rules for user profiles
@@ -125,8 +125,7 @@ service cloud.firestore {
       allow write: if request.auth != null && isDbAdmin(request.auth.uid);
     }
   }
-}
-`;
+}`;
   const { toast } = useToast();
   const [lastUpdated, setLastUpdated] = useState('');
 
