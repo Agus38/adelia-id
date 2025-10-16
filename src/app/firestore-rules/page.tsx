@@ -10,13 +10,13 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info, AlertTriangle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
-const firestoreRules = `rules_version = '2';
+const firestoreRules = `rules_version = "2";
 
 service cloud.firestore {
   match /databases/{database}/documents {
   
     function isDbAdmin(uid) {
-      return get(/databases/\\${database}/documents/users/\\${uid}).data.role == 'Admin';
+      return get(/databases/{database}/documents/users/{uid}).data.role == "Admin";
     }
 
     match /users/{userId} {
@@ -24,12 +24,12 @@ service cloud.firestore {
       allow list: if request.auth != null && isDbAdmin(request.auth.uid);
       allow create: if request.auth.uid == userId 
                     && request.resource.data.uid == userId
-                    && request.resource.data.role == 'Pengguna'
-                    && request.resource.data.status == 'Aktif';
+                    && request.resource.data.role == "Pengguna"
+                    && request.resource.data.status == "Aktif";
       allow read: if request.auth.uid == userId;
       allow update: if request.auth.uid == userId
-                    && (!('role' in request.resource.data) || request.resource.data.role == resource.data.role)
-                    && (!('status' in request.resource.data) || request.resource.data.status == resource.data.status);
+                    && (!("role" in request.resource.data) || request.resource.data.role == resource.data.role)
+                    && (!("status" in request.resource.data) || request.resource.data.status == resource.data.status);
     }
     
     match /userGroups/{groupId} {
