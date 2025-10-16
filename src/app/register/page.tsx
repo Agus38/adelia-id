@@ -121,6 +121,8 @@ export default function RegisterPage() {
       let errorMessage = 'Terjadi kesalahan saat pendaftaran. Silakan coba lagi.';
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Kata sandi terlalu lemah. Harap gunakan minimal 6 karakter.';
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
       } else if (error.code === 'auth/unauthorized-continue-uri' || error.code === 'auth/invalid-continue-uri') {
@@ -274,3 +276,5 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+    
