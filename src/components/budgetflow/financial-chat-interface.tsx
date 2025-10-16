@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useBudgetflowStore, type Transaction, type Goal, type Debt } from '@/lib/budgetflow-store';
+import { useBudgetflowStore } from '@/lib/budgetflow-store';
 import type { DateRange } from 'react-day-picker';
 import { endOfDay } from 'date-fns';
 
@@ -145,14 +145,14 @@ export function FinancialChatInterface({ dateRange }: FinancialChatInterfaceProp
 
    if (loadingData) {
       return (
-      <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed">
+      <div className="flex flex-1 items-center justify-center rounded-lg">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
       );
   }
 
   return (
-    <div className="flex flex-col flex-1 bg-background rounded-2xl border shadow-neumorphic-light w-full">
+    <div className="flex flex-col flex-1 bg-background rounded-lg w-full">
       <header className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-3">
               <div className="relative">

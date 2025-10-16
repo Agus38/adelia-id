@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, BarChart2, Table, PiggyBank, Scale, Landmark, Trash2, Bot } from 'lucide-react';
+import { Loader2, TrendingUp, BarChart2, Table, PiggyBank, Scale, Trash2, Bot } from 'lucide-react';
 import { usePageAccess } from "@/hooks/use-page-access";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BudgetFlowDashboard } from '@/components/budgetflow/dashboard';
@@ -24,11 +24,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { resetBudgetflowData } from '@/lib/budgetflow-store';
 import { FinancialChatInterface } from '@/components/budgetflow/financial-chat-interface';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 function ResetDataDialog() {
@@ -150,12 +159,11 @@ export default function BudgetFlowPage() {
         </div>
 
         <Tabs defaultValue="dashboard" className="flex flex-col flex-1">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
             <TabsTrigger value="dashboard"><BarChart2 className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Dasbor</span></TabsTrigger>
             <TabsTrigger value="transactions"><Table className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Transaksi</span></TabsTrigger>
             <TabsTrigger value="savings"><PiggyBank className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Tabungan</span></TabsTrigger>
             <TabsTrigger value="debts"><Scale className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Hutang</span></TabsTrigger>
-            <TabsTrigger value="ai-consultant" className="sm:col-span-2 md:col-span-1"><Bot className="w-4 h-4 md:mr-2"/><span className="hidden md:inline">Konsultan AI</span></TabsTrigger>
           </TabsList>
           
           <div className="mt-6 flex-1 flex flex-col">
@@ -171,11 +179,25 @@ export default function BudgetFlowPage() {
              <TabsContent value="debts">
                 <DebtsView />
             </TabsContent>
-            <TabsContent value="ai-consultant" className="flex-1 flex flex-col">
-                <FinancialChatInterface dateRange={date} />
-            </TabsContent>
           </div>
         </Tabs>
+        <Dialog>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DialogTrigger asChild>
+                   <Button size="icon" className="fixed bottom-20 right-6 z-50 md:bottom-8 md:right-8 h-14 w-14 rounded-full shadow-lg">
+                      <Bot className="h-7 w-7"/>
+                   </Button>
+                </DialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent><p>Konsultan AI</p></TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+           <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0 gap-0">
+             <FinancialChatInterface dateRange={date} />
+           </DialogContent>
+        </Dialog>
     </div>
   );
 }
