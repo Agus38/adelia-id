@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -74,7 +73,7 @@ const DynamicWidthInput = React.memo(function DynamicWidthInput({
 
 export default function StokProdukPage() {
   const { hasAccess, isLoading: isLoadingAccess } = usePageAccess('stok-produk');
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [date, setDate] = React.useState<Date | undefined>(undefined);
   const [shift, setShift] = React.useState<'pagi' | 'sore'>('pagi');
   const [stockData, setStockData] = React.useState<StockItem[]>(initialStockData);
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
@@ -86,6 +85,9 @@ export default function StokProdukPage() {
   const { UnsavedChangesDialog } = useUnsavedChangesWarning(isDirty);
 
   React.useEffect(() => {
+    // To avoid hydration mismatch, set the initial date on the client side.
+    setDate(new Date());
+
     const unsubscribe = auth.onAuthStateChanged((user) => {
         setCurrentUser(user);
         setIsLoadingUser(false);
@@ -96,7 +98,7 @@ export default function StokProdukPage() {
   const resetForm = React.useCallback(() => {
     setStockData(initialStockData.map(item => ({...item, morning: '', afternoon: '', order: ''})));
     setIsDirty(false);
-  }, []);
+  }, [setIsDirty]);
 
   const populateForm = React.useCallback((report: { stockData: StockItem[] }) => {
      // Create a map of the new stock data for quick lookup
@@ -108,7 +110,7 @@ export default function StokProdukPage() {
     });
     setStockData(updatedStockData);
     setIsDirty(false);
-  }, []);
+  }, [setIsDirty]);
 
   React.useEffect(() => {
     if (!date || !currentUser) return;
@@ -145,7 +147,7 @@ export default function StokProdukPage() {
         item.id === id ? { ...item, [field]: value } : item
       )
     );
-  }, []);
+  }, [setIsDirty]);
 
 
   const handleClear = () => {
@@ -363,5 +365,3 @@ export default function StokProdukPage() {
     </div>
   );
 }
-
-    

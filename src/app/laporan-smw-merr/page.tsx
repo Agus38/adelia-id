@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -58,7 +57,7 @@ type DeletionInfo = {
 
 export default function DailyReportPage() {
   const { hasAccess, isLoading: isLoadingAccess } = usePageAccess('laporan-smw-merr');
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [date, setDate] = React.useState<Date | undefined>(undefined);
   const [shift, setShift] = React.useState<'pagi' | 'sore'>('pagi');
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -99,6 +98,9 @@ export default function DailyReportPage() {
   const [itemToDelete, setItemToDelete] = React.useState<DeletionInfo>(null);
 
   React.useEffect(() => {
+    // To avoid hydration mismatch, set the initial date on the client side.
+    setDate(new Date());
+
     const unsubscribe = auth.onAuthStateChanged((user) => {
         setCurrentUser(user);
         setIsLoading(false);
@@ -642,4 +644,3 @@ ${pemasukanText}
     </>
   );
 }
-

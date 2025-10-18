@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -100,9 +99,8 @@ export default function LoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       if (userCredential.user && !userCredential.user.emailVerified) {
-        const appUrl = process.env.NEXT_PUBLIC_URL || window.location.origin;
         const actionCodeSettings = {
-            url: `${appUrl}/login`,
+            url: `${window.location.origin}/login`,
             handleCodeInApp: true,
         };
         await sendEmailVerification(userCredential.user, actionCodeSettings);

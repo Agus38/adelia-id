@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -65,8 +64,16 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       authUser = userCredential.user;
       
+      const actionCodeSettings = {
+          url: `${window.location.origin}/login`,
+          handleCodeInApp: true,
+      };
+
       // 2. Send email verification
-      await sendEmailVerification(authUser);
+      await sendEmailVerification(authUser, actionCodeSettings);
+      
+      // Store email in local storage to retrieve it on the login page after verification
+      window.localStorage.setItem('emailForSignIn', email);
       
       // 3. Update basic profile in Firebase Authentication.
       await updateProfile(authUser, {
