@@ -9,8 +9,9 @@ import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
+import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRegisterPageConfig } from '@/lib/menu-store';
@@ -36,7 +37,6 @@ export default function RegisterPage() {
       router.push('/');
     }
   }, [user, userLoading, router]);
-
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -73,7 +73,7 @@ export default function RegisterPage() {
       
       // Store email in local storage to retrieve it on the login page after verification
       window.localStorage.setItem('emailForSignIn', email);
-      
+
       // 3. Update basic profile in Firebase Authentication.
       await updateProfile(authUser, {
         displayName: name,
@@ -81,7 +81,6 @@ export default function RegisterPage() {
       });
       
       // 4. Sign out the user immediately so they have to log in after verification.
-      // This is crucial to ensure they don't have a session before verifying.
       await signOut(auth);
       
       // 5. Show success toast and redirect to login page.
