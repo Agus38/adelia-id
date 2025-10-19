@@ -19,16 +19,9 @@ service cloud.firestore {
     }
     
     match /users/{userId} {
-      allow read, write: if request.auth != null && isDbAdmin(request.auth.uid);
-      allow list: if request.auth != null && isDbAdmin(request.auth.uid);
-      
-      // Allow user to create their own document (only during first login)
+      allow list, read, update: if request.auth != null && (isDbAdmin(request.auth.uid) || request.auth.uid == userId);
       allow create: if request.auth.uid == userId;
-
-      allow read: if request.auth.uid == userId;
-      allow update: if request.auth.uid == userId
-                    && (!("role" in request.resource.data) || request.resource.data.role == resource.data.role)
-                    && (!("status" in request.resource.data) || request.resource.data.status == resource.data.status);
+      allow delete: if request.auth != null && isDbAdmin(request.auth.uid);
     }
     
     match /userGroups/{groupId} {
@@ -39,8 +32,7 @@ service cloud.firestore {
     
     match /dailyReports/{reportId} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read: if request.auth != null && (isDbAdmin(request.auth.uid) || reportId.split("-")[0] == request.auth.uid);
-      allow update: if request.auth != null && (isDbAdmin(request.auth.uid) || reportId.split("-")[0] == request.auth.uid);
+      allow read, update: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && reportId.split("-")[0] == request.auth.uid);
       allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
     }
     

@@ -11,7 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword, signOut, sendEmailVerification, isSignInWithEmailLink, signInWithEmailLink } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUserStore } from '@/lib/user-store';
 
@@ -92,20 +92,6 @@ export function LoginForm() {
             avatarUrl: authUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.displayName || 'A')}&background=random`,
             createdAt: serverTimestamp(),
           });
-
-          // Also try to add to default user group
-          try {
-            const defaultGroupConfigDoc = await getDoc(doc(db, 'app-settings', 'defaultUserGroup'));
-            if (defaultGroupConfigDoc.exists()) {
-                const { groupId } = defaultGroupConfigDoc.data();
-                if (groupId) {
-                    const groupDocRef = doc(db, 'userGroups', groupId);
-                    await updateDoc(groupDocRef, { memberIds: arrayUnion(authUser.uid) });
-                }
-            }
-          } catch (groupError) {
-              console.warn("Could not add user to default group on first login:", groupError);
-          }
       }
       return await getDoc(userDocRef); // Return the document snapshot
   }
