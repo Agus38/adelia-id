@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -9,147 +10,78 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info, AlertTriangle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
-const firestoreRules = 'rules_version = "2";' +
-  '\n' +
-  'service cloud.firestore {' +
-  '\n' +
-  '  match /databases/{database}/documents {' +
-  '\n' +
-  '  ' +
-  '\n' +
-  '    function isDbAdmin(uid) {' +
-  '\n' +
-  '      return get(/databases/$(database)/documents/users/' + "$(uid)" + ').data.role == "Admin";' +
-  '\n' +
-  '    }' +
-  '\n' +
-  '    ' +
-  '\n' +
-  '    match /users/{userId} {' +
-  '\n' +
-  '      allow read, write: if request.auth != null && isDbAdmin(request.auth.uid);' +
-  '\n' +
-  '      allow list: if request.auth != null && isDbAdmin(request.auth.uid);' +
-  '\n' +
-  '      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid' +
-  '\n' +
-  '                    && request.resource.data.role == "Pengguna"' +
-  '\n' +
-  '                    && request.resource.data.status == "Aktif";' +
-  '\n' +
-  '      allow read: if request.auth.uid == userId;' +
-  '\n' +
-  '      allow update: if request.auth.uid == userId' +
-  '\n' +
-  '                    && (!("role" in request.resource.data) || request.resource.data.role == resource.data.role)' +
-  '\n' +
-  '                    && (!("status" in request.resource.data) || request.resource.data.status == resource.data.status);' +
-  '\n' +
-  '    }' +
-  '\n' +
-  '    ' +
-  '\n' +
-  '    match /userGroups/{groupId} {' +
-  '\n' +
-  '        allow read, list: if request.auth != null;' +
-  '\n' +
-  '        allow write: if request.auth != null;' +
-  '\n' +
-  '        allow create, delete: if request.auth != null && isDbAdmin(request.auth.uid);' +
-  '\n' +
-  '    }' +
-  '\n' +
-  '    ' +
-  '\n' +
-  '    match /dailyReports/{reportId} {' +
-  '\n' +
-  '      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;' +
-  '\n' +
-  '      allow read: if request.auth != null && (isDbAdmin(request.auth.uid) || reportId.split("-")[0] == request.auth.uid);' +
-  '\n' +
-  '      allow update: if request.auth != null && (isDbAdmin(request.auth.uid) || reportId.split("-")[0] == request.auth.uid);' +
-  '\n' +
-  '      allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);' +
-  '\n' +
-  '    }' +
-  '\n' +
-  '    ' +
-  '\n' +
-  '    match /stockReports/{reportId} {' +
-  '\n' +
-  '      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;' +
-  '\n' +
-  '      allow read: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);' +
-  '\n' +
-  '      allow update: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);' +
-  '\n' +
-  '      allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);' +
-  '\n' +
-  '    }' +
-  '\n' +
-  '    ' +
-  '\n' +
-  '    match /budgetflow/{userId}/{document=**} {' +
-  '\n' +
-  '      allow read, write, delete, create: if request.auth != null && (isDbAdmin(request.auth.uid) || request.auth.uid == userId);' +
-  '\n' +
-  '    }' +
-  '\n' +
-  '    ' +
-  '\n' +
-  '    match /smwManyarReports/{reportId} {' +
-  '\n' +
-  '      allow create, update: if request.auth != null && request.resource.data.userId == request.auth.uid;' +
-  '\n' +
-  '      allow read: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);' +
-  '\n' +
-  '      allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);' +
-  '\n' +
-  '    }' +
-  '\n' +
-  '    ' +
-  '\n' +
-  '    match /activityLogs/{logId} {' +
-  '\n' +
-  '      allow read, write, create, update, delete, list: if request.auth != null && isDbAdmin(request.auth.uid);' +
-  '\n' +
-  '    }' +
-  '\n' +
-  '    ' +
-  '\n' +
-  '    match /ageCalculations/{calculationId} {' +
-  '\n' +
-  '      allow create: if true;' +
-  '\n' +
-  '      allow read, list, delete: if request.auth != null && isDbAdmin(request.auth.uid);' +
-  '\n' +
-  '    }' +
-  '\n' +
-  '    ' +
-  '\n' +
-  '    match /products/{productId} {' +
-  '\n' +
-  '      allow read: if true;' +
-  '\n' +
-  '      allow list: if true;' +
-  '\n' +
-  '      allow write: if request.auth != null && isDbAdmin(request.auth.uid);' +
-  '\n' +
-  '    }' +
-  '\n' +
-  '    ' +
-  '\n' +
-  '    match /app-settings/{setting} {' +
-  '\n' +
-  '      allow read: if true;' +
-  '\n' +
-  '      allow write: if request.auth != null && isDbAdmin(request.auth.uid);' +
-  '\n' +
-  '    }' +
-  '\n' +
-  '  }' +
-  '\n' +
-  '}';
+const firestoreRules = `rules_version = "2";
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    function isDbAdmin(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role == "Admin";
+    }
+    
+    match /users/{userId} {
+      allow read, write: if request.auth != null && isDbAdmin(request.auth.uid);
+      allow list: if request.auth != null && isDbAdmin(request.auth.uid);
+      
+      // Allow user to create their own document (only during first login)
+      allow create: if request.auth.uid == userId;
+
+      allow read: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId
+                    && (!("role" in request.resource.data) || request.resource.data.role == resource.data.role)
+                    && (!("status" in request.resource.data) || request.resource.data.status == resource.data.status);
+    }
+    
+    match /userGroups/{groupId} {
+        allow read, list: if request.auth != null;
+        allow write: if request.auth != null;
+        allow create, delete: if request.auth != null && isDbAdmin(request.auth.uid);
+    }
+    
+    match /dailyReports/{reportId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && (isDbAdmin(request.auth.uid) || reportId.split("-")[0] == request.auth.uid);
+      allow update: if request.auth != null && (isDbAdmin(request.auth.uid) || reportId.split("-")[0] == request.auth.uid);
+      allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
+    }
+    
+    match /stockReports/{reportId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow update: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
+    }
+    
+    match /budgetflow/{userId}/{document=**} {
+      allow read, write, delete, create: if request.auth != null && (isDbAdmin(request.auth.uid) || request.auth.uid == userId);
+    }
+    
+    match /smwManyarReports/{reportId} {
+      allow create, update: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
+    }
+    
+    match /activityLogs/{logId} {
+      allow read, write, create, update, delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
+    }
+    
+    match /ageCalculations/{calculationId} {
+      allow create: if true;
+      allow read, list, delete: if request.auth != null && isDbAdmin(request.auth.uid);
+    }
+    
+    match /products/{productId} {
+      allow read: if true;
+      allow list: if true;
+      allow write: if request.auth != null && isDbAdmin(request.auth.uid);
+    }
+    
+    match /app-settings/{setting} {
+      allow read: if true;
+      allow write: if request.auth != null && isDbAdmin(request.auth.uid);
+    }
+  }
+}`;
 
 export default function FirestoreRulesPage() {
   const { toast } = useToast();

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,8 @@ import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
-import { setDoc, doc, serverTimestamp, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { auth } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRegisterPageConfig } from '@/lib/menu-store';
@@ -58,11 +58,10 @@ export default function RegisterPage() {
     }
     setIsLoading(true);
 
-    let authUser;
     try {
       // 1. Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      authUser = userCredential.user;
+      const authUser = userCredential.user;
       
       const actionCodeSettings = {
           url: `${window.location.origin}/login`,
@@ -81,36 +80,11 @@ export default function RegisterPage() {
         photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
       });
       
-      // 4. Create user document in Firestore.
-      const userDocRef = doc(db, "users", authUser.uid);
-      await setDoc(userDocRef, {
-        uid: authUser.uid,
-        email: authUser.email,
-        fullName: name,
-        role: 'Pengguna',
-        status: 'Aktif',
-        avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
-        createdAt: serverTimestamp(),
-      });
+      // 4. Sign out the user immediately so they have to log in after verification.
+      // This is crucial to ensure they don't have a session before verifying.
+      await signOut(auth);
       
-      // 5. Add user to the default group (if configured)
-      try {
-        const defaultGroupConfigDoc = await getDoc(doc(db, 'app-settings', 'defaultUserGroup'));
-        if (defaultGroupConfigDoc.exists()) {
-            const { groupId } = defaultGroupConfigDoc.data();
-            if (groupId) {
-                const groupDocRef = doc(db, 'userGroups', groupId);
-                await updateDoc(groupDocRef, {
-                    memberIds: arrayUnion(authUser.uid)
-                });
-            }
-        }
-      } catch (groupError) {
-          console.warn("Could not add user to default group:", groupError);
-          // Don't block registration if this fails, just log it.
-      }
-      
-      // 6. Show success toast and redirect to login page.
+      // 5. Show success toast and redirect to login page.
       toast({
         title: 'Pendaftaran Berhasil!',
         description: `Silakan periksa email Anda untuk melakukan verifikasi sebelum masuk.`,
@@ -134,11 +108,6 @@ export default function RegisterPage() {
       
       console.error("Registration error:", error);
       
-      // If user was created in Auth but Firestore failed, delete the auth user
-      if (authUser) {
-          await authUser.delete().catch(delErr => console.error("Failed to delete orphaned auth user:", delErr));
-      }
-
       toast({
         title: 'Pendaftaran Gagal',
         description: errorMessage,

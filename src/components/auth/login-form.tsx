@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { signInWithEmailAndPassword, signOut, sendEmailVerification, isSignInWithEmailLink, signInWithEmailLink } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc, arrayUnion } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useUserStore } from '@/lib/user-store';
 
@@ -42,22 +43,17 @@ export function LoginForm() {
                     await signInWithEmailLink(auth, emailFromStorage, window.location.href);
                     const userCredential = auth.currentUser;
                     if (userCredential) {
-                        const userDocRef = doc(db, 'users', userCredential.uid);
-                        const userDoc = await getDoc(userDocRef);
-                        if (userDoc.exists()) {
-                            const userData = userDoc.data();
-                            const fullUserProfile = { id: userDoc.id, uid: userCredential.uid, ...userData };
-                            setUserProfile(fullUserProfile as any);
-                            toast({ title: 'Login Berhasil!', description: `Selamat datang, ${userData.fullName}!` });
-                            const redirectPath = searchParams.get('redirect') || (userData.role === 'Admin' ? '/admin' : '/');
-                            router.push(redirectPath);
-                        } else {
-                           throw new Error("User document not found in Firestore.");
-                        }
+                        // User is signed in. Now, ensure their Firestore doc exists.
+                        await ensureUserDocument(userCredential);
+                        toast({ title: 'Verifikasi Berhasil!', description: 'Email Anda telah diverifikasi. Silakan masuk.' });
                     } else {
-                        throw new Error("Failed to get current user after email link sign in.");
+                        throw new Error("Gagal mendapatkan info pengguna setelah verifikasi.");
                     }
                     window.localStorage.removeItem('emailForSignIn');
+                    // Sign out immediately, force user to login manually.
+                    await signOut(auth);
+                    // Redirect to login page without verification params.
+                    router.push('/login');
                 } catch (linkError) {
                     setError("Tautan verifikasi tidak valid atau telah kedaluwarsa.");
                     if(auth.currentUser) await signOut(auth);
@@ -71,7 +67,7 @@ export function LoginForm() {
     
     handleVerification();
 
-  }, [router, searchParams, setUserProfile, toast]);
+  }, [router]);
 
   useEffect(() => {
     if (!userLoading && user) {
@@ -80,6 +76,39 @@ export function LoginForm() {
     }
   }, [user, userLoading, router, searchParams]);
 
+  // Function to create user document if it doesn't exist (first login after registration)
+  const ensureUserDocument = async (authUser: import('firebase/auth').User) => {
+      const userDocRef = doc(db, "users", authUser.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+          // Document doesn't exist, so this is the first login. Create it.
+          await setDoc(userDocRef, {
+            uid: authUser.uid,
+            email: authUser.email,
+            fullName: authUser.displayName,
+            role: 'Pengguna', // Default role
+            status: 'Aktif', // Default status
+            avatarUrl: authUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.displayName || 'A')}&background=random`,
+            createdAt: serverTimestamp(),
+          });
+
+          // Also try to add to default user group
+          try {
+            const defaultGroupConfigDoc = await getDoc(doc(db, 'app-settings', 'defaultUserGroup'));
+            if (defaultGroupConfigDoc.exists()) {
+                const { groupId } = defaultGroupConfigDoc.data();
+                if (groupId) {
+                    const groupDocRef = doc(db, 'userGroups', groupId);
+                    await updateDoc(groupDocRef, { memberIds: arrayUnion(authUser.uid) });
+                }
+            }
+          } catch (groupError) {
+              console.warn("Could not add user to default group on first login:", groupError);
+          }
+      }
+      return await getDoc(userDocRef); // Return the document snapshot
+  }
 
   const handleResendVerification = async () => {
     setIsResending(true);
@@ -144,18 +173,22 @@ export function LoginForm() {
     const authUser = userCredential.user;
     
     try {
-      const userDocRef = doc(db, 'users', authUser.uid);
-      const userDoc = await getDoc(userDocRef);
+      // For Admin users, we bypass email verification for convenience.
+      const initialCheckDoc = await getDoc(doc(db, 'users', authUser.uid));
+      const isPotentiallyAdmin = initialCheckDoc.exists() && initialCheckDoc.data().role === 'Admin';
+      
+      if (!authUser.emailVerified && !isPotentiallyAdmin) {
+          await signOut(auth);
+          setError('Email Anda belum diverifikasi. Silakan periksa kotak masuk Anda atau kirim ulang email verifikasi.');
+          setIsLoading(false);
+          return;
+      }
+      
+      // Ensure the user document exists, creating it on first login if necessary.
+      const userDoc = await ensureUserDocument(authUser);
 
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        
-        if (!authUser.emailVerified && userData.role !== 'Admin') {
-            await signOut(auth);
-            setError('Email Anda belum diverifikasi. Silakan periksa kotak masuk Anda atau kirim ulang email verifikasi.');
-            setIsLoading(false);
-            return;
-        }
 
         if (userData.status === 'Diblokir') {
           await signOut(auth);
@@ -181,8 +214,9 @@ export function LoginForm() {
         router.push(redirectPath);
 
       } else {
+        // This case should theoretically not be reached because ensureUserDocument creates it.
         await signOut(auth);
-        setError('Gagal memverifikasi data pengguna. Akun mungkin tidak terdaftar dengan benar. Hubungi administrator.');
+        setError('Gagal memverifikasi data pengguna. Hubungi administrator.');
         setIsLoading(false);
       }
     } catch (firestoreError: any) {
