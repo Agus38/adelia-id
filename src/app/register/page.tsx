@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -109,11 +109,8 @@ export default function RegisterPage() {
           console.warn("Could not add user to default group:", groupError);
           // Don't block registration if this fails, just log it.
       }
-
-      // 6. Sign out the user immediately so they have to log in after verification.
-      await signOut(auth);
       
-      // 7. Show success toast and redirect to login page.
+      // 6. Show success toast and redirect to login page.
       toast({
         title: 'Pendaftaran Berhasil!',
         description: `Silakan periksa email Anda untuk melakukan verifikasi sebelum masuk.`,
@@ -139,7 +136,7 @@ export default function RegisterPage() {
       
       // If user was created in Auth but Firestore failed, delete the auth user
       if (authUser) {
-          await authUser.delete();
+          await authUser.delete().catch(delErr => console.error("Failed to delete orphaned auth user:", delErr));
       }
 
       toast({

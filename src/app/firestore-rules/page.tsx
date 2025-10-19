@@ -22,7 +22,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if request.auth != null && isDbAdmin(request.auth.uid);
       allow list: if request.auth != null && isDbAdmin(request.auth.uid);
-      allow create: if request.resource.data.uid == userId
+      allow create: if request.auth.uid == userId
+                    && request.resource.data.uid == userId
                     && request.resource.data.role == "Pengguna"
                     && request.resource.data.status == "Aktif";
       allow read: if request.auth.uid == userId;
