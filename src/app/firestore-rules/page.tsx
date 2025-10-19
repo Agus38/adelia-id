@@ -32,7 +32,8 @@ service cloud.firestore {
     
     match /dailyReports/{reportId} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read, update: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && reportId.split("-")[0] == request.auth.uid);
+      allow read: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && reportId.split("-")[0] == request.auth.uid);
+      allow update: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && reportId.split("-")[0] == request.auth.uid);
       allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
     }
     

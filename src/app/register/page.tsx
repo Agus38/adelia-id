@@ -81,9 +81,11 @@ export default function RegisterPage() {
       });
       
       // 4. Sign out the user immediately so they have to log in after verification.
+      // This is crucial to ensure they don't have a lingering unverified session.
       await signOut(auth);
       
       // 5. Show success toast and redirect to login page.
+      // The Firestore document will be created upon first successful login in login-form.tsx.
       toast({
         title: 'Pendaftaran Berhasil!',
         description: `Silakan periksa email Anda untuk melakukan verifikasi sebelum masuk.`,
