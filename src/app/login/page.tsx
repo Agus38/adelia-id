@@ -17,6 +17,8 @@ import { useUserStore } from '@/lib/user-store';
 import { useLoginPageConfig } from '@/lib/menu-store';
 import { Skeleton } from '@/components/ui/skeleton';
 
+export const dynamic = 'force-dynamic';
+
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
