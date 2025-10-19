@@ -16,7 +16,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
   
     function isDbAdmin(uid) {
-      return get(/databases/{database}/documents/users/{uid}).data.role == "Admin";
+      return get(/databases/{database}/documents/users/${uid}).data.role == "Admin";
     }
 
     match /users/{userId} {
@@ -40,7 +40,8 @@ service cloud.firestore {
 
     match /dailyReports/{reportId} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read, update: if (request.auth != null && isDbAdmin(request.auth.uid)) || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow read: if request.auth != null && (isDbAdmin(request.auth.uid) || reportId.split('-')[0] == request.auth.uid);
+      allow update: if request.auth != null && (isDbAdmin(request.auth.uid) || resource.data.userId == request.auth.uid);
       allow delete, list: if request.auth != null && isDbAdmin(request.auth.uid);
     }
 
@@ -52,8 +53,7 @@ service cloud.firestore {
     }
     
     match /budgetflow/{userId}/{document=**} {
-      allow read: if (request.auth != null && isDbAdmin(request.auth.uid)) || request.auth.uid == userId;
-      allow write, delete, create: if request.auth.uid == userId;
+      allow read, write, delete, create: if request.auth != null && (isDbAdmin(request.auth.uid) || request.auth.uid == userId);
     }
 
     match /smwManyarReports/{reportId} {
@@ -165,3 +165,4 @@ export default function FirestoreRulesPage() {
     </div>
   );
 }
+
