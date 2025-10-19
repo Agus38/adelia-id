@@ -14,7 +14,7 @@ git commit -m "Initial commit"
   `.trim();
 
   const gitRemoteCommands = `
-git remote add origin https://github.com/NAMA_PENGGUNA/NAMA_REPO.git
+git remote add origin https://github.com/Agus38/adelia-id.git
 git branch -M main
 git push -u origin main
   `.trim();
@@ -62,7 +62,7 @@ git push -u origin main
             <div className="space-y-2">
                 <h3 className="font-semibold">Langkah 3: Hubungkan dan Unggah Proyek</h3>
                 <p className="text-sm text-muted-foreground">
-                    Salin URL repositori yang Anda buat di Langkah 1. Ganti `NAMA_PENGGUNA` dan `NAMA_REPO` pada perintah di bawah dengan informasi Anda, lalu jalankan.
+                    Perintah di bawah ini sudah berisi URL repositori yang Anda berikan. Salin dan jalankan perintah ini.
                 </p>
                 <CodeBlock code={gitRemoteCommands} />
             </div>
