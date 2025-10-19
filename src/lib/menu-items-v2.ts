@@ -395,6 +395,15 @@ export const defaultAdminMenuItems: MenuItem[] = [
   },
   // --- System & Advanced ---
   {
+    id: 'github-sync',
+    title: 'Sinkronisasi GitHub',
+    href: '/admin/github-sync',
+    icon: Github,
+    description: 'Panduan untuk mengunggah proyek ke GitHub.',
+    access: 'admin',
+    requiresAuth: true,
+  },
+  {
     id: 'routes-list',
     title: 'Daftar Rute',
     href: '/admin/routes',

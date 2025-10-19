@@ -24,6 +24,7 @@ import {
   TrendingUp,
   TrendingDown,
   Trash2,
+  Github,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -204,6 +205,12 @@ icon: Users2,
     href: "/admin/routes",
     icon: LinkIcon,
     description: "Lihat semua rute halaman aplikasi.",
+  },
+  {
+    title: "Sinkronisasi GitHub",
+    href: "/admin/github-sync",
+    icon: Github,
+    description: "Panduan untuk mengunggah proyek ke GitHub.",
   },
   {
     title: "Pengaturan 'Tentang'",
