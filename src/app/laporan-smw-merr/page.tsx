@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -277,7 +278,7 @@ export default function DailyReportPage() {
         
         toast({
           title: 'Laporan Disimpan!',
-          description: 'Laporan keuangan harian telah berhasil disimpan di database.',
+          description: 'Laporan keuangan harian telah berhasil disimpan.',
         });
         setIsDirty(false);
         setIsExistingReport(true); // After saving, it becomes an existing report
@@ -644,3 +645,4 @@ ${pemasukanText}
     </>
   );
 }
+
