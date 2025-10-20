@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Bar, BarChart, Pie, PieChart, Cell } from 'recharts';
+import { Bar, BarChart, Pie, PieChart, Cell, XAxis } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
