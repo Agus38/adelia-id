@@ -205,7 +205,9 @@ export function BudgetFlowManagement() {
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarImage src={row.original.avatarUrl} alt={row.original.fullName} />
-            <AvatarFallback>{row.original.fullName.charAt(0)}</AvatarFallback>
+            <AvatarFallback>
+              {row.original.fullName ? row.original.fullName.charAt(0) : row.original.email.charAt(0).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
           <div>
             <div className="font-medium">{row.original.fullName}</div>
