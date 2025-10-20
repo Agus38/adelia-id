@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth, db } from './firebase';
 import type { UserProfile } from '@/app/main-layout';
-import { doc, getDoc, onSnapshot, collection, query } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection, query, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
 interface UserState {
@@ -31,18 +31,33 @@ export const useUserStore = create<UserState>((set) => ({
       if (authUser) {
         const userDocRef = doc(db, 'users', authUser.uid);
         
-        // We use getDoc here initially to quickly decide if a user is an admin
-        // This helps solve race conditions with email verification
-        const initialUserDoc = await getDoc(userDocRef);
+        // Use a one-time getDoc to check for existence and handle creation if needed.
+        // This is crucial for the first login after registration.
+        try {
+            const initialDoc = await getDoc(userDocRef);
 
-        // Immediately handle unverified users who are not admins
-        if (!authUser.emailVerified && initialUserDoc.exists() && initialUserDoc.data().role !== 'Admin') {
-          // Don't sign out here, as the login page logic handles it.
-          // Just ensure the app state treats them as logged out.
-          set({ user: null, loading: false });
-          return;
+            if (!initialDoc.exists()) {
+                // User is authenticated but has no document. This is the first login.
+                // Create the user document now.
+                const newUserProfile = {
+                    uid: authUser.uid,
+                    email: authUser.email,
+                    fullName: authUser.displayName,
+                    role: 'Pengguna', // Default role
+                    status: 'Aktif', // Default status
+                    avatarUrl: authUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.displayName || 'A')}&background=random`,
+                    createdAt: serverTimestamp(),
+                };
+                await setDoc(userDocRef, newUserProfile);
+            }
+        } catch (error) {
+             console.error("Error ensuring user document exists:", error);
+             signOut(auth); // Sign out if we can't even check/create the doc.
+             set({ user: null, loading: false });
+             return;
         }
 
+        // Now that we're sure the document exists, set up the real-time listener.
         firestoreUnsubscribe = onSnapshot(userDocRef, (userDoc) => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -67,15 +82,14 @@ export const useUserStore = create<UserState>((set) => ({
             };
             set({ user: fullUserProfile, loading: false });
           } else {
-            // User exists in Auth but not Firestore. This is an invalid state.
-            // Log them out.
+            // This case should no longer be reached due to the initial check, but as a safeguard:
             signOut(auth);
             set({ user: null, loading: false });
           }
         }, (error) => {
            console.error("Error with onSnapshot for user:", error);
-           set({ loading: false });
-           signOut(auth); // Sign out on error to be safe
+           signOut(auth);
+           set({ user: null, loading: false });
         });
 
       } else {

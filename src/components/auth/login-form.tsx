@@ -40,20 +40,15 @@ export function LoginForm() {
 
             if (emailFromStorage) {
                 try {
+                    // Sign in user with email link. This will trigger onAuthStateChanged.
                     await signInWithEmailLink(auth, emailFromStorage, window.location.href);
-                    const userCredential = auth.currentUser;
-                    if (userCredential) {
-                        // User is signed in. Now, ensure their Firestore doc exists.
-                        await ensureUserDocument(userCredential);
-                        toast({ title: 'Verifikasi Berhasil!', description: 'Email Anda telah diverifikasi. Silakan masuk.' });
-                    } else {
-                        throw new Error("Gagal mendapatkan info pengguna setelah verifikasi.");
-                    }
+                    
+                    // The user-store listener will now handle document creation.
+                    setSuccess('Email Anda telah berhasil diverifikasi. Anda akan segera dialihkan...');
                     window.localStorage.removeItem('emailForSignIn');
-                    // Sign out immediately, force user to login manually.
-                    await signOut(auth);
-                    // Redirect to login page without verification params.
-                    router.push('/login');
+
+                    // No need to sign out. Let the user store handle the session.
+                    // The redirect will happen via the user/userLoading useEffect.
                 } catch (linkError) {
                     setError("Tautan verifikasi tidak valid atau telah kedaluwarsa.");
                     if(auth.currentUser) await signOut(auth);
@@ -66,8 +61,9 @@ export function LoginForm() {
     };
     
     handleVerification();
-
-  }, [router]);
+  // We only want to run this once on component mount.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!userLoading && user) {
@@ -76,24 +72,16 @@ export function LoginForm() {
     }
   }, [user, userLoading, router, searchParams]);
 
-  // Function to create user document if it doesn't exist (first login after registration)
+  // This function is no longer needed here as the logic is moved to user-store.
+  // It's kept for reference but should be removed in a future cleanup.
   const ensureUserDocument = async (authUser: import('firebase/auth').User) => {
       const userDocRef = doc(db, "users", authUser.uid);
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-          // Document doesn't exist, so this is the first login. Create it.
-          await setDoc(userDocRef, {
-            uid: authUser.uid,
-            email: authUser.email,
-            fullName: authUser.displayName,
-            role: 'Pengguna', // Default role
-            status: 'Aktif', // Default status
-            avatarUrl: authUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.displayName || 'A')}&background=random`,
-            createdAt: serverTimestamp(),
-          });
+          // This logic is now in user-store.ts
       }
-      return await getDoc(userDocRef); // Return the document snapshot
+      return await getDoc(userDocRef);
   }
 
   const handleResendVerification = async () => {
@@ -128,9 +116,28 @@ export function LoginForm() {
     setError(null);
     setSuccess(null);
 
-    let userCredential;
     try {
-      userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const authUser = userCredential.user;
+
+      // The onAuthStateChanged listener in user-store now handles all profile fetching,
+      // document creation, and state setting. We just need to trigger it by signing in.
+      
+      // Check for email verification, except for Admins who can bypass it.
+      const userDocRef = doc(db, 'users', authUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      const isPotentiallyAdmin = userDoc.exists() && userDoc.data().role === 'Admin';
+      
+      if (!authUser.emailVerified && !isPotentiallyAdmin) {
+          await signOut(auth);
+          setError('Email Anda belum diverifikasi. Silakan periksa kotak masuk Anda atau kirim ulang email verifikasi.');
+          setIsLoading(false);
+          return;
+      }
+      
+      // If sign-in is successful, the useEffect for [user, userLoading] will handle the redirect.
+      // We don't need to do anything else here.
+      
     } catch (authError: any) {
       let description = 'Terjadi kesalahan. Silakan coba lagi.';
       switch (authError.code) {
@@ -153,64 +160,8 @@ export function LoginForm() {
       }
       setError(description);
       setIsLoading(false);
-      return;
     }
-
-    const authUser = userCredential.user;
-    
-    try {
-      // For Admin users, we bypass email verification for convenience.
-      const initialCheckDoc = await getDoc(doc(db, 'users', authUser.uid));
-      const isPotentiallyAdmin = initialCheckDoc.exists() && initialCheckDoc.data().role === 'Admin';
-      
-      if (!authUser.emailVerified && !isPotentiallyAdmin) {
-          await signOut(auth);
-          setError('Email Anda belum diverifikasi. Silakan periksa kotak masuk Anda atau kirim ulang email verifikasi.');
-          setIsLoading(false);
-          return;
-      }
-      
-      // Ensure the user document exists, creating it on first login if necessary.
-      const userDoc = await ensureUserDocument(authUser);
-
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-
-        if (userData.status === 'Diblokir') {
-          await signOut(auth);
-          setError('Akun Anda telah diblokir. Silakan hubungi administrator.');
-          setIsLoading(false);
-          return;
-        }
-
-        const fullUserProfile = {
-            id: userDoc.id,
-            uid: authUser.uid,
-            ...userData,
-        };
-        
-        setUserProfile(fullUserProfile as any);
-
-        toast({
-            title: 'Login Berhasil!',
-            description: `Selamat datang kembali, ${userData.fullName || authUser.displayName || 'Pengguna'}!`,
-        });
-
-        const redirectPath = searchParams.get('redirect') || (userData.role === 'Admin' ? '/admin' : '/');
-        router.push(redirectPath);
-
-      } else {
-        // This case should theoretically not be reached because ensureUserDocument creates it.
-        await signOut(auth);
-        setError('Gagal memverifikasi data pengguna. Hubungi administrator.');
-        setIsLoading(false);
-      }
-    } catch (firestoreError: any) {
-      console.error("Firestore verification error:", firestoreError);
-      await signOut(auth);
-      setError(`Terjadi kesalahan saat memverifikasi akun Anda. Silakan coba lagi.`);
-      setIsLoading(false);
-    }
+    // No finally block needed to set isLoading to false, as it's handled on success by redirect or on error in catch.
   };
   
   if (userLoading || isVerifying) {
@@ -255,7 +206,7 @@ export function LoginForm() {
         {success && (
             <Alert variant="default" className="border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400 [&>svg]:text-green-500">
                 <CheckCircle className="h-4 w-4" />
-                <AlertTitle className="text-sm sm:text-base text-green-800 dark:text-green-300">Verifikasi Berhasil</AlertTitle>
+                <AlertTitle className="text-sm sm:text-base text-green-800 dark:text-green-300">Berhasil</AlertTitle>
                 <AlertDescription className="text-xs sm:text-sm">{success}</AlertDescription>
             </Alert>
         )}

@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
-import { setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { setDoc, doc, serverTimestamp, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRegisterPageConfig } from '@/lib/menu-store';
@@ -37,6 +37,7 @@ export default function RegisterPage() {
       router.push('/');
     }
   }, [user, userLoading, router]);
+
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -80,12 +81,13 @@ export default function RegisterPage() {
         photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
       });
       
+      // NOTE: We no longer create the Firestore document here.
+      // The document will be created upon first successful login, handled by the user-store.
+      
       // 4. Sign out the user immediately so they have to log in after verification.
-      // This is crucial to ensure they don't have a lingering unverified session.
       await signOut(auth);
       
       // 5. Show success toast and redirect to login page.
-      // The Firestore document will be created upon first successful login in login-form.tsx.
       toast({
         title: 'Pendaftaran Berhasil!',
         description: `Silakan periksa email Anda untuk melakukan verifikasi sebelum masuk.`,
@@ -101,7 +103,7 @@ export default function RegisterPage() {
         errorMessage = 'Kata sandi terlalu lemah. Harap gunakan minimal 6 karakter.';
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
-      } else if (error.code === 'auth/unauthorized-continue-uri' || error.code === 'auth/invalid-continue-uri') {
+      } else if (error.code === 'auth/unauthorized-continue-uri') {
         errorMessage = 'Domain aplikasi belum diizinkan. Hubungi administrator untuk menambahkan domain ke daftar resmi Firebase.';
       } else if (error.code === 'permission-denied') {
         errorMessage = 'Izin ditolak oleh aturan keamanan Firestore. Pastikan aturan Anda sudah benar.';
