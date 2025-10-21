@@ -56,15 +56,17 @@ type DeletionInfo = {
   id: number;
 } | null;
 
-export function DailyReportForm() {
+export default function DailyReportPage() {
   const { hasAccess, isLoading: isLoadingAccess } = usePageAccess('laporan-smw-merr');
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [date, setDate] = React.useState<Date | undefined>(undefined);
   const [shift, setShift] = React.useState<'pagi' | 'sore'>('pagi');
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isFetchingReport, setIsFetchingReport] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDirty, setIsDirty] = React.useState(false);
+  const [isExistingReport, setIsExistingReport] = React.useState(false);
+
 
   const { toast } = useToast();
   const { UnsavedChangesDialog } = useUnsavedChangesWarning(isDirty);
@@ -97,6 +99,9 @@ export function DailyReportForm() {
   const [itemToDelete, setItemToDelete] = React.useState<DeletionInfo>(null);
 
   React.useEffect(() => {
+    // To avoid hydration mismatch, set the initial date on the client side.
+    setDate(new Date());
+
     const unsubscribe = auth.onAuthStateChanged((user) => {
         setCurrentUser(user);
         setIsLoading(false);
@@ -126,9 +131,9 @@ export function DailyReportForm() {
   }, []);
 
   const populateForm = React.useCallback((report: any) => {
-    setModalAwal(report.details.modalAwal);
-    setOmsetBersih(report.omsetBersih);
-    setPajak(report.details.pajak);
+    setModalAwal(report.details.modalAwal || 0);
+    setOmsetBersih(report.omsetBersih || 0);
+    setPajak(report.details.pajak || 0);
     
     const pemasukanMap = new Map(report.details.pemasukan.map((p: any) => [p.name, p.value]));
     setGoFood(pemasukanMap.get('GoFood') || 0);
@@ -148,9 +153,14 @@ export function DailyReportForm() {
 
     setExtraPemasukan(report.details.pemasukan.filter((p: any) => !['GoFood', 'GrabFood', 'ShopeeFood', 'Qris Mandiri', 'Qris Bri', 'Debit Mandiri', 'Debit Bri'].includes(p.name)).map((p: any) => ({...p, id: Math.random()})));
     setExtraPengeluaran(report.details.pengeluaran.filter((p: any) => !['Transport', 'GoSend', 'Iuran Bulanan', 'Bonus', 'Lembur'].includes(p.name)).map((p: any) => ({...p, id: Math.random()})));
-    setIsDirty(false);
+    setIsDirty(false); // Reset dirty state after populating
   }, []);
 
+  React.useEffect(() => {
+    if (!date || !currentUser) return;
+    setIsDirty(true); // Mark as dirty when date or shift changes, prompting a save
+  }, [date, shift, currentUser]);
+  
   React.useEffect(() => {
     if (!date || !currentUser) return;
 
@@ -160,8 +170,10 @@ export function DailyReportForm() {
         const report = await getReport(date, shift, currentUser.uid);
         if (report) {
           populateForm(report);
+          setIsExistingReport(true);
         } else {
           resetForm();
+          setIsExistingReport(false);
         }
       } catch (error) {
          toast({
@@ -170,6 +182,7 @@ export function DailyReportForm() {
           variant: 'destructive',
         });
         resetForm();
+        setIsExistingReport(false);
       } finally {
         setIsFetchingReport(false);
       }
@@ -265,9 +278,10 @@ export function DailyReportForm() {
         
         toast({
           title: 'Laporan Disimpan!',
-          description: 'Laporan keuangan harian telah berhasil disimpan di database.',
+          description: 'Laporan keuangan harian telah berhasil disimpan.',
         });
         setIsDirty(false);
+        setIsExistingReport(true); // After saving, it becomes an existing report
     } catch(error) {
         toast({
           title: 'Gagal Menyimpan',
@@ -307,11 +321,17 @@ export function DailyReportForm() {
     setItemToDelete(null);
   }
   
+  const formatValue = (value: number) => {
+    if (value === 0) return '';
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
   const handleNumericInputChange = (setter: React.Dispatch<React.SetStateAction<number>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
       setIsDirty(true);
-      const rawValue = e.target.value.replace(/[^0-9]/g, '');
-      if (rawValue.length <= 9) {
-          setter(Number(rawValue));
+      const rawValue = e.target.value.replace(/\./g, '');
+      if (/^\d*$/.test(rawValue) && rawValue.length <= 9) {
+          const numValue = Number(rawValue);
+          setter(numValue);
       }
   };
   
@@ -331,8 +351,8 @@ export function DailyReportForm() {
           if (field === 'name') {
             return { ...item, name: e.target.value };
           } else {
-            const rawValue = e.target.value.replace(/[^0-9]/g, '');
-             if (rawValue.length <= 9) {
+            const rawValue = e.target.value.replace(/\./g, '');
+             if (/^\d*$/.test(rawValue) && rawValue.length <= 9) {
               const numValue = Number(rawValue);
               return { ...item, value: numValue };
             }
@@ -341,11 +361,6 @@ export function DailyReportForm() {
         return item;
       })
     );
-  };
-
-  const formatDisplayValue = (value: number) => {
-    if (value === 0) return '';
-    return value.toLocaleString('id-ID');
   };
 
   const formatCurrency = (value: number) => {
@@ -432,6 +447,7 @@ ${pemasukanText}
     return null; // The hook handles redirection
   }
 
+  const showUpdateButton = isExistingReport && isDirty;
 
   return (
     <>
@@ -499,9 +515,18 @@ ${pemasukanText}
 
             {/* Main Financials */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-              <div className="space-y-2"><Label htmlFor="modalAwal">Modal Awal</Label><Input id="modalAwal" type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(modalAwal)} onChange={handleNumericInputChange(setModalAwal)} /></div>
-              <div className="space-y-2"><Label htmlFor="omsetBersih">Omset Bersih</Label><Input id="omsetBersih" type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(omsetBersih)} onChange={handleNumericInputChange(setOmsetBersih)} /></div>
-              <div className="space-y-2"><Label htmlFor="pajak">Pajak</Label><Input id="pajak" type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(pajak)} onChange={handleNumericInputChange(setPajak)} /></div>
+              <div className="space-y-2">
+                <Label htmlFor="modalAwal">Modal Awal</Label>
+                <Input id="modalAwal" type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(modalAwal)} onChange={handleNumericInputChange(setModalAwal)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="omsetBersih">Omset Bersih</Label>
+                <Input id="omsetBersih" type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(omsetBersih)} onChange={handleNumericInputChange(setOmsetBersih)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pajak">Pajak</Label>
+                <Input id="pajak" type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(pajak)} onChange={handleNumericInputChange(setPajak)} />
+              </div>
               <div className="space-y-2">
                 <Label>Omset Kotor</Label>
                 <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold">
@@ -582,7 +607,7 @@ ${pemasukanText}
             <Button
               className={cn(
                 "flex-1 text-white",
-                isDirty ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
+                showUpdateButton ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
               )}
               onClick={handleSaveReport}
               disabled={isSaving}
@@ -592,12 +617,12 @@ ${pemasukanText}
               ) : (
                 <Save className="mr-2 h-4 w-4" />
               )}
-              {isDirty ? 'Update' : 'Simpan'}
+              {showUpdateButton ? 'Update' : 'Simpan'}
             </Button>
             <Button 
               className="flex-1 bg-green-600 text-white hover:bg-green-700"
               onClick={handleSendWhatsApp}
-              disabled={!modalAwal && !omsetBersih}
+              disabled={(!modalAwal && !omsetBersih) || isDirty}
             >
               <Send className="mr-2 h-4 w-4" />
               Kirim WA
