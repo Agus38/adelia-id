@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -36,20 +36,23 @@ export default function DiskonPage() {
     return Number(value).toLocaleString('id-ID');
   };
 
-  const calculateDiscount = () => {
-    const original = parseFloat(originalPrice);
-    const discounted = parseFloat(discountedPrice);
+  useEffect(() => {
+    const calculateDiscount = () => {
+      const original = parseFloat(originalPrice);
+      const discounted = parseFloat(discountedPrice);
 
-    if (!isNaN(original) && !isNaN(discounted) && original > 0 && original > discounted) {
-      const amount = original - discounted;
-      const percentage = (amount / original) * 100;
-      setDiscountAmount(amount);
-      setDiscountPercentage(percentage);
-    } else {
-      setDiscountAmount(null);
-      setDiscountPercentage(null);
-    }
-  };
+      if (!isNaN(original) && !isNaN(discounted) && original > 0 && original >= discounted) {
+        const amount = original - discounted;
+        const percentage = (amount / original) * 100;
+        setDiscountAmount(amount);
+        setDiscountPercentage(percentage);
+      } else {
+        setDiscountAmount(null);
+        setDiscountPercentage(null);
+      }
+    };
+    calculateDiscount();
+  }, [originalPrice, discountedPrice]);
   
   const handleReset = () => {
       setOriginalPrice('');
@@ -57,11 +60,6 @@ export default function DiskonPage() {
       setDiscountAmount(null);
       setDiscountPercentage(null);
   }
-
-  // Calculate on price change
-  useState(() => {
-    calculateDiscount();
-  });
 
 
   return (
@@ -86,7 +84,6 @@ export default function DiskonPage() {
                     placeholder="0" 
                     value={formatDisplayValue(originalPrice)} 
                     onChange={handlePriceChange(setOriginalPrice)}
-                    onBlur={calculateDiscount}
                     className="pl-8 font-semibold"
                     maxLength={12}
                 />
@@ -103,7 +100,6 @@ export default function DiskonPage() {
                     placeholder="0" 
                     value={formatDisplayValue(discountedPrice)} 
                     onChange={handlePriceChange(setDiscountedPrice)}
-                    onBlur={calculateDiscount}
                     className="pl-8 font-semibold"
                     maxLength={12}
                 />
