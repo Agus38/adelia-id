@@ -17,13 +17,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { PackageOpen } from 'lucide-react';
 import { endOfDay } from 'date-fns';
 
-const chartColors = [
-  "hsl(0 72.2% 50.6%)",
-  "hsl(215.9 82.3% 62.2%)",
-  "hsl(34.9 82.3% 47.1%)",
-  "hsl(142.1 70.6% 45.3%)",
-  "hsl(255.1 73.8% 65.5%)",
-];
+// Function to generate a color from a string hash
+const generateColorFromString = (str: string): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = hash % 360;
+  // Using fixed saturation and lightness for a consistent pastel palette
+  return `hsl(${hue}, 70%, 60%)`;
+};
+
 
 interface ChartsViewProps {
     dateRange?: DateRange;
@@ -63,18 +67,19 @@ export function ChartsView({ dateRange }: ChartsViewProps) {
       }
     });
 
-    const newChartConfig = expenseCategories.reduce((config, category, index) => {
-      config[category.value] = {
-        label: category.label,
-        color: chartColors[index % chartColors.length],
-      };
-      return config;
-    }, {} as ChartConfig);
-
     const newPieChartData = Object.entries(expensesByCategory)
       .map(([category, value]) => ({ category, value }))
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
+      
+    const newChartConfig = newPieChartData.reduce((config, item) => {
+        config[item.category] = {
+            label: item.category,
+            color: generateColorFromString(item.category),
+        };
+        return config;
+    }, {} as ChartConfig);
+
 
     const newBarChartData = Object.entries(monthlySummary).map(([month, data]) => ({
       month,
@@ -82,7 +87,7 @@ export function ChartsView({ dateRange }: ChartsViewProps) {
     })).sort((a, b) => a.month.localeCompare(b.month));
 
     return { chartConfig: newChartConfig, pieChartData: newPieChartData, barChartData: newBarChartData };
-  }, [transactions, expenseCategories, dateRange]);
+  }, [transactions, dateRange]);
 
   const NoDataPlaceholder = ({ message }: { message: string }) => (
     <div className="flex flex-col items-center justify-center h-full min-h-[250px] text-center text-muted-foreground p-4">
@@ -111,7 +116,7 @@ export function ChartsView({ dateRange }: ChartsViewProps) {
                 />
                 <Pie data={pieChartData} dataKey="value" nameKey="category" innerRadius={60} strokeWidth={5}>
                    {pieChartData.map((entry, index) => (
-                     <Cell key={`cell-${index}`} fill={chartConfig[entry.category]?.color} className="focus:outline-none" />
+                     <Cell key={`cell-${index}`} fill={chartConfig[entry.category]?.color || '#000000'} className="focus:outline-none" />
                   ))}
                 </Pie>
                  <ChartLegend content={<ChartLegendContent nameKey="category" />} className="-mt-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center" />
