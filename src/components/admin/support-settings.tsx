@@ -65,8 +65,7 @@ export function SupportSettings() {
     const contactToUpdate = { ...newContacts[index] };
     
     if (field === 'iconName') {
-        contactToUpdate.iconName = value;
-        contactToUpdate.icon = iconMap[value] as LucideIcon;
+        (contactToUpdate as any)[field] = value;
     } else {
         (contactToUpdate as any)[field] = value;
     }
@@ -75,7 +74,7 @@ export function SupportSettings() {
   };
   
   const handleAddContact = () => {
-    const newContact: ContactMethod = {
+    const newContact: any = {
       id: `contact-${Date.now()}`,
       iconName: 'Mail',
       title: 'Metode Baru',
@@ -163,7 +162,7 @@ export function SupportSettings() {
                                 <SelectTrigger>
                                     <SelectValue>
                                         <div className="flex items-center gap-2">
-                                            {React.createElement(iconMap[contact.iconName] || 'Mail', { className: "h-4 w-4" })}
+                                            {React.createElement(iconMap[contact.iconName] || iconMap['Mail'], { className: "h-4 w-4" })}
                                             <span>{contact.iconName}</span>
                                         </div>
                                     </SelectValue>

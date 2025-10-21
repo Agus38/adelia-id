@@ -239,7 +239,8 @@ export interface FaqItem {
 }
 
 export interface ContactMethod {
-    id: LucideIcon;
+    id: string;
+    icon: LucideIcon;
     iconName: string;
     title: string;
     value: string;
@@ -405,8 +406,8 @@ const defaultSupportConfig: SupportPageConfig = {
     { id: 'faq-4', question: "Bagaimana cara menggunakan fitur 'Cek Usia'?", answer: "Cukup masukkan tanggal, bulan, dan tahun lahir Anda pada kolom yang tersedia di halaman 'Cek Usia', lalu klik tombol 'Hitung Usia'. Aplikasi akan secara otomatis menampilkan usia akurat Anda, zodiak, shio, dan informasi menarik lainnya." }
   ],
   contactMethods: [
-    { id: 'contact-1', iconName: 'Mail',  title: "Email", value: "support@adelia-id.com", action: "mailto:support@adelia-id.com", actionLabel: "Kirim Email" },
-    { id: 'contact-2', iconName: 'MessageSquare',  title: "WhatsApp", value: "+62 812 3456 7891", action: "https://wa.me/6281234567891", actionLabel: "Chat via WA" }
+    { id: 'contact-1', iconName: 'Mail', icon: getIconComponent('Mail'), title: "Email", value: "support@adelia-id.com", action: "mailto:support@adelia-id.com", actionLabel: "Kirim Email" },
+    { id: 'contact-2', iconName: 'MessageSquare', icon: getIconComponent('MessageSquare'), title: "WhatsApp", value: "+62 812 3456 7891", action: "https://wa.me/6281234567891", actionLabel: "Chat via WA" }
   ]
 };
 
@@ -1172,8 +1173,9 @@ const useSupportPageStore = create<SupportPageStoreState>((set) => ({
         const dto = docSnap.data() as SupportPageConfigDTO;
         const hydratedConfig: SupportPageConfig = {
           faqItems: dto.faqItems || [],
-          contactMethods: dto.contactMethods.map(method => ({
+          contactMethods: (dto.contactMethods || []).map(method => ({
             id: method.id,
+            icon: getIconComponent(method.iconName),
             iconName: method.iconName,
             title: method.title,
             value: method.value,
