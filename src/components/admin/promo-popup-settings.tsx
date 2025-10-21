@@ -102,12 +102,12 @@ export function PromoPopupSettings() {
       if (newVersion) {
         toast({
           title: 'Notifikasi Terkirim!',
-          description: 'Popup promosi akan ditampilkan kembali kepada semua pengguna.',
+          description: 'Popup notifikasi akan ditampilkan kembali kepada semua pengguna.',
         });
       } else {
         toast({
           title: 'Perubahan Disimpan!',
-          description: 'Konfigurasi popup promosi telah berhasil diperbarui.',
+          description: 'Konfigurasi popup notifikasi telah berhasil diperbarui.',
         });
       }
       // Re-sync local state with the newly saved config (especially the version)
@@ -148,7 +148,7 @@ export function PromoPopupSettings() {
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
-                <CardTitle>Pengaturan Popup Promosi</CardTitle>
+                <CardTitle>Pengaturan Popup Notifikasi</CardTitle>
                 <CardDescription>
                 Aktifkan dan atur konten popup yang akan muncul di halaman utama.
                 </CardDescription>
@@ -165,12 +165,12 @@ export function PromoPopupSettings() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label>Gambar Promosi</Label>
+          <Label>Gambar Notifikasi</Label>
           <div className="relative w-full aspect-video rounded-md border flex items-center justify-center bg-muted overflow-hidden">
             {localConfig.imageUrl ? (
               <Image
                 src={localConfig.imageUrl}
-                alt="Pratinjau gambar promosi"
+                alt="Pratinjau gambar notifikasi"
                 fill
                 className="object-cover"
               />
@@ -214,11 +214,11 @@ export function PromoPopupSettings() {
          <div className="grid grid-cols-2 gap-4">
              <div className="space-y-2">
                 <Label htmlFor="buttonText">Teks Tombol</Label>
-                <Input id="buttonText" value={localConfig.buttonText} onChange={(e) => handleConfigChange('buttonText', e.target.value)} placeholder="Contoh: Lihat Promo" />
+                <Input id="buttonText" value={localConfig.buttonText} onChange={(e) => handleConfigChange('buttonText', e.target.value)} placeholder="Contoh: Lihat Detail" />
             </div>
             <div className="space-y-2">
                 <Label htmlFor="buttonLink">Tautan Tombol</Label>
-                <Input id="buttonLink" value={localConfig.buttonLink} onChange={(e) => handleConfigChange('buttonLink', e.target.value)} placeholder="/digital-products" />
+                <Input id="buttonLink" value={localConfig.buttonLink} onChange={(e) => handleConfigChange('buttonLink', e.target.value)} placeholder="/halaman-tujuan" />
             </div>
          </div>
       </CardContent>

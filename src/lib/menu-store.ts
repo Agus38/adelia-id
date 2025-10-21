@@ -359,10 +359,10 @@ const defaultAboutInfo: AboutInfo = {
 const defaultPromoPopupConfig: PromoPopupConfig = {
   enabled: false,
   imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1974&auto=format&fit=crop',
-  title: 'Promo Spesial!',
-  description: 'Dapatkan diskon 20% untuk semua pembelian produk digital hari ini. Jangan lewatkan kesempatan ini!',
-  buttonText: 'Lihat Promo',
-  buttonLink: '/digital-products',
+  title: 'Pengumuman',
+  description: 'Konten pengumuman atau promosi akan ditampilkan di sini. Anda dapat mengubahnya di panel admin.',
+  buttonText: 'Lihat Detail',
+  buttonLink: '/',
   promoVersion: 1,
 };
 

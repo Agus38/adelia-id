@@ -26,6 +26,7 @@ import {
   Trash2,
   Github,
   LifeBuoy,
+  Megaphone,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -200,6 +201,12 @@ icon: Users2,
     href: "/admin/banner",
     icon: Info, // Changed to a more generic icon
     description: "Kelola banner dan slide di halaman utama.",
+  },
+   {
+    title: "Manajemen Popup",
+    href: "/admin/promo-popup",
+    icon: Megaphone,
+    description: "Kelola popup notifikasi di halaman utama.",
   },
   {
     title: "Daftar Rute Aplikasi",
