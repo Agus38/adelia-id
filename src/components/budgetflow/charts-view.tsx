@@ -18,11 +18,11 @@ import { PackageOpen } from 'lucide-react';
 import { endOfDay } from 'date-fns';
 
 const chartColors = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
+  "hsl(0 72.2% 50.6%)",
+  "hsl(215.9 82.3% 62.2%)",
+  "hsl(34.9 82.3% 47.1%)",
+  "hsl(142.1 70.6% 45.3%)",
+  "hsl(255.1 73.8% 65.5%)",
 ];
 
 interface ChartsViewProps {
@@ -131,8 +131,8 @@ export function ChartsView({ dateRange }: ChartsViewProps) {
         <CardContent>
            {barChartData.length > 0 ? (
                 <ChartContainer config={{
-                    income: { label: "Pemasukan", color: "hsl(142.1 76.2% 36.3%)" }, // Green
-                    expense: { label: "Pengeluaran", color: "hsl(0 84.2% 60.2%)" }, // Red
+                    income: { label: "Pemasukan", color: "hsl(142.1 76.2% 36.3%)" },
+                    expense: { label: "Pengeluaran", color: "hsl(0 84.2% 60.2%)" },
                 }} className="h-[300px] w-full">
                 <BarChart data={barChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                     <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => new Date(value + '-02').toLocaleDateString('id-ID', { month: 'short' })} />
