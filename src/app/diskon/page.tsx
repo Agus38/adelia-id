@@ -26,7 +26,9 @@ export default function DiskonPage() {
 
   const handlePriceChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^0-9]/g, '');
-    setter(value);
+    if (value.length <= 12) {
+      setter(value);
+    }
   };
   
   const formatDisplayValue = (value: string) => {
@@ -86,6 +88,7 @@ export default function DiskonPage() {
                     onChange={handlePriceChange(setOriginalPrice)}
                     onBlur={calculateDiscount}
                     className="pl-8 font-semibold"
+                    maxLength={12}
                 />
             </div>
           </div>
@@ -102,6 +105,7 @@ export default function DiskonPage() {
                     onChange={handlePriceChange(setDiscountedPrice)}
                     onBlur={calculateDiscount}
                     className="pl-8 font-semibold"
+                    maxLength={12}
                 />
             </div>
           </div>
