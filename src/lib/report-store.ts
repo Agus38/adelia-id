@@ -25,9 +25,14 @@ export interface DailyReport {
 
 const reportsCollection = collection(db, 'dailyReports');
 
-// Helper to generate a consistent ID for Firestore documents
+// Helper to generate a consistent ID for Firestore documents, accounting for timezone.
 const generateReportId = (date: Date, shift: 'pagi' | 'sore', userId: string) => {
-    const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    // Get timezone offset in minutes and convert it to milliseconds
+    const timezoneOffset = date.getTimezoneOffset() * 60000;
+    // Create a new Date object adjusted for the local timezone
+    const localDate = new Date(date.getTime() - timezoneOffset);
+    // Convert to ISO string and take the date part (YYYY-MM-DD)
+    const dateString = localDate.toISOString().split('T')[0];
     return `${userId}-${dateString}-${shift}`;
 };
 
