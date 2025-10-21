@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -107,11 +108,11 @@ export default function DiskonPage() {
                   <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 bg-muted rounded-lg text-center">
                           <p className="text-sm text-muted-foreground">Potongan Harga</p>
-                          <p className="text-2xl font-bold text-primary">{formatCurrency(discountAmount ?? 0)}</p>
+                          <p className="text-xl md:text-2xl font-bold text-primary">{formatCurrency(discountAmount ?? 0)}</p>
                       </div>
                       <div className="p-4 bg-muted rounded-lg text-center">
                           <p className="text-sm text-muted-foreground">Persentase Diskon</p>
-                          <p className="text-2xl font-bold text-primary">{discountPercentage?.toFixed(1) ?? '0'}%</p>
+                          <p className="text-xl md:text-2xl font-bold text-primary">{discountPercentage?.toFixed(1) ?? '0'}%</p>
                       </div>
                   </div>
               </div>
