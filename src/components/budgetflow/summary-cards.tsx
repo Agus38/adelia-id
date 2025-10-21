@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle, Wallet } from "lucide-react";
 import { useBudgetflowStore } from '@/lib/budgetflow-store';
 import type { DateRange } from 'react-day-picker';
-import { endOfDay } from 'date-fns';
+import { endOfDay } from 'date-ns';
+import { cn } from '@/lib/utils';
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
@@ -61,7 +62,7 @@ export function SummaryCards({ dateRange }: SummaryCardsProps) {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <Card>
+      <Card className="border-l-4 border-green-500">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Pemasukan</CardTitle>
           <ArrowUpCircle className="h-5 w-5 text-green-500" />
@@ -71,7 +72,7 @@ export function SummaryCards({ dateRange }: SummaryCardsProps) {
           <p className="text-xs text-muted-foreground">Pemasukan dalam periode yang dipilih.</p>
         </CardContent>
       </Card>
-      <Card>
+      <Card className="border-l-4 border-red-500">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Pengeluaran</CardTitle>
           <ArrowDownCircle className="h-5 w-5 text-red-500" />
@@ -81,7 +82,7 @@ export function SummaryCards({ dateRange }: SummaryCardsProps) {
           <p className="text-xs text-muted-foreground">Pengeluaran dalam periode yang dipilih.</p>
         </CardContent>
       </Card>
-      <Card className="sm:col-span-2 lg:col-span-1 border-primary/50">
+      <Card className="sm:col-span-2 lg:col-span-1 border-l-4 border-primary">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Saldo Tersedia</CardTitle>
           <Wallet className="h-5 w-5 text-primary" />
