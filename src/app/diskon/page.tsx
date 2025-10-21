@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -66,11 +65,7 @@ export default function DiskonPage() {
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8 flex items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <div className="flex items-center space-x-2 mb-2">
-            <Tag className="h-8 w-8" />
-            <CardTitle className="text-3xl">Kalkulator Diskon</CardTitle>
-          </div>
-          <CardDescription>Hitung potongan harga dengan mudah untuk mengetahui besaran diskon dalam nominal dan persentase.</CardDescription>
+          <CardDescription className="text-center text-lg">Hitung potongan harga dengan mudah untuk mengetahui besaran diskon dalam nominal dan persentase.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
