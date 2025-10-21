@@ -517,15 +517,15 @@ ${pemasukanText}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               <div className="space-y-2">
                 <Label htmlFor="modalAwal">Modal Awal</Label>
-                <Input id="modalAwal" type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(modalAwal)} onChange={handleNumericInputChange(setModalAwal)} />
+                <Input id="modalAwal" type="text" inputMode="numeric" placeholder="0" value={formatValue(modalAwal)} onChange={handleNumericInputChange(setModalAwal)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="omsetBersih">Omset Bersih</Label>
-                <Input id="omsetBersih" type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(omsetBersih)} onChange={handleNumericInputChange(setOmsetBersih)} />
+                <Input id="omsetBersih" type="text" inputMode="numeric" placeholder="0" value={formatValue(omsetBersih)} onChange={handleNumericInputChange(setOmsetBersih)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pajak">Pajak</Label>
-                <Input id="pajak" type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(pajak)} onChange={handleNumericInputChange(setPajak)} />
+                <Input id="pajak" type="text" inputMode="numeric" placeholder="0" value={formatValue(pajak)} onChange={handleNumericInputChange(setPajak)} />
               </div>
               <div className="space-y-2">
                 <Label>Omset Kotor</Label>
@@ -540,18 +540,18 @@ ${pemasukanText}
                 <AccordionTrigger>Pemasukan Online</AccordionTrigger>
                 <AccordionContent className="space-y-4 pt-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                    <div className="space-y-2"><Label>GoFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(goFood)} onChange={handleNumericInputChange(setGoFood)} /></div>
-                    <div className="space-y-2"><Label>GrabFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(grabFood)} onChange={handleNumericInputChange(setGrabFood)} /></div>
-                    <div className="space-y-2"><Label>ShopeeFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(shopeeFood)} onChange={handleNumericInputChange(setShopeeFood)} /></div>
-                    <div className="space-y-2"><Label>Qris Mandiri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(qrisMandiri)} onChange={handleNumericInputChange(setQrisMandiri)} /></div>
-                    <div className="space-y-2"><Label>Qris Bri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(qrisBri)} onChange={handleNumericInputChange(setQrisBri)} /></div>
-                    <div className="space-y-2"><Label>Debit Mandiri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(debitMandiri)} onChange={handleNumericInputChange(setDebitMandiri)} /></div>
-                    <div className="space-y-2"><Label>Debit Bri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(debitBri)} onChange={handleNumericInputChange(setDebitBri)} /></div>
+                    <div className="space-y-2"><Label>GoFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(goFood)} onChange={handleNumericInputChange(setGoFood)} /></div>
+                    <div className="space-y-2"><Label>GrabFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(grabFood)} onChange={handleNumericInputChange(setGrabFood)} /></div>
+                    <div className="space-y-2"><Label>ShopeeFood</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(shopeeFood)} onChange={handleNumericInputChange(setShopeeFood)} /></div>
+                    <div className="space-y-2"><Label>Qris Mandiri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(qrisMandiri)} onChange={handleNumericInputChange(setQrisMandiri)} /></div>
+                    <div className="space-y-2"><Label>Qris Bri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(qrisBri)} onChange={handleNumericInputChange(setQrisBri)} /></div>
+                    <div className="space-y-2"><Label>Debit Mandiri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(debitMandiri)} onChange={handleNumericInputChange(setDebitMandiri)} /></div>
+                    <div className="space-y-2"><Label>Debit Bri</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(debitBri)} onChange={handleNumericInputChange(setDebitBri)} /></div>
                   </div>
                   {extraPemasukan.map(field => (
                     <div key={field.id} className="flex items-end gap-2">
                       <div className="flex-1 space-y-2"><Label>Nama Pemasukan</Label><Input value={field.name} placeholder="cth: Transfer Bank" onChange={(e) => handleExtraFieldChange('pemasukan', field.id, 'name', e)} /></div>
-                      <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(field.value)} onChange={(e) => handleExtraFieldChange('pemasukan', field.id, 'value', e)} /></div>
+                      <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(field.value)} onChange={(e) => handleExtraFieldChange('pemasukan', field.id, 'value', e)} /></div>
                       <Button variant="ghost" size="icon" onClick={() => confirmRemoveExtraField('pemasukan', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
                   ))}
@@ -562,16 +562,16 @@ ${pemasukanText}
                 <AccordionTrigger>Pengeluaran Offline</AccordionTrigger>
                 <AccordionContent className="space-y-4 pt-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                    <div className="space-y-2"><Label>Transport</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(transport)} onChange={handleNumericInputChange(setTransport)} /></div>
-                    <div className="space-y-2"><Label>Gosend</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(goSend)} onChange={handleNumericInputChange(setGoSend)} /></div>
-                    <div className="space-y-2"><Label>Iuran Bulanan</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(iuranBulanan)} onChange={handleNumericInputChange(setIuranBulanan)} /></div>
-                    <div className="space-y-2"><Label>Bonus</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(bonus)} onChange={handleNumericInputChange(setBonus)} /></div>
-                    <div className="space-y-2"><Label>Lembur</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(lembur)} onChange={handleNumericInputChange(setLembur)} /></div>
+                    <div className="space-y-2"><Label>Transport</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(transport)} onChange={handleNumericInputChange(setTransport)} /></div>
+                    <div className="space-y-2"><Label>Gosend</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(goSend)} onChange={handleNumericInputChange(setGoSend)} /></div>
+                    <div className="space-y-2"><Label>Iuran Bulanan</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(iuranBulanan)} onChange={handleNumericInputChange(setIuranBulanan)} /></div>
+                    <div className="space-y-2"><Label>Bonus</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(bonus)} onChange={handleNumericInputChange(setBonus)} /></div>
+                    <div className="space-y-2"><Label>Lembur</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(lembur)} onChange={handleNumericInputChange(setLembur)} /></div>
                   </div>
                   {extraPengeluaran.map(field => (
                     <div key={field.id} className="flex items-end gap-2">
                       <div className="flex-1 space-y-2"><Label>Nama Pengeluaran</Label><Input value={field.name} placeholder="cth: Beli Gas" onChange={(e) => handleExtraFieldChange('pengeluaran', field.id, 'name', e)} /></div>
-                      <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatDisplayValue(field.value)} onChange={(e) => handleExtraFieldChange('pengeluaran', field.id, 'value', e)} /></div>
+                      <div className="flex-1 space-y-2"><Label>Jumlah</Label><Input type="text" inputMode="numeric" placeholder="0" value={formatValue(field.value)} onChange={(e) => handleExtraFieldChange('pengeluaran', field.id, 'value', e)} /></div>
                       <Button variant="ghost" size="icon" onClick={() => confirmRemoveExtraField('pengeluaran', field.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
                   ))}
@@ -613,11 +613,13 @@ ${pemasukanText}
               disabled={isSaving}
             >
               {isSaving ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Save className="mr-2 h-4 w-4" />
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  {showUpdateButton ? 'Update' : 'Simpan'}
+                </>
               )}
-              {showUpdateButton ? 'Update' : 'Simpan'}
             </Button>
             <Button 
               className="flex-1 bg-green-600 text-white hover:bg-green-700"
