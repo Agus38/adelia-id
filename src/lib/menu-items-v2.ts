@@ -1,4 +1,3 @@
-
 import {
   MessageSquare,
   Package,
@@ -194,7 +193,7 @@ export const menuItems: MenuItem[] = [
     title: 'Diskon',
     href: '/diskon',
     icon: Tag,
-    comingSoon: true,
+    comingSoon: false,
     requiresAuth: false,
   },
   {
