@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle, Wallet } from "lucide-react";
 import { useBudgetflowStore } from '@/lib/budgetflow-store';
 import type { DateRange } from 'react-day-picker';
-import { endOfDay } from 'date-ns';
+import { endOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 const formatCurrency = (value: number) => {
