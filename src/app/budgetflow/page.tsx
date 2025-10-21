@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, BarChart2, Table, PiggyBank, Scale, Trash2, Bot } from 'lucide-react';
+import { Loader2, TrendingUp, BarChart2, Table, PiggyBank, Scale, Trash2, Bot, PlusCircle } from 'lucide-react';
 import { usePageAccess } from "@/hooks/use-page-access";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BudgetFlowDashboard } from '@/components/budgetflow/dashboard';
@@ -38,6 +38,7 @@ import { useToast } from '@/hooks/use-toast';
 import { resetBudgetflowData } from '@/lib/budgetflow-store';
 import { FinancialChatInterface } from '@/components/budgetflow/financial-chat-interface';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AddTransactionButton } from '@/components/budgetflow/add-transaction-dialog';
 
 
 function ResetDataDialog() {
@@ -181,27 +182,33 @@ export default function BudgetFlowPage() {
             </TabsContent>
           </div>
         </Tabs>
-        <Dialog>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DialogTrigger asChild>
-                   <Button size="icon" className="fixed bottom-20 right-6 z-50 md:bottom-8 md:right-8 h-14 w-14 rounded-full shadow-lg">
-                      <Bot className="h-7 w-7"/>
-                   </Button>
-                </DialogTrigger>
-              </TooltipTrigger>
-              <TooltipContent><p>Konsultan AI</p></TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-           <DialogContent className="w-full max-w-md md:max-w-2xl h-full sm:h-[90vh] flex flex-col p-0 gap-0">
-             <DialogHeader className="sr-only">
-               <DialogTitle>Konsultan Keuangan AI</DialogTitle>
-               <DialogDescription>Antarmuka chat untuk berinteraksi dengan asisten keuangan AI.</DialogDescription>
-             </DialogHeader>
-             <FinancialChatInterface dateRange={date} />
-           </DialogContent>
-        </Dialog>
+        
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-4 md:bottom-8 md:right-8">
+            <Dialog>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DialogTrigger asChild>
+                       <Button size="icon" className="h-14 w-14 rounded-full shadow-lg">
+                          <Bot className="h-7 w-7"/>
+                       </Button>
+                    </DialogTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent><p>Konsultan AI</p></TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+               <DialogContent className="w-full max-w-md md:max-w-2xl h-full sm:h-[90vh] flex flex-col p-0 gap-0">
+                 <DialogHeader className="sr-only">
+                   <DialogTitle>Konsultan Keuangan AI</DialogTitle>
+                   <DialogDescription>Antarmuka chat untuk berinteraksi dengan asisten keuangan AI.</DialogDescription>
+                 </DialogHeader>
+                 <FinancialChatInterface dateRange={date} />
+               </DialogContent>
+            </Dialog>
+            <AddTransactionButton />
+        </div>
     </div>
   );
 }
+
+    

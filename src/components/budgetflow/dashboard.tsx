@@ -30,10 +30,8 @@ export function BudgetFlowDashboard({ dateRange }: BudgetFlowDashboardProps) {
           </div>
         )}
       </div>
-
-      <div className="fixed bottom-6 right-6 z-50 md:bottom-8 md:right-8">
-        <AddTransactionButton />
-      </div>
     </div>
   );
 }
+
+    
