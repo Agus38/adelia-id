@@ -133,6 +133,11 @@ export function DailyReportManagement() {
 
   const [selectedReport, setSelectedReport] = React.useState<DailyReport | null>(null);
 
+  const [isFilteredTotalActive, setFilteredTotalActive] = React.useState(false);
+  const [selectedMonth, setSelectedMonth] = React.useState('all');
+  const [selectedYear, setSelectedYear] = React.useState('all');
+
+
   const handleViewDetails = (report: DailyReport) => {
     setSelectedReport(report);
     setDetailModalOpen(true);
@@ -226,8 +231,33 @@ export function DailyReportManagement() {
     },
   ];
 
+  // Memoize the filtered data based on date and text filters. This is the core optimization.
+  const filteredData = React.useMemo(() => {
+    return data.filter(report => {
+      // Date filtering
+      const reportMonth = (report.date.getMonth() + 1).toString();
+      const reportYear = report.date.getFullYear().toString();
+      const monthMatch = selectedMonth === 'all' || reportMonth === selectedMonth;
+      const yearMatch = selectedYear === 'all' || reportYear === selectedYear;
+      if (!monthMatch || !yearMatch) return false;
+
+      // Global text filtering
+      if (globalFilter) {
+        const search = globalFilter.toLowerCase();
+        const reportId = report.id.toLowerCase();
+        const shift = report.shift.toLowerCase();
+        const createdBy = report.createdBy.toLowerCase();
+        const dateStr = format(report.date, 'd MMMM yyyy', { locale: id }).toLowerCase();
+        return reportId.includes(search) || shift.includes(search) || dateStr.includes(search) || createdBy.includes(search);
+      }
+      
+      return true;
+    });
+  }, [data, selectedMonth, selectedYear, globalFilter]);
+
+
   const table = useReactTable({
-    data,
+    data: filteredData, // Use the memoized filtered data for the table
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -237,37 +267,14 @@ export function DailyReportManagement() {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: globalFilterFn,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
-      globalFilter,
     },
   });
 
-  const [isFilteredTotalActive, setFilteredTotalActive] = React.useState(false);
-  const [selectedMonth, setSelectedMonth] = React.useState('all');
-  const [selectedYear, setSelectedYear] = React.useState('all');
-
-  React.useEffect(() => {
-    const filteredData = data.filter(report => {
-        const reportMonth = (report.date.getMonth() + 1).toString();
-        const reportYear = report.date.getFullYear().toString();
-        const monthMatch = selectedMonth === 'all' || reportMonth === selectedMonth;
-        const yearMatch = selectedYear === 'all' || reportYear === selectedYear;
-        return monthMatch && yearMatch;
-    });
-    table.setGlobalFilter(globalFilter); // Re-apply global filter on date change
-    // This is a bit of a hack to re-filter the table when date filters change
-    // by triggering a state update on the table itself.
-    if (table.getState().globalFilter !== globalFilter) {
-      table.setGlobalFilter(globalFilter);
-    }
-  }, [selectedMonth, selectedYear, data, globalFilter, table]);
-  
   const getYears = React.useMemo(() => {
     const years = new Set(data.map(report => report.date.getFullYear().toString()));
     return Array.from(years).sort((a, b) => b.localeCompare(a));
@@ -280,27 +287,25 @@ export function DailyReportManagement() {
     { value: '10', label: 'Oktober' }, { value: '11', label: 'November' }, { value: '12', label: 'Desember' }
   ];
 
+  // Memoize total calculations
+  const totals = React.useMemo(() => {
+    const dataForTotals = isFilteredTotalActive ? filteredData : data;
+    
+    let totalOmsetBersih = 0;
+    let totalPajak = 0;
+    let totalPengeluaran = 0;
 
-  const dataForTotals = isFilteredTotalActive ? table.getFilteredRowModel().rows.map(row => row.original) : data;
+    for (const report of dataForTotals) {
+        totalOmsetBersih += report.omsetBersih;
+        totalPajak += report.details.pajak;
+        for (const item of report.details.pengeluaran) {
+            totalPengeluaran += item.value;
+        }
+    }
+    const totalOmsetKotor = totalOmsetBersih + totalPajak;
 
-  const totalOmsetBersih = React.useMemo(() => dataForTotals.reduce((sum, report) => sum + report.omsetBersih, 0), [dataForTotals]);
-  const totalPajak = React.useMemo(() => dataForTotals.reduce((sum, report) => sum + report.details.pajak, 0), [dataForTotals]);
-  const totalOmsetKotor = totalOmsetBersih + totalPajak;
-  const totalPengeluaran = React.useMemo(() => dataForTotals.reduce((sum, report) => sum + report.details.pengeluaran.reduce((subSum, item) => subSum + item.value, 0), 0), [dataForTotals]);
-
-  // Apply date filters to the main table data
-  const filteredTableData = React.useMemo(() => {
-    return data.filter(report => {
-        const reportMonth = (report.date.getMonth() + 1).toString();
-        const reportYear = report.date.getFullYear().toString();
-        const monthMatch = selectedMonth === 'all' || reportMonth === selectedMonth;
-        const yearMatch = selectedYear === 'all' || reportYear === selectedYear;
-        return monthMatch && yearMatch;
-    });
-  }, [data, selectedMonth, selectedYear]);
-
-  table.setOptions(prev => ({ ...prev, data: filteredTableData }));
-
+    return { totalOmsetBersih, totalPajak, totalOmsetKotor, totalPengeluaran };
+  }, [data, filteredData, isFilteredTotalActive]);
 
   return (
     <>
@@ -313,7 +318,7 @@ export function DailyReportManagement() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalOmsetBersih)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totals.totalOmsetBersih)}</div>
             <p className="text-xs text-muted-foreground">Dari {isFilteredTotalActive ? 'laporan yang difilter' : 'semua laporan'}</p>
           </CardContent>
         </Card>
@@ -323,7 +328,7 @@ export function DailyReportManagement() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalOmsetKotor)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totals.totalOmsetKotor)}</div>
              <p className="text-xs text-muted-foreground">{isFilteredTotalActive ? 'Termasuk pajak dari filter' : 'Termasuk pajak'}</p>
           </CardContent>
         </Card>
@@ -333,7 +338,7 @@ export function DailyReportManagement() {
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalPajak)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totals.totalPajak)}</div>
             <p className="text-xs text-muted-foreground">Dari {isFilteredTotalActive ? 'laporan yang difilter' : 'semua laporan'}</p>
           </CardContent>
         </Card>
@@ -343,7 +348,7 @@ export function DailyReportManagement() {
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalPengeluaran)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totals.totalPengeluaran)}</div>
             <p className="text-xs text-muted-foreground">Dari {isFilteredTotalActive ? 'laporan yang difilter' : 'semua laporan'}</p>
           </CardContent>
         </Card>
