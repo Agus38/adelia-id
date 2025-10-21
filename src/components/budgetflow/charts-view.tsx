@@ -131,8 +131,8 @@ export function ChartsView({ dateRange }: ChartsViewProps) {
         <CardContent>
            {barChartData.length > 0 ? (
                 <ChartContainer config={{
-                    income: { label: "Pemasukan", color: "hsl(var(--chart-2))" },
-                    expense: { label: "Pengeluaran", color: "hsl(var(--chart-1))" },
+                    income: { label: "Pemasukan", color: "hsl(142.1 76.2% 36.3%)" }, // Green
+                    expense: { label: "Pengeluaran", color: "hsl(0 84.2% 60.2%)" }, // Red
                 }} className="h-[300px] w-full">
                 <BarChart data={barChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                     <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => new Date(value + '-02').toLocaleDateString('id-ID', { month: 'short' })} />
