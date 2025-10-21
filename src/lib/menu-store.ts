@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -127,6 +126,26 @@ interface TeamMemberDTO {
     avatarFallback: string;
 }
 
+interface FaqItemDTO {
+    id: string;
+    question: string;
+    answer: string;
+}
+
+interface ContactMethodDTO {
+    id: string;
+    iconName: string;
+    title: string;
+    value: string;
+    action: string;
+    actionLabel: string;
+}
+
+interface SupportPageConfigDTO {
+    faqItems: FaqItemDTO[];
+    contactMethods: ContactMethodDTO[];
+}
+
 
 // --- Type Definitions ---
 export interface BannerSlide {
@@ -213,6 +232,26 @@ export interface TeamMember {
     avatarFallback: string;
 }
 
+export interface FaqItem {
+    id: string;
+    question: string;
+    answer: string;
+}
+
+export interface ContactMethod {
+    id: LucideIcon;
+    iconName: string;
+    title: string;
+    value: string;
+    action: string;
+    actionLabel: string;
+}
+
+export interface SupportPageConfig {
+    faqItems: FaqItem[];
+    contactMethods: ContactMethod[];
+}
+
 
 // --- Firestore Document References ---
 const menuConfigDocRef = doc(db, 'app-settings', 'menu-grid');
@@ -230,6 +269,7 @@ const defaultUserGroupDocRef = doc(db, 'app-settings', 'defaultUserGroup');
 const rolesDocRef = doc(db, 'app-settings', 'userRoles');
 const smwManyarConfigDocRef = doc(db, 'app-settings', 'smwManyarConfig');
 const teamMembersDocRef = doc(db, 'app-settings', 'teamMembers');
+const supportConfigDocRef = doc(db, 'app-settings', 'supportPageConfig');
 
 
 // --- Default Data ---
@@ -356,6 +396,19 @@ const defaultTeamMembers: TeamMember[] = [
   { id: 3, name: 'Citra', title: 'UI/UX Designer', avatarUrl: 'https://placehold.co/150x150.png', avatarFallback: 'CI' },
   { id: 4, name: 'Dewi', title: 'QA Engineer', avatarUrl: 'https://placehold.co/150x150.png', avatarFallback: 'DE' },
 ];
+
+const defaultSupportConfig: SupportPageConfig = {
+  faqItems: [
+    { id: 'faq-1', question: "Bagaimana cara mengubah kata sandi saya?", answer: "Anda dapat mengubah kata sandi Anda dengan membuka halaman 'Profil' dari menu dropdown pengguna di kanan atas. Di sana, Anda akan menemukan bagian 'Ubah Kata Sandi'. Masukkan kata sandi Anda saat ini dan kata sandi baru untuk memperbaruinya." },
+    { id: 'faq-2', question: "Apa yang harus dilakukan jika saya lupa kata sandi?", answer: "Jika Anda lupa kata sandi, silakan hubungi administrator sistem Anda secara langsung. Saat ini, fitur pemulihan kata sandi mandiri belum tersedia dan memerlukan bantuan admin untuk mereset akun Anda." },
+    { id: 'faq-3', question: "Untuk apa halaman 'Laporan Harian' digunakan?", answer: "Halaman 'Laporan Harian' digunakan untuk mencatat dan mengirimkan laporan keuangan harian Anda dengan mudah. Anda bisa memasukkan data seperti omset, pengeluaran, dan pemasukan online, lalu mengirimkannya via WhatsApp atau menyimpannya." },
+    { id: 'faq-4', question: "Bagaimana cara menggunakan fitur 'Cek Usia'?", answer: "Cukup masukkan tanggal, bulan, dan tahun lahir Anda pada kolom yang tersedia di halaman 'Cek Usia', lalu klik tombol 'Hitung Usia'. Aplikasi akan secara otomatis menampilkan usia akurat Anda, zodiak, shio, dan informasi menarik lainnya." }
+  ],
+  contactMethods: [
+    { id: 'contact-1', iconName: 'Mail',  title: "Email", value: "support@adelia-id.com", action: "mailto:support@adelia-id.com", actionLabel: "Kirim Email" },
+    { id: 'contact-2', iconName: 'MessageSquare',  title: "WhatsApp", value: "+62 812 3456 7891", action: "https://wa.me/6281234567891", actionLabel: "Chat via WA" }
+  ]
+};
 
 
 // --- Menu Grid Store ---
@@ -1099,4 +1152,71 @@ export const saveTeamConfig = async (members: TeamMember[]) => {
     avatarFallback: member.avatarFallback,
   }));
   await setDoc(teamMembersDocRef, { members: membersToStore });
+};
+
+// --- Support Page Config Store ---
+interface SupportPageStoreState {
+  supportConfig: SupportPageConfig;
+  isLoading: boolean;
+  error: Error | null;
+  initializeListener: () => () => void;
+}
+
+const useSupportPageStore = create<SupportPageStoreState>((set) => ({
+  supportConfig: defaultSupportConfig,
+  isLoading: true,
+  error: null,
+  initializeListener: () => {
+    const unsubscribe = onSnapshot(supportConfigDocRef, (docSnap) => {
+      if (docSnap.exists() && docSnap.data()) {
+        const dto = docSnap.data() as SupportPageConfigDTO;
+        const hydratedConfig: SupportPageConfig = {
+          faqItems: dto.faqItems || [],
+          contactMethods: dto.contactMethods.map(method => ({
+            id: method.id,
+            iconName: method.iconName,
+            title: method.title,
+            value: method.value,
+            action: method.action,
+            actionLabel: method.actionLabel,
+          })),
+        };
+        set({ supportConfig: hydratedConfig, isLoading: false, error: null });
+      } else {
+        set({ supportConfig: defaultSupportConfig, isLoading: false, error: null });
+      }
+    }, (error) => {
+      console.error("Error fetching support page config:", error);
+      set({ supportConfig: defaultSupportConfig, isLoading: false, error });
+    });
+    return unsubscribe;
+  }
+}));
+
+export const useSupportPageConfig = () => {
+  const { supportConfig, isLoading, initializeListener } = useSupportPageStore();
+  React.useEffect(() => {
+    const unsubscribe = initializeListener();
+    return () => unsubscribe();
+  }, [initializeListener]);
+  return { supportConfig, isLoading };
+};
+
+export const saveSupportPageConfig = async (config: SupportPageConfig) => {
+  const configToStore: SupportPageConfigDTO = {
+    faqItems: config.faqItems.map(item => ({
+      id: item.id,
+      question: item.question,
+      answer: item.answer,
+    })),
+    contactMethods: config.contactMethods.map(method => ({
+      id: method.id,
+      iconName: method.iconName,
+      title: method.title,
+      value: method.value,
+      action: method.action,
+      actionLabel: method.actionLabel,
+    })),
+  };
+  await setDoc(supportConfigDocRef, configToStore);
 };

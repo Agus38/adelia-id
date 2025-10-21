@@ -25,6 +25,7 @@ import {
   TrendingDown,
   Trash2,
   Github,
+  LifeBuoy,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -211,6 +212,12 @@ icon: Users2,
     href: "/admin/github-sync",
     icon: Github,
     description: "Panduan untuk mengunggah proyek ke GitHub.",
+  },
+  {
+    title: "Pengaturan Halaman Bantuan",
+    href: "/admin/support",
+    icon: LifeBuoy,
+    description: "Kelola konten halaman Bantuan &amp; Dukungan.",
   },
   {
     title: "Pengaturan 'Tentang'",
