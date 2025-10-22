@@ -422,13 +422,14 @@ ${pemasukanText}
     window.open(whatsappUrl, '_blank');
   };
 
-  const SummaryRow = ({ label, value, isBold = false, isDestructive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean }) => (
+  const SummaryRow = ({ label, value, isBold = false, isDestructive = false, isPositive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean, isPositive?: boolean }) => (
     <div className="flex justify-between items-center">
       <Label className={cn("text-sm", isBold && "font-semibold")}>{label}</Label>
       <div className={cn(
         "text-sm font-semibold text-right",
         isBold && "text-base font-bold",
-        isDestructive && "text-destructive"
+        isDestructive && "text-destructive",
+        isPositive && "text-green-600"
       )}>
         {value}
       </div>
@@ -597,7 +598,7 @@ ${pemasukanText}
                   <Separator className="my-2" />
                   <SummaryRow label="Total Pengeluaran" value={formatCurrency(totalPengeluaran)} isDestructive />
                   <SummaryRow label="Sisa Omset" value={formatCurrency(sisaOmset)} isBold />
-                  <SummaryRow label="Omset + Pajak" value={formatCurrency(sisaOmsetPlusPajak)} isBold />
+                  <SummaryRow label="Omset + Pajak" value={formatCurrency(sisaOmsetPlusPajak)} isBold isPositive />
                   <Separator className="my-2" />
                   <SummaryRow label="Total Akhir (Setor)" value={formatCurrency(totalAkhir)} isBold />
               </div>
@@ -612,13 +613,13 @@ ${pemasukanText}
               onClick={handleSaveReport}
               disabled={isSaving}
               >
-              {isSaving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+               {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                  <>
+                <>
                   <Save className="mr-2 h-4 w-4" />
                   {showUpdateButton ? 'Update' : 'Simpan'}
-                  </>
+                </>
               )}
             </Button>
             <Button 
