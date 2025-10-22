@@ -703,4 +703,3 @@ export function UserManagement() {
     </div>
   );
 }
-
