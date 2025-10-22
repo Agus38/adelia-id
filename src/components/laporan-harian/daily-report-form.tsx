@@ -604,22 +604,22 @@ ${pemasukanText}
             </div>
           </CardContent>
           <CardFooter className="flex justify-between gap-4">
-             <Button
-                className={cn(
-                    "flex-1 text-white",
-                    showUpdateButton ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
-                )}
-                onClick={handleSaveReport}
-                disabled={isSaving}
-                >
-                {isSaving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                    <>
-                    <Save className="mr-2 h-4 w-4" />
-                    {showUpdateButton ? 'Update' : 'Simpan'}
-                    </>
-                )}
+            <Button
+              className={cn(
+                  "flex-1 text-white",
+                  showUpdateButton ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
+              )}
+              onClick={handleSaveReport}
+              disabled={isSaving}
+              >
+              {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                  <>
+                  <Save className="mr-2 h-4 w-4" />
+                  {showUpdateButton ? 'Update' : 'Simpan'}
+                  </>
+              )}
             </Button>
             <Button 
               className="flex-1 bg-green-600 text-white hover:bg-green-700"
@@ -650,3 +650,4 @@ ${pemasukanText}
     </>
   );
 }
+
