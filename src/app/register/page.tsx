@@ -87,13 +87,8 @@ export default function RegisterPage() {
       // 4. Sign out the user immediately so they have to log in after verification.
       await signOut(auth);
       
-      // 5. Show success toast and redirect to login page.
-      toast({
-        title: 'Pendaftaran Berhasil!',
-        description: `Silakan periksa email Anda untuk melakukan verifikasi sebelum masuk.`,
-        duration: 8000,
-      });
-      router.push('/login');
+      // 5. Redirect to the check-email page instead of showing a toast
+      router.push('/check-email');
 
     } catch (error: any) {
       let errorMessage = 'Terjadi kesalahan saat pendaftaran. Silakan coba lagi.';
