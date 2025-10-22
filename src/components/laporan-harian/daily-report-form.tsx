@@ -429,7 +429,7 @@ ${pemasukanText}
         "text-sm font-semibold text-right",
         isBold && "text-base font-bold",
         isDestructive && "text-destructive",
-        isPositive && "text-green-600"
+        isPositive && "text-positive"
       )}>
         {value}
       </div>
@@ -651,4 +651,3 @@ ${pemasukanText}
     </>
   );
 }
-
