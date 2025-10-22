@@ -11,12 +11,14 @@ const cspHeader = `
     object-src 'none';
     base-uri 'self';
     form-action 'self';
-    frame-ancestors 'none';
     upgrade-insecure-requests;
 `;
 
 const nextConfig: NextConfig = {
   async headers() {
+     if (process.env.NODE_ENV === 'development') {
+      return []; // Disable CSP in development to allow dev tools and hot-reloading
+    }
     return [
       {
         source: '/(.*)',
