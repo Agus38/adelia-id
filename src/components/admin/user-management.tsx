@@ -70,6 +70,11 @@ import { id as indonesiaLocale } from 'date-fns/locale';
 type UserStatus = 'Aktif' | 'Diblokir';
 type UserRole = string;
 
+type PresenceStatus = {
+    state: 'online' | 'offline';
+    last_changed: number;
+}
+
 type User = {
   id: string; // Firestore document ID
   uid: string;
@@ -81,10 +86,10 @@ type User = {
   menuAccess?: Record<string, boolean>;
 };
 
-type PresenceStatus = {
-    state: 'online' | 'offline';
-    last_changed: number;
+type UserWithPresence = User & {
+    presence?: PresenceStatus;
 }
+
 
 const roleBadgeVariant: { [key: string]: 'destructive' | 'secondary' | 'default' } = {
   'admin': 'destructive',
@@ -155,6 +160,13 @@ export function UserManagement() {
 
     return () => unsubscribe();
   }, []);
+  
+  const usersWithPresence = React.useMemo<UserWithPresence[]>(() => {
+    return users.map(user => ({
+        ...user,
+        presence: presenceData[user.uid],
+    }))
+  }, [users, presenceData]);
 
 
   const handleEdit = (user: User) => {
@@ -312,7 +324,7 @@ export function UserManagement() {
     }
   };
   
-  const columns: ColumnDef<User>[] = [
+  const columns: ColumnDef<UserWithPresence>[] = [
     {
       id: 'select',
       header: ({ table }) => (
@@ -341,8 +353,7 @@ export function UserManagement() {
       header: 'Nama',
       cell: ({ row }) => {
         const user = row.original;
-        const presence = presenceData[user.uid];
-        const isOnline = presence?.state === 'online';
+        const isOnline = user.presence?.state === 'online';
 
         return (
             <div className="flex items-center gap-2">
@@ -383,10 +394,10 @@ export function UserManagement() {
       },
     },
     {
-      id: 'lastOnline',
+      accessorKey: 'presence',
       header: 'Terakhir Online',
       cell: ({ row }) => {
-        const presence = presenceData[row.original.uid];
+        const presence = row.original.presence;
         if (presence?.state === 'online') {
             return <span className="text-green-600 font-semibold text-xs">Online</span>
         }
@@ -439,7 +450,7 @@ export function UserManagement() {
   ];
 
   const table = useReactTable({
-    data: users,
+    data: usersWithPresence,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
