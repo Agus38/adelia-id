@@ -15,6 +15,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
+import { Wand2, Loader2 } from 'lucide-react';
+import { enhanceText } from '@/ai/flows/text-enhancer';
 
 const initialTerms = {
   penerimaan:
@@ -30,13 +32,33 @@ const initialTerms = {
 };
 
 type TermsContent = typeof initialTerms;
+type TermsSection = keyof TermsContent;
 
 export function TermsSettings() {
   const [terms, setTerms] = useState<TermsContent>(initialTerms);
+  const [enhancingSection, setEnhancingSection] = useState<TermsSection | null>(null);
 
-  const handleTextChange = (section: keyof TermsContent, value: string) => {
+  const handleTextChange = (section: TermsSection, value: string) => {
     setTerms((prev) => ({ ...prev, [section]: value }));
   };
+
+  const handleEnhanceText = async (section: TermsSection) => {
+    const currentText = terms[section];
+     if (!currentText.trim()) {
+        toast({ title: "Teks kosong", description: "Tidak ada teks untuk disempurnakan.", variant: "destructive" });
+        return;
+    }
+    setEnhancingSection(section);
+    try {
+        const result = await enhanceText({ text: currentText });
+        setTerms(prev => ({...prev, [section]: result.enhancedText}));
+        toast({ title: "Teks berhasil disempurnakan!", description: `Bagian "${section}" telah diperbarui oleh AI.` });
+    } catch (error) {
+        toast({ title: "Gagal Menyempurnakan Teks", description: "Terjadi kesalahan saat menghubungi AI.", variant: "destructive" });
+    } finally {
+        setEnhancingSection(null);
+    }
+  }
 
   const handleSaveChanges = () => {
     // NOTE: Mock implementation. In a real app, you would save this to a database.
@@ -46,6 +68,14 @@ export function TermsSettings() {
       description: "Konten Syarat & Ketentuan telah berhasil diperbarui.",
     });
   };
+  
+  const sections: { key: TermsSection, title: string }[] = [
+      { key: 'penerimaan', title: '1. Penerimaan Persyaratan' },
+      { key: 'lisensi', title: '2. Penggunaan Lisensi' },
+      { key: 'akun', title: '3. Akun Pengguna' },
+      { key: 'batasan', title: '4. Batasan Tanggung Jawab' },
+      { key: 'perubahan', title: '5. Perubahan pada Persyaratan' },
+  ];
 
   return (
     <Card>
@@ -56,60 +86,33 @@ export function TermsSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="penerimaan" className="text-base font-semibold">1. Penerimaan Persyaratan</Label>
-          <Textarea
-            id="penerimaan"
-            value={terms.penerimaan}
-            onChange={(e) => handleTextChange('penerimaan', e.target.value)}
-            rows={4}
-            className="text-sm"
-          />
-        </div>
-        <Separator />
-         <div className="space-y-2">
-          <Label htmlFor="lisensi" className="text-base font-semibold">2. Penggunaan Lisensi</Label>
-          <Textarea
-            id="lisensi"
-            value={terms.lisensi}
-            onChange={(e) => handleTextChange('lisensi', e.target.value)}
-            rows={5}
-            className="text-sm"
-          />
-        </div>
-         <Separator />
-        <div className="space-y-2">
-          <Label htmlFor="akun" className="text-base font-semibold">3. Akun Pengguna</Label>
-          <Textarea
-            id="akun"
-            value={terms.akun}
-            onChange={(e) => handleTextChange('akun', e.target.value)}
-            rows={4}
-            className="text-sm"
-          />
-        </div>
-         <Separator />
-        <div className="space-y-2">
-          <Label htmlFor="batasan" className="text-base font-semibold">4. Batasan Tanggung Jawab</Label>
-          <Textarea
-            id="batasan"
-            value={terms.batasan}
-            onChange={(e) => handleTextChange('batasan', e.target.value)}
-            rows={4}
-            className="text-sm"
-          />
-        </div>
-         <Separator />
-        <div className="space-y-2">
-          <Label htmlFor="perubahan" className="text-base font-semibold">5. Perubahan pada Persyaratan</Label>
-          <Textarea
-            id="perubahan"
-            value={terms.perubahan}
-            onChange={(e) => handleTextChange('perubahan', e.target.value)}
-            rows={4}
-            className="text-sm"
-          />
-        </div>
+        {sections.map((section, index) => (
+            <React.Fragment key={section.key}>
+                <div className="space-y-2">
+                <Label htmlFor={section.key} className="text-base font-semibold">{section.title}</Label>
+                 <div className="relative">
+                    <Textarea
+                        id={section.key}
+                        value={terms[section.key]}
+                        onChange={(e) => handleTextChange(section.key, e.target.value)}
+                        rows={5}
+                        className="text-sm pr-10"
+                    />
+                    <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="absolute right-1 top-2 h-8 w-8"
+                        onClick={() => handleEnhanceText(section.key)}
+                        disabled={enhancingSection === section.key}
+                    >
+                        {enhancingSection === section.key ? <Loader2 className="h-4 w-4 animate-spin"/> : <Wand2 className="h-4 w-4 text-muted-foreground"/>}
+                        <span className="sr-only">Sempurnakan teks</span>
+                    </Button>
+                </div>
+                </div>
+                {index < sections.length - 1 && <Separator />}
+            </React.Fragment>
+        ))}
       </CardContent>
       <CardFooter>
         <Button onClick={handleSaveChanges}>Simpan Perubahan</Button>
