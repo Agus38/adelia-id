@@ -423,13 +423,14 @@ ${pemasukanText}
     window.open(whatsappUrl, '_blank');
   };
 
-  const SummaryRow = ({ label, value, isBold = false, isDestructive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean }) => (
+  const SummaryRow = ({ label, value, isBold = false, isDestructive = false, isPositive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean, isPositive?: boolean }) => (
     <div className="flex justify-between items-center">
       <Label className={cn("text-sm", isBold && "font-semibold")}>{label}</Label>
       <div className={cn(
         "text-sm font-semibold text-right",
         isBold && "text-base font-bold",
-        isDestructive && "text-destructive"
+        isDestructive && "text-destructive",
+        isPositive && "text-positive"
       )}>
         {value}
       </div>
@@ -600,7 +601,7 @@ ${pemasukanText}
                   <SummaryRow label="Sisa Omset" value={formatCurrency(sisaOmset)} isBold />
                   <div className="flex justify-between items-center">
                       <Label className="text-sm font-semibold">Omset + Pajak</Label>
-                      <div className="text-base font-bold text-right" style={{ color: 'hsl(var(--positive))' }}>
+                      <div className="text-base font-bold text-right text-positive">
                           {formatCurrency(sisaOmsetPlusPajak)}
                       </div>
                   </div>
