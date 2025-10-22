@@ -8,12 +8,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, PlusCircle, Save, Trash2, type LucideIcon } from 'lucide-react';
+import { Loader2, PlusCircle, Save, Trash2, type LucideIcon, Wand2 } from 'lucide-react';
 import { useSupportPageConfig, saveSupportPageConfig, type FaqItem, type ContactMethod } from '@/lib/menu-store';
 import { toast } from '@/hooks/use-toast';
 import { allIcons } from '@/lib/menu-items-v2';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { enhanceText } from '@/ai/flows/text-enhancer';
 
 const iconMap: { [key: string]: React.ElementType } = allIcons;
 
@@ -21,6 +22,7 @@ export function SupportSettings() {
   const { supportConfig, isLoading } = useSupportPageConfig();
   const [localConfig, setLocalConfig] = useState<{ faqItems: FaqItem[], contactMethods: ContactMethod[] } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [enhancingFaqId, setEnhancingFaqId] = useState<string | null>(null);
 
   useEffect(() => {
     if (supportConfig) {
@@ -41,6 +43,29 @@ export function SupportSettings() {
     );
   }
   
+  const handleEnhanceText = async (faqId: string, field: 'question' | 'answer') => {
+    if (!localConfig) return;
+    const faqIndex = localConfig.faqItems.findIndex(f => f.id === faqId);
+    if (faqIndex === -1) return;
+
+    const currentText = localConfig.faqItems[faqIndex][field];
+    if (!currentText.trim()) {
+        toast({ title: "Teks kosong", description: "Tidak ada teks untuk disempurnakan.", variant: "destructive" });
+        return;
+    }
+
+    setEnhancingFaqId(`${faqId}-${field}`);
+    try {
+        const result = await enhanceText({ text: currentText });
+        handleFaqChange(faqIndex, field, result.enhancedText);
+        toast({ title: "Teks berhasil disempurnakan!", description: "AI telah memperbarui teks untuk Anda." });
+    } catch (error) {
+        toast({ title: "Gagal Menyempurnakan Teks", description: "Terjadi kesalahan saat menghubungi AI.", variant: "destructive" });
+    } finally {
+        setEnhancingFaqId(null);
+    }
+  };
+
   // Handlers for FAQ
   const handleFaqChange = (index: number, field: 'question' | 'answer', value: string) => {
     const newFaqs = [...localConfig.faqItems];
@@ -128,11 +153,21 @@ export function SupportSettings() {
                 <AccordionContent className="space-y-4 pt-4">
                    <div className="space-y-2">
                         <Label htmlFor={`faq-q-${index}`}>Pertanyaan</Label>
-                        <Input id={`faq-q-${index}`} value={faq.question} onChange={(e) => handleFaqChange(index, 'question', e.target.value)} />
+                        <div className="relative">
+                            <Input id={`faq-q-${index}`} value={faq.question} onChange={(e) => handleFaqChange(index, 'question', e.target.value)} className="pr-10" />
+                             <Button size="icon" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => handleEnhanceText(faq.id, 'question')} disabled={enhancingFaqId === `${faq.id}-question`}>
+                                {enhancingFaqId === `${faq.id}-question` ? <Loader2 className="h-4 w-4 animate-spin"/> : <Wand2 className="h-4 w-4 text-muted-foreground"/>}
+                            </Button>
+                        </div>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor={`faq-a-${index}`}>Jawaban</Label>
-                        <Textarea id={`faq-a-${index}`} value={faq.answer} onChange={(e) => handleFaqChange(index, 'answer', e.target.value)} rows={4} />
+                        <div className="relative">
+                            <Textarea id={`faq-a-${index}`} value={faq.answer} onChange={(e) => handleFaqChange(index, 'answer', e.target.value)} rows={4} className="pr-10" />
+                            <Button size="icon" variant="ghost" className="absolute right-1 top-2 h-8 w-8" onClick={() => handleEnhanceText(faq.id, 'answer')} disabled={enhancingFaqId === `${faq.id}-answer`}>
+                                 {enhancingFaqId === `${faq.id}-answer` ? <Loader2 className="h-4 w-4 animate-spin"/> : <Wand2 className="h-4 w-4 text-muted-foreground"/>}
+                            </Button>
+                        </div>
                     </div>
                     <Button variant="destructive" size="sm" onClick={() => handleRemoveFaq(index)}>
                         <Trash2 className="mr-2 h-4 w-4"/> Hapus FAQ
