@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -422,14 +421,14 @@ ${pemasukanText}
     window.open(whatsappUrl, '_blank');
   };
 
-  const SummaryRow = ({ label, value, isBold = false, isDestructive = false, isPositive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean, isPositive?: boolean }) => (
+  const SummaryRow = ({ label, value, isBold = false, isDestructive = false, className = '' }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean, className?: string }) => (
     <div className="flex justify-between items-center">
       <Label className={cn("text-sm", isBold && "font-semibold")}>{label}</Label>
       <div className={cn(
         "text-sm font-semibold text-right",
         isBold && "text-base font-bold",
         isDestructive && "text-destructive",
-        isPositive && "text-positive"
+        className
       )}>
         {value}
       </div>
@@ -598,7 +597,7 @@ ${pemasukanText}
                   <Separator className="my-2" />
                   <SummaryRow label="Total Pengeluaran" value={formatCurrency(totalPengeluaran)} isDestructive />
                   <SummaryRow label="Sisa Omset" value={formatCurrency(sisaOmset)} isBold />
-                  <SummaryRow label="Omset + Pajak" value={formatCurrency(sisaOmsetPlusPajak)} isBold isPositive />
+                  <SummaryRow label="Omset + Pajak" value={formatCurrency(sisaOmsetPlusPajak)} isBold className="text-green-600 dark:text-green-500" />
                   <Separator className="my-2" />
                   <SummaryRow label="Total Akhir (Setor)" value={formatCurrency(totalAkhir)} isBold />
               </div>
