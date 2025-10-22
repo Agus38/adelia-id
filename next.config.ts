@@ -17,7 +17,7 @@ const cspHeader = `
 const nextConfig: NextConfig = {
   async headers() {
      if (process.env.NODE_ENV === 'development') {
-      return []; // Disable CSP in development to allow dev tools and hot-reloading
+      return []; // Disable security headers in development to allow dev tools and hot-reloading
     }
     return [
       {
@@ -26,6 +26,18 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy',
             value: cspHeader.replace(/\s{2,}/g, ' ').trim(),
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'same-origin',
           },
         ],
       },
