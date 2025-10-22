@@ -650,4 +650,3 @@ ${pemasukanText}
     </>
   );
 }
-
