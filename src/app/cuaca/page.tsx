@@ -7,10 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Search, MapPin, Wind, Droplets, Sunrise, Sunset, Loader2, AlertTriangle, CloudSun } from 'lucide-react';
+import { Search, MapPin, Wind, Droplets, Sunrise, Sunset, Loader2, AlertTriangle, CloudSun, Thermometer, Cloud, Eye } from 'lucide-react';
 import Image from 'next/image';
 import { format, fromUnixTime } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 
 interface WeatherData {
   coord: { lon: number; lat: number };
@@ -28,14 +30,18 @@ interface WeatherData {
   cod: number;
 }
 
+type ForecastItem = {
+    dt: number;
+    main: { temp: number; feels_like: number; temp_min: number; temp_max: number; pressure: number; humidity: number; };
+    weather: { id: number; main: string; description: string; icon: string; }[];
+    wind: { speed: number; deg: number };
+    dt_txt: string;
+    clouds: { all: number };
+    visibility: number;
+};
+
 interface ForecastData {
-    list: {
-        dt: number;
-        main: { temp: number; feels_like: number; temp_min: number; temp_max: number; pressure: number; humidity: number; };
-        weather: { id: number; main: string; description: string; icon: string; }[];
-        wind: { speed: number; deg: number };
-        dt_txt: string;
-    }[];
+    list: ForecastItem[];
     city: { name: string; country: string; sunrise: number; sunset: number; };
 }
 
@@ -49,6 +55,14 @@ export default function WeatherPage() {
     const [isLoading, setIsLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
     const [lastSearchedQuery, setLastSearchedQuery] = React.useState<string | { lat: number, lon: number }>(DEFAULT_CITY);
+
+    const [selectedForecast, setSelectedForecast] = React.useState<ForecastItem | null>(null);
+    const [isDetailOpen, setDetailOpen] = React.useState(false);
+
+    const handleForecastClick = (item: ForecastItem) => {
+        setSelectedForecast(item);
+        setDetailOpen(true);
+    }
 
     const fetchWeatherData = React.useCallback(async (query: string | { lat: number, lon: number }) => {
         if (!query) return;
@@ -118,6 +132,16 @@ export default function WeatherPage() {
             </div>
         </div>
     );
+    
+    const DetailInfoRow = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) => (
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Icon className="h-4 w-4"/>
+                <span>{label}</span>
+            </div>
+            <span className="font-semibold text-sm">{value}</span>
+        </div>
+    );
 
     const groupedForecast = React.useMemo(() => {
         if (!forecast) return {};
@@ -128,10 +152,11 @@ export default function WeatherPage() {
             }
             acc[date].push(item);
             return acc;
-        }, {} as Record<string, typeof forecast.list>);
+        }, {} as Record<string, ForecastItem[]>);
     }, [forecast]);
 
   return (
+    <Dialog open={isDetailOpen} onOpenChange={setDetailOpen}>
     <div className="flex-1 space-y-6 p-4 pt-6 md:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
@@ -210,7 +235,7 @@ export default function WeatherPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Prakiraan Cuaca 5 Hari</CardTitle>
-                        <CardDescription>Prakiraan cuaca untuk {weather.name} setiap 3 jam.</CardDescription>
+                        <CardDescription>Prakiraan cuaca untuk {weather.name} setiap 3 jam. Klik untuk detail.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         {Object.entries(groupedForecast).map(([date, items]) => (
@@ -218,18 +243,20 @@ export default function WeatherPage() {
                                 <h3 className="font-semibold mb-3">{date}</h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
                                     {items.map((item, index) => (
-                                        <div key={index} className="flex flex-col items-center text-center p-2 rounded-lg bg-muted/50">
-                                            <p className="font-semibold text-sm">{format(fromUnixTime(item.dt), 'HH:mm')}</p>
-                                            <Image
-                                                src={`https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`}
-                                                alt={item.weather[0].description}
-                                                width={40}
-                                                height={40}
-                                                className="w-10 h-10"
-                                            />
-                                            <p className="font-bold">{Math.round(item.main.temp)}°C</p>
-                                            <p className="text-xs capitalize text-muted-foreground truncate w-full">{item.weather[0].description}</p>
-                                        </div>
+                                        <DialogTrigger asChild key={index}>
+                                            <button onClick={() => handleForecastClick(item)} className="flex flex-col items-center text-center p-2 rounded-lg bg-muted/50 transition-colors hover:bg-primary/10 hover:ring-2 hover:ring-primary">
+                                                <p className="font-semibold text-sm">{format(fromUnixTime(item.dt), 'HH:mm')}</p>
+                                                <Image
+                                                    src={`https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`}
+                                                    alt={item.weather[0].description}
+                                                    width={40}
+                                                    height={40}
+                                                    className="w-10 h-10"
+                                                />
+                                                <p className="font-bold">{Math.round(item.main.temp)}°C</p>
+                                                <p className="text-xs capitalize text-muted-foreground truncate w-full">{item.weather[0].description}</p>
+                                            </button>
+                                        </DialogTrigger>
                                     ))}
                                 </div>
                             </div>
@@ -238,6 +265,49 @@ export default function WeatherPage() {
                 </Card>
             </div>
         )}
+        
+        {selectedForecast && (
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Detail Cuaca: {format(fromUnixTime(selectedForecast.dt), 'd MMM yyyy, HH:mm', { locale: id })}</DialogTitle>
+                    <DialogDescription>
+                        Rincian cuaca untuk {weather?.name} pada waktu yang dipilih.
+                    </DialogDescription>
+                </DialogHeader>
+                 <div className="py-4 space-y-4">
+                    <div className="flex items-center justify-center gap-4 p-4 bg-muted rounded-lg">
+                        <Image
+                            src={`https://openweathermap.org/img/wn/${selectedForecast.weather[0].icon}@4x.png`}
+                            alt={selectedForecast.weather[0].description}
+                            width={100}
+                            height={100}
+                        />
+                        <div className="text-center">
+                            <p className="text-5xl font-bold">{Math.round(selectedForecast.main.temp)}°C</p>
+                            <p className="capitalize text-muted-foreground">{selectedForecast.weather[0].description}</p>
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        <DetailInfoRow icon={Thermometer} label="Terasa Seperti" value={`${Math.round(selectedForecast.main.feels_like)}°C`} />
+                        <Separator />
+                        <DetailInfoRow icon={Droplets} label="Kelembapan" value={`${selectedForecast.main.humidity}%`} />
+                        <Separator />
+                        <DetailInfoRow icon={Wind} label="Kecepatan Angin" value={`${selectedForecast.wind.speed.toFixed(1)} m/s`} />
+                        <Separator />
+                        <DetailInfoRow icon={Cloud} label="Tutupan Awan" value={`${selectedForecast.clouds.all}%`} />
+                         <Separator />
+                        <DetailInfoRow icon={Eye} label="Jarak Pandang" value={`${(selectedForecast.visibility / 1000).toFixed(1)} km`} />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setDetailOpen(false)}>Tutup</Button>
+                </DialogFooter>
+            </DialogContent>
+        )}
+
     </div>
+    </Dialog>
   );
 }
+
+    
