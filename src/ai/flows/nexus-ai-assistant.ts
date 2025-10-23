@@ -62,11 +62,17 @@ Ketika pengguna bertanya tentang cara melakukan sesuatu, gunakan panduan berikut
 Selalu jawab dengan antusias dan jelas. Jika kamu tidak tahu jawabannya, katakan saja kamu belum punya info itu, tapi akan coba cari tahu.
 Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
   
+  // Separate the last user message as the prompt, and the rest as history.
+  // This is a more robust way to handle the conversation flow.
+  const conversationHistory = history.slice(0, -1);
+  const currentPrompt = history.length > 0 ? history[history.length - 1].content : "Sapa pengguna.";
+
   try {
     const response = await ai.generate({
       model: 'googleai/gemini-pro',
       system: systemPrompt,
-      history: history.map(h => ({
+      prompt: currentPrompt,
+      history: conversationHistory.map(h => ({
           role: h.role,
           content: [{ text: h.content }],
       })),
