@@ -62,15 +62,11 @@ Ketika pengguna bertanya tentang cara melakukan sesuatu, gunakan panduan berikut
 Selalu jawab dengan antusias dan jelas. Jika kamu tidak tahu jawabannya, katakan saja kamu belum punya info itu, tapi akan coba cari tahu.
 Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
   
-  const currentPrompt = history[history.length - 1]?.content || '';
-  const conversationHistory = history.slice(0, -1);
-
   try {
     const response = await ai.generate({
       model: 'googleai/gemini-pro',
       system: systemPrompt,
-      history: conversationHistory.map(h => ({ role: h.role, content: [{ text: h.content }] })),
-      prompt: currentPrompt,
+      history: history.map(h => ({ role: h.role, content: [{ text: h.content }] })),
     });
     return { response: response.text };
   } catch (error) {
