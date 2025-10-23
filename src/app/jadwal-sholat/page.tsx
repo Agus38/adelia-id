@@ -102,6 +102,7 @@ export default function JadwalSholatPage() {
                 }
             },
             () => {
+                // User denied or an error occurred, set default city
                 setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
             },
             { timeout: 10000 }
