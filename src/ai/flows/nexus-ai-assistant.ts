@@ -63,7 +63,6 @@ Selalu jawab dengan antusias dan jelas. Jika kamu tidak tahu jawabannya, katakan
 Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
   
   try {
-    // Format the entire history correctly for the model.
     const formattedHistory = history.map(h => ({
         role: h.role,
         content: [{ text: h.content }],
@@ -72,7 +71,7 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
     const response = await ai.generate({
       model: 'googleai/gemini-pro',
       system: systemPrompt,
-      history: formattedHistory, // Use the full, correctly formatted history.
+      history: formattedHistory,
     });
     
     return { response: response.text };
