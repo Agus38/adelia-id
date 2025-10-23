@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -69,7 +68,7 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
 
   try {
     const response = await ai.generate({
-      model: 'googleai/gemini-pro',
+      model: 'gemini-pro',
       system: systemPrompt,
       prompt: currentPrompt,
       history: conversationHistory.map(h => ({
