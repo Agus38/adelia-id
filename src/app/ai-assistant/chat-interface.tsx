@@ -45,6 +45,8 @@ export function ChatInterface() {
 
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState<string | null>(null); // message content being played
+  const [apiStatus, setApiStatus] = useState<'ok' | 'error'>('ok');
+
 
   // Fetching app context
   const { aboutInfo } = useAboutInfoConfig();
@@ -142,14 +144,22 @@ export function ChatInterface() {
           developerTitle: developerInfo.title,
       };
       
-      // Use the consistent newHistory array for the API call
-      const result = await nexusAIAssistant({ 
-        history: newHistory, 
-        appContext,
-        userName: user?.fullName || 'Pengguna',
-      });
-      const assistantMessage: Message = { role: 'model', content: result.response };
-      setMessages((prev) => [...prev, assistantMessage]);
+      try {
+        const result = await nexusAIAssistant({ 
+          history: newHistory, 
+          appContext,
+          userName: user?.fullName || 'Pengguna',
+        });
+        const assistantMessage: Message = { role: 'model', content: result.response };
+        setMessages((prev) => [...prev, assistantMessage]);
+        setApiStatus('ok');
+      } catch (error) {
+        console.error("AI Assistant Error:", error);
+        const errorMessage: Message = { role: 'model', content: "Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti." };
+        setMessages((prev) => [...prev, errorMessage]);
+        setApiStatus('error');
+      }
+
     });
   };
 
@@ -161,11 +171,11 @@ export function ChatInterface() {
                  <Avatar>
                     <AvatarFallback><Bot /></AvatarFallback>
                 </Avatar>
-                 <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
+                 <span className={`absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-background transition-colors ${apiStatus === 'ok' ? 'bg-green-500' : 'bg-red-500'}`} />
               </div>
               <div>
                   <p className="font-semibold">Nexus</p>
-                  <p className="text-xs text-muted-foreground">Online</p>
+                  <p className="text-xs text-muted-foreground">{apiStatus === 'ok' ? 'Online' : 'Gangguan'}</p>
               </div>
           </div>
           {messages.length > 0 && (

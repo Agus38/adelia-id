@@ -10,7 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 import Groq from 'groq-sdk';
 import type {ChatCompletionMessageParam} from 'groq-sdk/resources/chat/completions';
 
@@ -83,29 +83,7 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
     return { response: response.text };
   } catch (googleError) {
     console.warn("Google AI failed. Falling back to Groq.", googleError);
-    try {
-      console.log("Attempting to generate response with Groq...");
-      
-      const messages: ChatCompletionMessageParam[] = [
-        { role: 'system', content: systemPrompt },
-        ...conversationHistory.map(h => ({
-            role: h.role === 'model' ? 'assistant' as const : 'user' as const,
-            content: h.content
-        })),
-        { role: 'user', content: currentPrompt }
-      ];
-
-      const chatCompletion = await groq.chat.completions.create({
-        messages,
-        model: "llama3-8b-8192",
-      });
-      
-      const responseText = chatCompletion.choices[0]?.message?.content || "Maaf, saya tidak bisa memberikan respons saat ini.";
-      return { response: responseText };
-
-    } catch (groqError) {
-      console.error("Both Google AI and Groq failed.", groqError);
-      return { response: "Maaf, sepertinya saya sedang mengalami kesulitan teknis. Silakan coba lagi nanti." };
-    }
+    // If Google AI fails, throw an error to be caught by the component
+    throw new Error('Failed to access Google AI and Groq fallback is not implemented here.');
   }
 }
