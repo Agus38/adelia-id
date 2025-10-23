@@ -54,7 +54,7 @@ export default function JadwalSholatPage() {
   const [selectedCity, setSelectedCity] = React.useState<City | null>(null);
   const [prayerData, setPrayerData] = React.useState<PrayerData | null>(null);
   const [isLoadingCities, setIsLoadingCities] = React.useState(true);
-  const [isLoadingSchedule, setIsLoadingSchedule] = React.useState(false);
+  const [isLoadingSchedule, setIsLoadingSchedule] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [comboboxOpen, setComboboxOpen] = React.useState(false);
 
@@ -81,32 +81,27 @@ export default function JadwalSholatPage() {
 
     const initializeLocation = async () => {
         const allCities = await fetchCities();
+        if (allCities.length === 0) return;
 
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
                 try {
-                    // Get city name from OpenWeatherMap
                     const geoResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHERMAP_API_KEY}&units=metric`);
                     const geoData = await geoResponse.json();
                     const cityName = geoData.name;
 
-                    // Find the best match in MyQuran city list
                     const foundCity = allCities.find(c => c.lokasi.toLowerCase() === cityName.toLowerCase());
                     if (foundCity) {
                         setSelectedCity(foundCity);
                     } else {
-                        // Fallback to default if city not found in list
                         setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
                     }
                 } catch (e) {
-                    // Fallback to default on API error
                     setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
                 }
             },
-            (err) => {
-                console.warn(`Geolocation error (${err.code}): ${err.message}`);
-                // Fallback to default on permission denial
+            () => {
                 setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
             },
             { timeout: 10000 }
@@ -247,7 +242,11 @@ export default function JadwalSholatPage() {
                     </TableBody>
                   </Table>
                </div>
-            ) : null}
+            ) : (
+                <div className="flex h-48 flex-col items-center justify-center text-center text-muted-foreground">
+                    <p>Pilih kota untuk menampilkan jadwal.</p>
+                </div>
+            )}
           </CardContent>
         </Card>
       </div>
