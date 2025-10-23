@@ -61,6 +61,7 @@ export default function WeatherPage() {
 
     const handleForecastClick = (item: ForecastItem) => {
         setSelectedForecast(item);
+        setDetailOpen(true);
     }
 
     const fetchWeatherData = React.useCallback(async (query: string | { lat: number, lon: number }) => {
@@ -155,7 +156,7 @@ export default function WeatherPage() {
     }, [forecast]);
 
   return (
-    <Dialog open={isDetailOpen} onOpenChange={setDetailOpen}>
+    <>
     <div className="flex-1 space-y-6 p-4 pt-6 md:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
@@ -242,20 +243,22 @@ export default function WeatherPage() {
                                 <h3 className="font-semibold mb-3">{date}</h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
                                     {items.map((item, index) => (
-                                        <DialogTrigger asChild key={index}>
-                                            <button onClick={() => handleForecastClick(item)} className="flex flex-col items-center text-center p-2 rounded-lg bg-muted/50 transition-colors hover:bg-primary/10 hover:ring-2 hover:ring-primary">
-                                                <p className="font-semibold text-sm">{format(fromUnixTime(item.dt), 'HH:mm')}</p>
-                                                <Image
-                                                    src={`https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`}
-                                                    alt={item.weather[0].description}
-                                                    width={40}
-                                                    height={40}
-                                                    className="w-10 h-10"
-                                                />
-                                                <p className="font-bold">{Math.round(item.main.temp)}°C</p>
-                                                <p className="text-xs capitalize text-muted-foreground truncate w-full">{item.weather[0].description}</p>
-                                            </button>
-                                        </DialogTrigger>
+                                        <button 
+                                          key={index} 
+                                          onClick={() => handleForecastClick(item)} 
+                                          className="flex flex-col items-center text-center p-2 rounded-lg bg-muted/50 transition-colors hover:bg-primary/10 hover:ring-2 hover:ring-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                                        >
+                                            <p className="font-semibold text-sm">{format(fromUnixTime(item.dt), 'HH:mm')}</p>
+                                            <Image
+                                                src={`https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`}
+                                                alt={item.weather[0].description}
+                                                width={40}
+                                                height={40}
+                                                className="w-10 h-10"
+                                            />
+                                            <p className="font-bold">{Math.round(item.main.temp)}°C</p>
+                                            <p className="text-xs capitalize text-muted-foreground truncate w-full">{item.weather[0].description}</p>
+                                        </button>
                                     ))}
                                 </div>
                             </div>
@@ -265,47 +268,49 @@ export default function WeatherPage() {
             </div>
         )}
         
-        {selectedForecast && (
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Detail Cuaca: {format(fromUnixTime(selectedForecast.dt), 'd MMM yyyy, HH:mm', { locale: id })}</DialogTitle>
-                    <DialogDescription>
-                        Rincian cuaca untuk {weather?.name} pada waktu yang dipilih.
-                    </DialogDescription>
-                </DialogHeader>
-                 <div className="py-4 space-y-4">
-                    <div className="flex items-center justify-center gap-4 p-4 bg-muted rounded-lg">
-                        <Image
-                            src={`https://openweathermap.org/img/wn/${selectedForecast.weather[0].icon}@4x.png`}
-                            alt={selectedForecast.weather[0].description}
-                            width={100}
-                            height={100}
-                        />
-                        <div className="text-center">
-                            <p className="text-5xl font-bold">{Math.round(selectedForecast.main.temp)}°C</p>
-                            <p className="capitalize text-muted-foreground">{selectedForecast.weather[0].description}</p>
+        <Dialog open={isDetailOpen} onOpenChange={setDetailOpen}>
+            {selectedForecast && (
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Detail Cuaca: {format(fromUnixTime(selectedForecast.dt), 'd MMM yyyy, HH:mm', { locale: id })}</DialogTitle>
+                        <DialogDescription>
+                            Rincian cuaca untuk {weather?.name} pada waktu yang dipilih.
+                        </DialogDescription>
+                    </DialogHeader>
+                     <div className="py-4 space-y-4">
+                        <div className="flex items-center justify-center gap-4 p-4 bg-muted rounded-lg">
+                            <Image
+                                src={`https://openweathermap.org/img/wn/${selectedForecast.weather[0].icon}@4x.png`}
+                                alt={selectedForecast.weather[0].description}
+                                width={100}
+                                height={100}
+                            />
+                            <div className="text-center">
+                                <p className="text-5xl font-bold">{Math.round(selectedForecast.main.temp)}°C</p>
+                                <p className="capitalize text-muted-foreground">{selectedForecast.weather[0].description}</p>
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <DetailInfoRow icon={Thermometer} label="Terasa Seperti" value={`${Math.round(selectedForecast.main.feels_like)}°C`} />
+                            <Separator />
+                            <DetailInfoRow icon={Droplets} label="Kelembapan" value={`${selectedForecast.main.humidity}%`} />
+                            <Separator />
+                            <DetailInfoRow icon={Wind} label="Kecepatan Angin" value={`${selectedForecast.wind.speed.toFixed(1)} m/s`} />
+                            <Separator />
+                            <DetailInfoRow icon={Cloud} label="Tutupan Awan" value={`${selectedForecast.clouds.all}%`} />
+                             <Separator />
+                            <DetailInfoRow icon={Eye} label="Jarak Pandang" value={`${(selectedForecast.visibility / 1000).toFixed(1)} km`} />
                         </div>
                     </div>
-                    <div className="space-y-3">
-                        <DetailInfoRow icon={Thermometer} label="Terasa Seperti" value={`${Math.round(selectedForecast.main.feels_like)}°C`} />
-                        <Separator />
-                        <DetailInfoRow icon={Droplets} label="Kelembapan" value={`${selectedForecast.main.humidity}%`} />
-                        <Separator />
-                        <DetailInfoRow icon={Wind} label="Kecepatan Angin" value={`${selectedForecast.wind.speed.toFixed(1)} m/s`} />
-                        <Separator />
-                        <DetailInfoRow icon={Cloud} label="Tutupan Awan" value={`${selectedForecast.clouds.all}%`} />
-                         <Separator />
-                        <DetailInfoRow icon={Eye} label="Jarak Pandang" value={`${(selectedForecast.visibility / 1000).toFixed(1)} km`} />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setDetailOpen(false)}>Tutup</Button>
-                </DialogFooter>
-            </DialogContent>
-        )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDetailOpen(false)}>Tutup</Button>
+                    </DialogFooter>
+                </DialogContent>
+            )}
+        </Dialog>
 
     </div>
-    </Dialog>
+    </>
   );
 }
 
