@@ -11,12 +11,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import Groq from 'groq-sdk';
-import type {ChatCompletionMessageParam} from 'groq-sdk/resources/chat/completions';
-
-const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY,
-});
 
 // Define a schema for a single message in the chat history
 const MessageSchema = z.object({
@@ -72,8 +66,6 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
   const conversationHistory = history.slice(0, -1);
 
   try {
-    // Attempt to use Google AI first
-    console.log("Attempting to generate response with Google AI...");
     const response = await ai.generate({
       model: 'googleai/gemini-pro',
       system: systemPrompt,
@@ -81,31 +73,9 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
       prompt: currentPrompt,
     });
     return { response: response.text };
-  } catch (googleError) {
-    console.warn("Google AI failed. Falling back to Groq.", googleError);
-    
-    // Fallback to Groq
-    try {
-      console.log("Attempting to generate response with Groq...");
-      const groqHistory: ChatCompletionMessageParam[] = [
-        { role: "system", content: systemPrompt },
-        ...history.map(h => ({
-          role: h.role === 'model' ? 'assistant' : 'user',
-          content: h.content,
-        })),
-      ];
-
-      const chatCompletion = await groq.chat.completions.create({
-        messages: groqHistory,
-        model: "llama3-8b-8192",
-      });
-      
-      const responseText = chatCompletion.choices[0]?.message?.content || "Maaf, saya tidak bisa memberikan respons saat ini.";
-      return { response: responseText };
-
-    } catch (groqError) {
-        console.error("Groq fallback also failed.", groqError);
-        throw new Error('Both AI services failed. Please try again later.');
-    }
+  } catch (error) {
+    console.error("AI Assistant Error:", error);
+    // Re-throw a more generic error to be handled by the client component
+    throw new Error('Gagal menghubungi asisten AI. Silakan coba lagi nanti.');
   }
 }
