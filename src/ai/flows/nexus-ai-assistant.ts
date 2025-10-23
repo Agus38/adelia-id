@@ -10,7 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'zod';
+import {z} from 'genkit';
 import Groq from 'groq-sdk';
 import type {ChatCompletionMessageParam} from 'groq-sdk/resources/chat/completions';
 
@@ -89,11 +89,10 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
       console.log("Attempting to generate response with Groq...");
       const groqHistory: ChatCompletionMessageParam[] = [
         { role: "system", content: systemPrompt },
-        ...conversationHistory.map(h => ({
+        ...history.map(h => ({
           role: h.role === 'model' ? 'assistant' : 'user',
           content: h.content,
         })),
-        { role: 'user', content: currentPrompt }
       ];
 
       const chatCompletion = await groq.chat.completions.create({
