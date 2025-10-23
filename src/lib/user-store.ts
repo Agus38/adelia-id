@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth, db } from './firebase';
 import type { UserProfile } from '@/app/main-layout';
-import { doc, getDoc, onSnapshot, collection, query, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection, query, setDoc, serverTimestamp, addDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
 interface UserState {
@@ -15,6 +15,26 @@ interface UserState {
   setUserProfile: (profile: UserProfile) => void;
   clearUser: () => void;
 }
+
+// --- Activity Logging (Moved here to be client-side only) ---
+export const logActivity = async (action: string, target: string) => {
+    const user = auth.currentUser;
+    if (!user) return; // Don't log if user is not authenticated
+
+    try {
+        await addDoc(collection(db, 'activityLogs'), {
+            userId: user.uid,
+            userName: user.displayName || user.email,
+            userAvatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'A')}&background=random`,
+            action: action,
+            target: target,
+            timestamp: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Error logging activity:", error);
+    }
+};
+
 
 export const useUserStore = create<UserState>((set) => ({
   user: null,

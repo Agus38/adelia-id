@@ -2,7 +2,8 @@
 'use client';
 
 import { collection, setDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { db, logActivity } from './firebase';
+import { db } from './firebase';
+import { logActivity } from './user-store';
 
 export interface SmwReportData {
   id: string; // Firestore document ID

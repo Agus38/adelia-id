@@ -2,7 +2,8 @@
 'use client';
 
 import { collection, query, where, getDocs, setDoc, doc, deleteDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { db, logActivity } from './firebase';
+import { db } from './firebase';
+import { logActivity } from './user-store';
 import type { User } from 'firebase/auth';
 
 // The DailyReport interface now includes userId
