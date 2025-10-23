@@ -61,7 +61,6 @@ export default function WeatherPage() {
 
     const handleForecastClick = (item: ForecastItem) => {
         setSelectedForecast(item);
-        setDetailOpen(true);
     }
 
     const fetchWeatherData = React.useCallback(async (query: string | { lat: number, lon: number }) => {
