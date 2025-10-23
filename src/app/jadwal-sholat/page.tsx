@@ -15,6 +15,9 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 interface City {
   id: string;
   lokasi: string;
+  // For distance calculation
+  lat?: number;
+  lon?: number;
 }
 
 interface Jadwal {
@@ -32,6 +35,13 @@ interface PrayerData {
   lokasi: string;
   daerah: string;
   jadwal: Jadwal & { tanggal: string };
+  // Add coordinates for distance calculation
+  koordinat: {
+      lat: number;
+      lon: number;
+      lintang: string;
+      bujur: string;
+  }
 }
 
 const scheduleOrder: (keyof Jadwal)[] = ['imsak', 'subuh', 'terbit', 'dhuha', 'dzuhur', 'ashar', 'maghrib', 'isya'];
@@ -46,8 +56,20 @@ const scheduleLabels: Record<keyof Jadwal, string> = {
   isya: 'Isya',
 };
 
-const OPENWEATHERMAP_API_KEY = '2c22f1e55ce0ba542652c2b4164b47eb';
 const DEFAULT_CITY_ID = '1301'; // Jakarta
+
+// Haversine formula to calculate distance between two lat/lon points
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371; // Radius of the Earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+}
 
 export default function JadwalSholatPage() {
   const [cities, setCities] = React.useState<City[]>([]);
@@ -58,9 +80,13 @@ export default function JadwalSholatPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [comboboxOpen, setComboboxOpen] = React.useState(false);
 
-  // Fetch all cities on initial mount
+  // Fetch all cities and then try to determine user location
   React.useEffect(() => {
-    const fetchCities = async () => {
+    const fetchAndSetLocation = async () => {
+      setIsLoadingCities(true);
+      
+      // 1. Fetch all cities from MyQuran API
+      let allCities: City[] = [];
       try {
         const response = await fetch('https://api.myquran.com/v2/sholat/kota/semua');
         if (!response.ok) throw new Error('Gagal mengambil daftar kota');
@@ -69,50 +95,66 @@ export default function JadwalSholatPage() {
         
         const sortedCities = data.data.sort((a: City, b: City) => a.lokasi.localeCompare(b.lokasi));
         setCities(sortedCities);
-        return sortedCities;
-
+        allCities = sortedCities;
       } catch (err: any) {
         setError(err.message || 'Terjadi kesalahan saat memuat kota.');
-        return [];
-      } finally {
+        const defaultCity = cities.find(c => c.id === DEFAULT_CITY_ID) || null;
+        setSelectedCity(defaultCity);
         setIsLoadingCities(false);
+        return;
+      }
+      setIsLoadingCities(false);
+
+      // 2. Get user's geolocation
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            let closestCity: City | null = null;
+            let minDistance = Infinity;
+
+            // Fetch coordinates for all cities to find the closest one
+            const cityDetailsPromises = allCities.map(city => 
+                fetch(`https://api.myquran.com/v2/sholat/jadwal/${city.id}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`)
+                .then(res => res.json())
+            );
+            
+            const cityDetailsResults = await Promise.all(cityDetailsPromises);
+            
+            cityDetailsResults.forEach((result, index) => {
+                 if (result.status && result.data?.koordinat) {
+                    const cityLat = result.data.koordinat.lat;
+                    const cityLon = result.data.koordinat.lon;
+                    const distance = getDistance(latitude, longitude, cityLat, cityLon);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestCity = allCities[index];
+                    }
+                }
+            });
+
+            if (closestCity) {
+              setSelectedCity(closestCity);
+            } else {
+              setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
+            }
+          },
+          // Geolocation failed or denied
+          () => {
+            setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
+          },
+          { timeout: 10000 }
+        );
+      } else {
+        // Geolocation not supported
+        setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
       }
     };
-
-    const initializeLocation = async () => {
-        const allCities = await fetchCities();
-        if (allCities.length === 0) return;
-
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                try {
-                    const geoResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHERMAP_API_KEY}&units=metric`);
-                    const geoData = await geoResponse.json();
-                    const cityName = geoData.name;
-
-                    const foundCity = allCities.find(c => c.lokasi.toLowerCase() === cityName.toLowerCase());
-                    if (foundCity) {
-                        setSelectedCity(foundCity);
-                    } else {
-                        setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
-                    }
-                } catch (e) {
-                    setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
-                }
-            },
-            () => {
-                // User denied or an error occurred, set default city
-                setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
-            },
-            { timeout: 10000 }
-        );
-    }
     
-    initializeLocation();
+    fetchAndSetLocation();
+  }, []); // Run only once on component mount
 
-  }, []);
-
+  // Fetch schedule whenever selectedCity changes
   React.useEffect(() => {
     if (!selectedCity) return;
 
@@ -217,7 +259,7 @@ export default function JadwalSholatPage() {
             {isLoadingSchedule ? (
                  <div className="flex h-48 flex-col items-center justify-center text-center text-muted-foreground">
                     <Loader2 className="h-8 w-8 mb-2 animate-spin"/>
-                    <p>Memuat jadwal untuk {selectedCity?.lokasi}...</p>
+                    <p>Memuat jadwal untuk {selectedCity?.lokasi || 'lokasi Anda'}...</p>
                 </div>
             ) : error ? (
               <Alert variant="destructive">
