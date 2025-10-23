@@ -7,7 +7,7 @@ const cspHeader = `
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' data: https://placehold.co https://images.unsplash.com https://plus.unsplash.com https://lh3.googleusercontent.com https://openweathermap.org;
     font-src 'self' https://fonts.gstatic.com;
-    connect-src 'self' https://api.myquran.com https://api.openweathermap.org;
+    connect-src *;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
