@@ -107,7 +107,7 @@ export function ChatInterface() {
   }
 
   const handlePromptSuggestionClick = (prompt: string) => {
-      setInput(prompt);
+      // No need to setInput, directly call handleSubmit
       const syntheticEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
       handleSubmit(syntheticEvent, prompt);
   };
@@ -122,9 +122,15 @@ export function ChatInterface() {
     if (!currentInput.trim()) return;
 
     const userMessage: Message = { role: 'user', content: currentInput };
+    // Create the new history array immediately
     const newHistory = [...messages, userMessage];
+    
+    // Update the UI state
     setMessages(newHistory);
-    setInput('');
+    // Clear input field only if it wasn't a suggested prompt
+    if (!suggestedPrompt) {
+      setInput('');
+    }
 
     startTransition(async () => {
       const appContext = {
@@ -136,6 +142,7 @@ export function ChatInterface() {
           developerTitle: developerInfo.title,
       };
       
+      // Use the consistent newHistory array for the API call
       const result = await nexusAIAssistant({ 
         history: newHistory, 
         appContext,

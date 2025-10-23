@@ -62,11 +62,18 @@ Ketika pengguna bertanya tentang cara melakukan sesuatu, gunakan panduan berikut
 Selalu jawab dengan antusias dan jelas. Jika kamu tidak tahu jawabannya, katakan saja kamu belum punya info itu, tapi akan coba cari tahu.
 Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
   
+  // The last message in the history is the user's current prompt.
+  const currentPrompt = history.length > 0 ? history[history.length - 1].content : '';
+  // The rest of the history is the context of the conversation.
+  const conversationHistory = history.slice(0, -1);
+
   const response = await ai.generate({
     model: 'googleai/gemini-2.0-flash',
     system: systemPrompt,
-    history: history.map(h => ({ role: h.role, content: [{ text: h.content }] })),
-    prompt: history[history.length - 1].content,
+    // Pass the entire conversation history to the model
+    history: conversationHistory.map(h => ({ role: h.role, content: [{ text: h.content }] })),
+    // The current user message is the prompt
+    prompt: currentPrompt,
   });
 
   return { response: response.text };
