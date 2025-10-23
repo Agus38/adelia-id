@@ -11,6 +11,12 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import Groq from 'groq-sdk';
+import type {ChatCompletionMessageParam} from 'groq-sdk/resources/chat/completions';
+
+const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY,
+});
 
 // Define a schema for a single message in the chat history
 const MessageSchema = z.object({
@@ -62,19 +68,44 @@ Ketika pengguna bertanya tentang cara melakukan sesuatu, gunakan panduan berikut
 Selalu jawab dengan antusias dan jelas. Jika kamu tidak tahu jawabannya, katakan saja kamu belum punya info itu, tapi akan coba cari tahu.
 Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
   
-  // The last message in the history is the user's current prompt.
-  const currentPrompt = history.length > 0 ? history[history.length - 1].content : '';
-  // The rest of the history is the context of the conversation.
+  const currentPrompt = history[history.length - 1]?.content || '';
   const conversationHistory = history.slice(0, -1);
 
-  const response = await ai.generate({
-    model: 'googleai/gemini-pro',
-    system: systemPrompt,
-    // Pass the entire conversation history to the model
-    history: conversationHistory.map(h => ({ role: h.role, content: [{ text: h.content }] })),
-    // The current user message is the prompt
-    prompt: currentPrompt,
-  });
+  try {
+    // Attempt to use Google AI first
+    console.log("Attempting to generate response with Google AI...");
+    const response = await ai.generate({
+      model: 'googleai/gemini-pro',
+      system: systemPrompt,
+      history: conversationHistory.map(h => ({ role: h.role, content: [{ text: h.content }] })),
+      prompt: currentPrompt,
+    });
+    return { response: response.text };
+  } catch (googleError) {
+    console.warn("Google AI failed. Falling back to Groq.", googleError);
+    try {
+      console.log("Attempting to generate response with Groq...");
+      
+      const messages: ChatCompletionMessageParam[] = [
+        { role: 'system', content: systemPrompt },
+        ...conversationHistory.map(h => ({
+            role: h.role === 'model' ? 'assistant' as const : 'user' as const,
+            content: h.content
+        })),
+        { role: 'user', content: currentPrompt }
+      ];
 
-  return { response: response.text };
+      const chatCompletion = await groq.chat.completions.create({
+        messages,
+        model: "llama3-8b-8192",
+      });
+      
+      const responseText = chatCompletion.choices[0]?.message?.content || "Maaf, saya tidak bisa memberikan respons saat ini.";
+      return { response: responseText };
+
+    } catch (groqError) {
+      console.error("Both Google AI and Groq failed.", groqError);
+      return { response: "Maaf, sepertinya saya sedang mengalami kesulitan teknis. Silakan coba lagi nanti." };
+    }
+  }
 }
