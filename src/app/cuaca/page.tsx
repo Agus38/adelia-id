@@ -270,12 +270,9 @@ export default function WeatherPage() {
         
         <Dialog open={isDetailOpen} onOpenChange={setDetailOpen}>
             {selectedForecast && (
-                <DialogContent>
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Detail Cuaca: {format(fromUnixTime(selectedForecast.dt), 'd MMM yyyy, HH:mm', { locale: id })}</DialogTitle>
-                        <DialogDescription>
-                            Rincian cuaca untuk {weather?.name} pada waktu yang dipilih.
-                        </DialogDescription>
                     </DialogHeader>
                      <div className="py-4 space-y-4">
                         <div className="flex items-center justify-center gap-4 p-4 bg-muted rounded-lg">
