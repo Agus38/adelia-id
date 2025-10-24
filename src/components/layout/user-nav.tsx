@@ -152,7 +152,7 @@ export function UserNav() {
           {user && user.role === 'Admin' && (
             <>
               <Link href="/admin">
-                <DropdownMenuItem className="text-primary focus:text-primary-foreground">
+                <DropdownMenuItem className="text-primary focus:bg-primary focus:text-primary-foreground">
                   <Shield className="mr-2 h-4 w-4" />
                   <span>Panel Admin</span>
                 </DropdownMenuItem>
@@ -160,7 +160,7 @@ export function UserNav() {
               <DropdownMenuSeparator />
             </>
           )}
-          <DropdownMenuItem onClick={handleLogout}>
+          <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive focus:text-destructive-foreground">
             <LogOut className="mr-2 h-4 w-4" />
             <span>Keluar</span>
           </DropdownMenuItem>
