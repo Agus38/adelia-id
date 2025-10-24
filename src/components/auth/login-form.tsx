@@ -108,24 +108,38 @@ export function LoginForm() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const authUser = userCredential.user;
-
-      // The onAuthStateChanged listener in user-store now handles all profile fetching,
-      // document creation, and state setting. We just need to trigger it by signing in.
       
-      // Check for email verification, except for Admins who can bypass it.
       const userDocRef = doc(db, 'users', authUser.uid);
       const userDoc = await getDoc(userDocRef);
-      const isPotentiallyAdmin = userDoc.exists() && userDoc.data().role === 'Admin';
       
-      if (!authUser.emailVerified && !isPotentiallyAdmin) {
+      let userRole = 'Pengguna';
+
+      if (!userDoc.exists()) {
+        // If doc doesn't exist, create it. This is a fallback for users who registered before the fix.
+        const newUserDoc = {
+          uid: authUser.uid,
+          email: authUser.email,
+          fullName: authUser.displayName || email.split('@')[0], // Fallback name
+          role: 'Pengguna',
+          status: 'Aktif',
+          avatarUrl: authUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.displayName || email.split('@')[0])}&background=random`,
+          createdAt: serverTimestamp(),
+        };
+        await setDoc(userDocRef, newUserDoc);
+        userRole = 'Pengguna';
+      } else {
+        userRole = userDoc.data().role;
+      }
+      
+      if (!authUser.emailVerified && userRole !== 'Admin') {
           await signOut(auth);
           setError('Email Anda belum diverifikasi. Silakan periksa kotak masuk Anda atau kirim ulang email verifikasi.');
           setIsLoading(false);
           return;
       }
       
-      // If sign-in is successful, the useEffect for [user, userLoading] will handle the redirect.
-      // We don't need to do anything else here.
+      // If successful, onAuthStateChanged listener will handle the user state and redirect.
+      // We don't need to do anything else here. The listener is the single source of truth.
       
     } catch (authError: any) {
       let description = 'Terjadi kesalahan. Silakan coba lagi.';
@@ -148,9 +162,9 @@ export function LoginForm() {
           description = `Terjadi kesalahan autentikasi. Silakan coba lagi. (${authError.code})`;
       }
       setError(description);
+    } finally {
       setIsLoading(false);
     }
-    // No finally block needed to set isLoading to false, as it's handled on success by redirect or on error in catch.
   };
   
   if (userLoading || isVerifying) {
