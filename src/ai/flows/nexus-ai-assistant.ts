@@ -66,30 +66,28 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.
 - Fitur Utama: ${appContext.features.join(', ')}
 - Developer: ${appContext.developerName}, yang merupakan ${appContext.developerTitle}.`;
   
-  const conversationHistory = history.slice(0, -1);
+  // The user's latest message is the new prompt. The rest is history.
   const currentPrompt = history.length > 0 ? history[history.length - 1].content : "Sapa pengguna.";
+  const conversationHistory = history.slice(0, -1);
 
   try {
+    // First call to the model
     const llmResponse = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       system: systemPrompt,
       prompt: currentPrompt,
       tools: [reportIssue],
-      toolConfig: {
-        toolChoice: 'auto'
-      },
       history: conversationHistory.map(h => ({
           role: h.role,
           content: [{ text: h.content }],
       })),
-      output: {
-          format: "text" // Ensure we get a text response even if a tool is called
-      }
     });
 
     const toolRequest = llmResponse.toolRequest();
-    if(toolRequest) {
-        // If the model wants to call a tool, we need to provide the user's info.
+    
+    // If the model requests to use a tool
+    if (toolRequest) {
+        // Augment the input for the tool with user data from the main flow
         const augmentedInput = { ...toolRequest.input, userName, userAvatar };
         const toolResponse = await toolRequest.run(augmentedInput);
 
@@ -97,16 +95,23 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.
         const finalResponse = await ai.generate({
             model: 'googleai/gemini-2.0-flash',
             system: systemPrompt,
-            prompt: currentPrompt,
             history: [
+                // Include the previous history
                 ...conversationHistory.map(h => ({ role: h.role, content: [{ text: h.content }] })),
+                // Include the user's prompt that triggered the tool call
+                { role: 'user', content: [{ text: currentPrompt }] },
+                // Include the model's tool request
                 llmResponse.requestAsMessage,
+                // Include the tool's response
                 llmResponse.responseAsMessage(toolResponse)
             ]
         });
+
+        // The final text response after the tool call
         return { response: finalResponse.text };
     }
     
+    // If no tool is called, return the initial text response
     return { response: llmResponse.text };
 
   } catch (error: any) {
