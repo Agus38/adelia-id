@@ -424,13 +424,16 @@ ${pemasukanText}
   };
 
   const SummaryRow = ({ label, value, isBold = false, isDestructive = false, isPositive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean, isPositive?: boolean }) => (
-    <div className="flex justify-between items-center">
+    <div className={cn(
+        "flex justify-between items-center",
+        isPositive && "bg-green-500/10 -mx-4 px-4 py-2 rounded-lg"
+      )}>
       <Label className={cn("text-sm", isBold && "font-semibold")}>{label}</Label>
       <div className={cn(
         "text-sm font-semibold text-right",
         isBold && "text-base font-bold",
         isDestructive && "text-destructive",
-        isPositive && "text-green-600"
+        isPositive && "text-green-600 dark:text-green-500"
       )}>
         {value}
       </div>

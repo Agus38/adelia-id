@@ -422,13 +422,17 @@ ${pemasukanText}
     window.open(whatsappUrl, '_blank');
   };
 
-  const SummaryRow = ({ label, value, isBold = false, isDestructive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean }) => (
-    <div className="flex justify-between items-center">
+  const SummaryRow = ({ label, value, isBold = false, isDestructive = false, isPositive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean, isPositive?: boolean }) => (
+    <div className={cn(
+        "flex justify-between items-center",
+        isPositive && "bg-green-500/10 -mx-4 px-4 py-2 rounded-lg"
+      )}>
       <Label className={cn("text-sm", isBold && "font-semibold")}>{label}</Label>
       <div className={cn(
         "text-sm font-semibold text-right",
         isBold && "text-base font-bold",
-        isDestructive && "text-destructive"
+        isDestructive && "text-destructive",
+        isPositive && "text-green-600 dark:text-green-500"
       )}>
         {value}
       </div>
@@ -597,29 +601,34 @@ ${pemasukanText}
                   <Separator className="my-2" />
                   <SummaryRow label="Total Pengeluaran" value={formatCurrency(totalPengeluaran)} isDestructive />
                   <SummaryRow label="Sisa Omset" value={formatCurrency(sisaOmset)} isBold />
-                  <SummaryRow label="Omset + Pajak" value={formatCurrency(sisaOmsetPlusPajak)} isBold />
+                  <SummaryRow label="Omset + Pajak" value={formatCurrency(sisaOmsetPlusPajak)} isBold isPositive />
                   <Separator className="my-2" />
-                  <SummaryRow label="Total Akhir (Setor)" value={formatCurrency(totalAkhir)} isBold />
+                  <SummaryRow label="Total Akhir (Setor)" value={formatCurrency(totalAkhir)} isBold isPositive />
               </div>
             </div>
           </CardContent>
           <CardFooter className="flex justify-between gap-4">
             <Button
               className={cn(
-                "flex-1 text-white",
-                showUpdateButton ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
+                  "flex-1 text-white",
+                  showUpdateButton ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
               )}
               onClick={handleSaveReport}
               disabled={isSaving}
-            >
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <Save className="mr-2 h-4 w-4" />
-              {showUpdateButton ? 'Update' : 'Simpan'}
+              >
+               {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  {showUpdateButton ? 'Update' : 'Simpan'}
+                </>
+              )}
             </Button>
             <Button 
               className="flex-1 bg-green-600 text-white hover:bg-green-700"
               onClick={handleSendWhatsApp}
-              disabled={(!modalAwal && !omsetBersih) || isDirty}
+              disabled={isDirty}
             >
               <Send className="mr-2 h-4 w-4" />
               Kirim WA
@@ -645,4 +654,3 @@ ${pemasukanText}
     </>
   );
 }
-
