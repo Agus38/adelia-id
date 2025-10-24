@@ -65,8 +65,8 @@ export default function DiskonPage() {
   const getDynamicFontSize = (text: string) => {
     const length = text.length;
     if (length > 15) return 'text-sm';
-    if (length > 12) return 'text-base';
-    if (length > 9) return 'text-lg';
+    if (length > 11) return 'text-base';
+    if (length > 8) return 'text-lg';
     return 'text-xl md:text-2xl';
   };
 
