@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut, signInWithEmailAndPassword } from 'firebase/auth';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -33,12 +33,10 @@ interface PasswordStrength {
 const PasswordStrengthIndicator = ({ strength }: { strength: PasswordStrength }) => {
   if (!strength.label) return null;
 
-  // By passing the color class to the Progress component's child (the indicator),
-  // we ensure it overrides the default `bg-primary`.
   return (
     <div className="space-y-2">
-      <Progress value={strength.score * 25} className="h-2 transition-all">
-        <div className={cn('h-full w-full flex-1 transition-all', strength.color)} style={{ transform: `translateX(-${100 - (strength.score * 25)}%)` }} />
+      <Progress value={strength.score * 25} className="h-2 [&>div]:transition-all">
+        <div className={cn('h-full w-full flex-1', strength.color)} style={{ transform: `translateX(-${100 - (strength.score * 25)}%)` }} />
       </Progress>
       <p className={`text-xs font-medium ${strength.color === 'bg-destructive' ? 'text-destructive' : strength.color === 'bg-yellow-500' ? 'text-yellow-600' : 'text-green-600'}`}>
         Kekuatan: {strength.label}
@@ -133,44 +131,49 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      // 1. Create user in Firebase Authentication
+      // 1. Create user in Firebase Authentication, but don't consider them "logged in" for app state yet.
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const authUser = userCredential.user;
       
-      // 2. Send email verification
-      await sendEmailVerification(authUser);
-      
-      // 3. Update basic profile in Firebase Authentication.
+      // 2. Update their profile immediately.
       await updateProfile(authUser, {
         displayName: name,
         photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
       });
+
+      // 3. **CRITICAL STEP**: Sign in the user explicitly to get an authenticated state for Firestore rules.
+      await signInWithEmailAndPassword(auth, email, password);
       
-      // 4. Create the Firestore user document directly, ensuring 'name' is captured.
+      // 4. Now that the user is authenticated, create their Firestore document.
       const userDocRef = doc(db, 'users', authUser.uid);
       const userDocData = {
         uid: authUser.uid,
         email: authUser.email,
-        fullName: name, // Use the 'name' state directly
+        fullName: name,
         role: 'Pengguna',
         status: 'Aktif',
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         createdAt: serverTimestamp(),
       };
-      
-      setDoc(userDocRef, userDocData).catch((serverError) => {
+
+      await setDoc(userDocRef, userDocData).catch((serverError) => {
           const permissionError = new FirestorePermissionError({
               path: userDocRef.path,
               operation: 'create',
               requestResourceData: userDocData,
           });
           errorEmitter.emit('permission-error', permissionError);
+          // Re-throw the original error to be caught by the outer try-catch
+          throw serverError;
       });
       
-      // 5. Sign out the user immediately so they have to log in after verification.
+      // 5. Send verification email.
+      await sendEmailVerification(authUser);
+      
+      // 6. Sign out the user immediately so they have to verify before logging in.
       await signOut(auth);
       
-      // 6. Redirect to the check-email page instead of showing a toast
+      // 7. Redirect to the check-email page.
       router.push('/check-email');
 
     } catch (error: any) {
@@ -178,9 +181,11 @@ export default function RegisterPage() {
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.';
       } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Kata sandi terlalu lemah. Harap gunakan minimal 6 karakter.';
+        errorMessage = 'Kata sandi terlalu lemah. Harap gunakan minimal 8 karakter dengan kombinasi huruf, angka, dan simbol.';
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
+      } else if (error.name === 'FirestorePermissionError') {
+        errorMessage = 'Terjadi masalah izin saat menyimpan data. Hubungi administrator.';
       }
       
       toast({
@@ -189,6 +194,10 @@ export default function RegisterPage() {
         variant: 'destructive',
       });
     } finally {
+      // Ensure user is signed out in case of any failure after sign-in step
+      if (auth.currentUser) {
+          await signOut(auth);
+      }
       setIsLoading(false);
     }
   };

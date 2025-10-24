@@ -20,7 +20,7 @@ service cloud.firestore {
     
     match /users/{userId} {
       allow list, read, update: if request.auth != null && (isDbAdmin(request.auth.uid) || request.auth.uid == userId);
-      allow create: if true;
+      allow create: if request.auth != null && request.auth.uid == userId;
       allow delete: if request.auth != null && isDbAdmin(request.auth.uid);
     }
     
