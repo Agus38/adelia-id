@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signOut } from 'firebase/auth';
-import { setDoc, doc, serverTimestamp, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRegisterPageConfig } from '@/lib/menu-store';
@@ -64,17 +64,9 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const authUser = userCredential.user;
       
-      const actionCodeSettings = {
-          url: `${window.location.origin}/login`,
-          handleCodeInApp: true,
-      };
-
       // 2. Send email verification
-      await sendEmailVerification(authUser, actionCodeSettings);
+      await sendEmailVerification(authUser);
       
-      // Store email in local storage to retrieve it on the login page after verification
-      window.localStorage.setItem('emailForSignIn', email);
-
       // 3. Update basic profile in Firebase Authentication.
       await updateProfile(authUser, {
         displayName: name,
@@ -107,10 +99,6 @@ export default function RegisterPage() {
         errorMessage = 'Kata sandi terlalu lemah. Harap gunakan minimal 6 karakter.';
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
-      } else if (error.code === 'auth/unauthorized-continue-uri') {
-        errorMessage = 'Domain aplikasi belum diizinkan. Hubungi administrator untuk menambahkan domain ke daftar resmi Firebase.';
-      } else if (error.code === 'permission-denied') {
-        errorMessage = 'Izin ditolak oleh aturan keamanan Firestore. Pastikan aturan Anda sudah benar.';
       }
       
       console.error("Registration error:", error);
