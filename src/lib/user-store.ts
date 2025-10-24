@@ -19,7 +19,8 @@ interface UserState {
 // --- Activity Logging (Moved here to be client-side only) ---
 export const logActivity = async (action: string, target: string) => {
     const user = auth.currentUser;
-    if (!user) return; // Don't log if user is not authenticated
+    // Do not log if user is not authenticated or if the action is just logging in
+    if (!user || action === 'login') return; 
 
     try {
         await addDoc(collection(db, 'activityLogs'), {
@@ -76,6 +77,8 @@ export const useUserStore = create<UserState>((set) => ({
               ...userData,
             };
             set({ user: fullUserProfile, loading: false });
+            // Log user login after setting the user profile
+            logActivity('login', 'Aplikasi');
           } else {
             // This case should be rare now, but as a fallback, sign out.
             signOut(auth);

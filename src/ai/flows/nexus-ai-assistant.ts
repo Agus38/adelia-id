@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -10,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { reportIssue } from './report-issue-flow';
 
 // Define a schema for a single message in the chat history
 const MessageSchema = z.object({
@@ -21,6 +23,7 @@ const MessageSchema = z.object({
 const NexusAIAssistantInputSchema = z.object({
   history: z.array(MessageSchema).describe('The conversation history.'),
   userName: z.string().describe("The current user's name."),
+  userAvatar: z.string().describe("The current user's avatar URL."),
   appContext: z.object({
     appName: z.string(),
     appVersion: z.string(),
@@ -40,7 +43,7 @@ export type NexusAIAssistantOutput = z.infer<typeof NexusAIAssistantOutputSchema
 
 
 export async function nexusAIAssistant(input: NexusAIAssistantInput): Promise<NexusAIAssistantOutput> {
-  const { history, appContext, userName } = input;
+  const { history, appContext, userName, userAvatar } = input;
 
   const systemPrompt = `Kamu adalah Nexus, AI assistant untuk aplikasi "${appContext.appName}" (versi ${appContext.appVersion}).
 Kamu adalah seorang sahabat yang sangat ramah, ceria, dan super membantu. Gunakan bahasa yang santai, kasual, dan bersahabat.
@@ -48,39 +51,66 @@ Kamu sedang berbicara dengan pengguna bernama "${userName}". Sapa mereka dengan 
 
 Tujuan utamamu adalah membantu pengguna dengan pertanyaan apa pun tentang aplikasi ini.
 
+--- PANDUAN ---
+1.  **Menjawab Pertanyaan**: Jawab pertanyaan pengguna tentang cara menggunakan aplikasi, fitur, atau informasi umum berdasarkan konteks yang diberikan.
+2.  **Menangani Keluhan**: Jika pengguna menyampaikan keluhan, masalah, bug, atau error (contoh: "kenapa aplikasinya lambat?", "fitur X tidak berfungsi", "saya tidak suka tampilan baru"), kamu HARUS menggunakan tool \`reportIssue\` untuk mencatat keluhan tersebut. Setelah itu, berikan respons yang empatik seperti "Terima kasih atas laporannya, akan segera kami teruskan ke tim developer."
+3.  **How-To Guides**: Ketika pengguna bertanya tentang cara melakukan sesuatu, gunakan panduan berikut untuk menjawab:
+    *   **Cara mengubah profil**: Untuk mengubah profil, klik avatar atau nama kamu di pojok kanan atas, lalu pilih menu 'Profil'. Di halaman tersebut, kamu bisa mengubah nama dan foto profil.
+    *   **Cara mengubah kata sandi**: Untuk mengubah kata sandi, buka halaman 'Profil' (klik avatar di pojok kanan atas > Profil), lalu cari bagian 'Ubah Kata Sandi'.
+
+Selalu jawab dengan antusias dan jelas. Jika kamu tidak tahu jawabannya, katakan saja kamu belum punya info itu, tapi akan coba cari tahu.
+Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.
+
 --- KONTEKS APLIKASI ---
 - Deskripsi: ${appContext.appDescription}
 - Fitur Utama: ${appContext.features.join(', ')}
-- Developer: ${appContext.developerName}, yang merupakan ${appContext.developerTitle}.
-
---- PANDUAN CARA PENGGUNAAN (HOW-TO GUIDES) ---
-Ketika pengguna bertanya tentang cara melakukan sesuatu, gunakan panduan berikut untuk menjawab:
-1.  **Cara mengubah profil**: Untuk mengubah profil, klik avatar atau nama kamu di pojok kanan atas, lalu pilih menu 'Profil'. Di halaman tersebut, kamu bisa mengubah nama dan foto profil.
-2.  **Cara mengubah kata sandi**: Untuk mengubah kata sandi, buka halaman 'Profil' (klik avatar di pojok kanan atas > Profil), lalu cari bagian 'Ubah Kata Sandi'.
-
-Selalu jawab dengan antusias dan jelas. Jika kamu tidak tahu jawabannya, katakan saja kamu belum punya info itu, tapi akan coba cari tahu.
-Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
+- Developer: ${appContext.developerName}, yang merupakan ${appContext.developerTitle}.`;
   
-  // Separate the last user message as the prompt, and the rest as history.
-  // This is a more robust way to handle the conversation flow.
   const conversationHistory = history.slice(0, -1);
   const currentPrompt = history.length > 0 ? history[history.length - 1].content : "Sapa pengguna.";
 
   try {
-    const response = await ai.generate({
+    const llmResponse = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       system: systemPrompt,
       prompt: currentPrompt,
+      tools: [reportIssue],
+      toolConfig: {
+        toolChoice: 'auto'
+      },
       history: conversationHistory.map(h => ({
           role: h.role,
           content: [{ text: h.content }],
       })),
+      output: {
+          format: "text" // Ensure we get a text response even if a tool is called
+      }
     });
+
+    const toolRequest = llmResponse.toolRequest();
+    if(toolRequest) {
+        // If the model wants to call a tool, we need to provide the user's info.
+        const augmentedInput = { ...toolRequest.input, userName, userAvatar };
+        const toolResponse = await toolRequest.run(augmentedInput);
+
+        // Send the tool's response back to the model to get a final text response
+        const finalResponse = await ai.generate({
+            model: 'googleai/gemini-2.0-flash',
+            system: systemPrompt,
+            prompt: currentPrompt,
+            history: [
+                ...conversationHistory.map(h => ({ role: h.role, content: [{ text: h.content }] })),
+                llmResponse.requestAsMessage,
+                llmResponse.responseAsMessage(toolResponse)
+            ]
+        });
+        return { response: finalResponse.text };
+    }
     
-    return { response: response.text };
-  } catch (error) {
+    return { response: llmResponse.text };
+
+  } catch (error) => {
     console.error("AI Assistant Error:", error);
-    // Re-throw a more generic error to be handled by the client component
     throw new Error('Gagal menghubungi asisten AI. Silakan coba lagi nanti.');
   }
 }

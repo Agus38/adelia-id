@@ -149,6 +149,7 @@ export function ChatInterface() {
           history: newHistory, 
           appContext,
           userName: user?.fullName || 'Pengguna',
+          userAvatar: user?.avatarUrl || user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'P')}`
         });
         const assistantMessage: Message = { role: 'model', content: result.response };
         setMessages((prev) => [...prev, assistantMessage]);
