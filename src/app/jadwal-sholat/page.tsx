@@ -16,7 +16,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 interface City {
   id: string;
   lokasi: string;
-  // For distance calculation
+  // For distance calculation, now populated upfront
   lat?: number;
   lon?: number;
 }
@@ -36,7 +36,6 @@ interface PrayerData {
   lokasi: string;
   daerah: string;
   jadwal: Jadwal & { tanggal: string };
-  // Add coordinates for distance calculation
   koordinat: {
       lat: number;
       lon: number;
@@ -61,6 +60,7 @@ const DEFAULT_CITY_ID = '1301'; // Jakarta
 
 // Haversine formula to calculate distance between two lat/lon points
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
     const R = 6371; // Radius of the Earth in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -73,7 +73,7 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
 }
 
 export default function JadwalSholatPage() {
-  const [cities, setCities] = React.useState<City[]>([]);
+  const [citiesWithCoords, setCitiesWithCoords] = React.useState<City[]>([]);
   const [selectedCity, setSelectedCity] = React.useState<City | null>(null);
   const [prayerData, setPrayerData] = React.useState<PrayerData | null>(null);
   const [isLoadingCities, setIsLoadingCities] = React.useState(true);
@@ -82,18 +82,45 @@ export default function JadwalSholatPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [comboboxOpen, setComboboxOpen] = React.useState(false);
 
-  // Fetch all cities only once
+  // Fetch all cities and their coordinates once
   React.useEffect(() => {
-    const fetchCities = async () => {
+    const fetchCityData = async () => {
       setIsLoadingCities(true);
       try {
         const response = await fetch('https://api.myquran.com/v2/sholat/kota/semua');
         if (!response.ok) throw new Error('Gagal mengambil daftar kota');
-        const data = await response.json();
-        if (!data.status || !Array.isArray(data.data)) throw new Error('Format data kota tidak valid');
+        const cityListData = await response.json();
+        if (!cityListData.status || !Array.isArray(cityListData.data)) throw new Error('Format data kota tidak valid');
         
-        const sortedCities = data.data.sort((a: City, b: City) => a.lokasi.localeCompare(b.lokasi));
-        setCities(sortedCities);
+        const cities: City[] = cityListData.data;
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        const day = today.getDate();
+
+        // Fetch coordinates for all cities in parallel. This is still a lot of requests.
+        // A better API would provide this in one go. We proceed with caution.
+        // This is a simplified approach; in a real app, batching or a dedicated backend would be better.
+        const cityDetailsPromises = cities.map(city => 
+            fetch(`https://api.myquran.com/v2/sholat/jadwal/${city.id}/${year}/${month}/${day}`)
+            .then(res => res.json())
+            .then(details => {
+                if (details.status && details.data?.koordinat) {
+                    return {
+                        ...city,
+                        lat: details.data.koordinat.lat,
+                        lon: details.data.koordinat.lon,
+                    };
+                }
+                return city; // Return city without coords if fetch fails
+            })
+            .catch(() => city) // Keep city in list even if detail fetch fails
+        );
+
+        const citiesWithDetails = await Promise.all(cityDetailsPromises);
+        
+        const sortedCities = citiesWithDetails.sort((a, b) => a.lokasi.localeCompare(b.lokasi));
+        setCitiesWithCoords(sortedCities);
         
         // Set default city after fetching
         const defaultCity = sortedCities.find(c => c.id === DEFAULT_CITY_ID) || null;
@@ -105,33 +132,24 @@ export default function JadwalSholatPage() {
         setIsLoadingCities(false);
       }
     };
-    fetchCities();
+    fetchCityData();
   }, []);
 
-  const findClosestCity = async (latitude: number, longitude: number): Promise<City | null> => {
+  const findClosestCity = (latitude: number, longitude: number): City | null => {
+      if (citiesWithCoords.length === 0) return null;
+      
       let closestCity: City | null = null;
       let minDistance = Infinity;
 
-      // This is inefficient but required by the API structure. Consider caching.
-      const cityDetailsPromises = cities.map(city => 
-          fetch(`https://api.myquran.com/v2/sholat/jadwal/${city.id}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`)
-          .then(res => res.json())
-          .catch(() => null)
-      );
-      
-      const cityDetailsResults = await Promise.all(cityDetailsPromises);
-      
-      cityDetailsResults.forEach((result, index) => {
-           if (result && result.status && result.data?.koordinat) {
-              const cityLat = result.data.koordinat.lat;
-              const cityLon = result.data.koordinat.lon;
-              const distance = getDistance(latitude, longitude, cityLat, cityLon);
+      for (const city of citiesWithCoords) {
+          if (city.lat && city.lon) {
+              const distance = getDistance(latitude, longitude, city.lat, city.lon);
               if (distance < minDistance) {
                   minDistance = distance;
-                  closestCity = cities[index];
+                  closestCity = city;
               }
           }
-      });
+      }
       return closestCity;
   }
   
@@ -143,13 +161,14 @@ export default function JadwalSholatPage() {
 
     setIsDetectingLocation(true);
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
+      (position) => {
         const { latitude, longitude } = position.coords;
-        const closest = await findClosestCity(latitude, longitude);
+        const closest = findClosestCity(latitude, longitude);
         if (closest) {
           setSelectedCity(closest);
+          setError(null);
         } else {
-          setError("Tidak dapat menemukan kota terdekat.");
+          setError("Tidak dapat menemukan kota terdekat. Pastikan daftar kota berhasil dimuat.");
         }
         setIsDetectingLocation(false);
       },
@@ -239,7 +258,7 @@ export default function JadwalSholatPage() {
                               <CommandList>
                                   <CommandEmpty>Kota tidak ditemukan.</CommandEmpty>
                                   <CommandGroup>
-                                      {cities.map((city) => (
+                                      {citiesWithCoords.map((city) => (
                                           <CommandItem
                                               key={city.id}
                                               value={city.lokasi}
