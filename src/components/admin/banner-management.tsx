@@ -27,7 +27,7 @@ import { Textarea } from '../ui/textarea';
 import Image from 'next/image';
 import { useBannerConfig, saveBannerConfig, type BannerSlide } from '@/lib/menu-store';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, UploadCloud } from 'lucide-react';
+import { Loader2, UploadCloud, PlusCircle } from 'lucide-react';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -38,7 +38,8 @@ export function BannerManagement() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedSlide, setSelectedSlide] = useState<BannerSlide | null>(null);
+  const [isNew, setIsNew] = useState(false);
+  const [selectedSlide, setSelectedSlide] = useState<Partial<BannerSlide> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -48,15 +49,39 @@ export function BannerManagement() {
   }, [bannerSlides]);
 
   const handleEdit = (slide: BannerSlide) => {
-    setSelectedSlide(JSON.parse(JSON.stringify(slide))); // Create a deep copy to avoid direct state mutation
+    setSelectedSlide(JSON.parse(JSON.stringify(slide))); // Create a deep copy
+    setIsNew(false);
     setEditDialogOpen(true);
   };
   
+  const handleAddNew = () => {
+    setSelectedSlide({
+        id: Date.now(), // Temporary unique ID
+        title: 'Judul Baru',
+        description: 'Deskripsi singkat untuk slide baru.',
+        image: 'https://placehold.co/800x450.png?text=Gambar+Baru',
+        hint: 'new banner',
+        visible: true,
+        url: '',
+    });
+    setIsNew(true);
+    setEditDialogOpen(true);
+  }
+
   const handleDialogSave = () => {
-    if (selectedSlide) {
-      setSlides(slides.map(s => s.id === selectedSlide.id ? selectedSlide : s));
+    if (!selectedSlide) return;
+
+    if (isNew) {
+        setSlides([...slides, selectedSlide as BannerSlide]);
+        toast({ title: 'Slide Ditambahkan', description: 'Slide baru telah ditambahkan ke daftar lokal.' });
+    } else {
+        setSlides(slides.map(s => s.id === selectedSlide.id ? selectedSlide as BannerSlide : s));
+        toast({ title: 'Slide Diperbarui', description: 'Perubahan pada slide telah disimpan sementara.' });
     }
+
     setEditDialogOpen(false);
+    setSelectedSlide(null);
+    setIsNew(false);
   };
   
   const handleToggleVisibility = (slideId: number, visible: boolean) => {
@@ -127,7 +152,8 @@ export function BannerManagement() {
     }
   };
 
-  const isValidHttpUrl = (string: string) => {
+  const isValidHttpUrl = (string: string | undefined) => {
+    if (!string) return false;
     let url;
     try {
       url = new URL(string);
@@ -142,7 +168,11 @@ export function BannerManagement() {
 
   return (
     <>
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between items-center mb-4">
+        <Button onClick={handleAddNew}>
+            <PlusCircle className="mr-2 h-4 w-4"/>
+            Tambah Slide Baru
+        </Button>
         <Button onClick={handleSaveChanges} disabled={isSaveDisabled}>
             {(isSaving || isLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Simpan Perubahan
@@ -199,9 +229,9 @@ export function BannerManagement() {
       <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Edit Slide: {selectedSlide?.title}</DialogTitle>
+            <DialogTitle>{isNew ? 'Tambah Slide Baru' : `Edit Slide: ${selectedSlide?.title}`}</DialogTitle>
             <DialogDescription>
-              Ubah detail slide banner di bawah ini.
+              {isNew ? 'Buat slide baru untuk carousel di halaman utama.' : 'Ubah detail slide banner di bawah ini.'}
             </DialogDescription>
           </DialogHeader>
           {selectedSlide && (
@@ -272,8 +302,8 @@ export function BannerManagement() {
                  <div className="col-span-3 h-[80px] rounded-md border flex items-center justify-center bg-muted">
                    {isValidHttpUrl(selectedSlide.image) ? (
                       <Image
-                        src={selectedSlide.image}
-                        alt={selectedSlide.title}
+                        src={selectedSlide.image!}
+                        alt={selectedSlide.title!}
                         width={200}
                         height={80}
                         className="rounded-md object-contain h-full w-auto"
