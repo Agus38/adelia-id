@@ -33,9 +33,13 @@ interface PasswordStrength {
 const PasswordStrengthIndicator = ({ strength }: { strength: PasswordStrength }) => {
   if (!strength.label) return null;
 
+  // By passing the color class to the Progress component's child (the indicator),
+  // we ensure it overrides the default `bg-primary`.
   return (
     <div className="space-y-2">
-      <Progress value={strength.score * 25} className={cn("h-2 transition-all", strength.color)} />
+      <Progress value={strength.score * 25} className="h-2 transition-all">
+        <div className={cn('h-full w-full flex-1 transition-all', strength.color)} style={{ transform: `translateX(-${100 - (strength.score * 25)}%)` }} />
+      </Progress>
       <p className={`text-xs font-medium ${strength.color === 'bg-destructive' ? 'text-destructive' : strength.color === 'bg-yellow-500' ? 'text-yellow-600' : 'text-green-600'}`}>
         Kekuatan: {strength.label}
       </p>
