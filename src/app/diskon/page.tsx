@@ -63,67 +63,78 @@ export default function DiskonPage() {
 
 
   return (
-    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8 flex items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardDescription className="text-center text-lg">Hitung potongan harga dengan mudah untuk mengetahui besaran diskon dalam nominal dan persentase.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="original-price">Harga Asli (Sebelum Diskon)</Label>
-            <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
-                <Input 
-                    id="original-price" 
-                    type="text"
-                    inputMode='numeric'
-                    placeholder="0" 
-                    value={formatDisplayValue(originalPrice)} 
-                    onChange={handlePriceChange(setOriginalPrice)}
-                    className="pl-8 font-semibold"
-                    maxLength={12}
-                />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="discounted-price">Harga Setelah Diskon</Label>
-             <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
-                <Input 
-                    id="discounted-price" 
-                    type="text"
-                    inputMode='numeric'
-                    placeholder="0" 
-                    value={formatDisplayValue(discountedPrice)} 
-                    onChange={handlePriceChange(setDiscountedPrice)}
-                    className="pl-8 font-semibold"
-                    maxLength={12}
-                />
-            </div>
-          </div>
-          
-           {(discountAmount !== null || discountPercentage !== null) && (
-              <div className="space-y-4 pt-4 border-t animate-in fade-in duration-300">
-                  <h3 className="text-lg font-semibold text-center">Hasil Perhitungan</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-muted rounded-lg text-center">
-                          <p className="text-sm text-muted-foreground">Potongan Harga</p>
-                          <p className="text-xl md:text-2xl font-bold text-primary">{formatCurrency(discountAmount ?? 0)}</p>
-                      </div>
-                      <div className="p-4 bg-muted rounded-lg text-center">
-                          <p className="text-sm text-muted-foreground">Persentase Diskon</p>
-                          <p className="text-xl md:text-2xl font-bold text-primary">{discountPercentage?.toFixed(1) ?? '0'}%</p>
-                      </div>
-                  </div>
+    <div className="flex flex-1 flex-col p-4 pt-6 md:p-8">
+      <div className="flex-shrink-0 mb-6">
+        <div className="flex items-center space-x-2">
+          <Tag className="h-8 w-8" />
+          <h2 className="text-3xl font-bold tracking-tight">Kalkulator Diskon</h2>
+        </div>
+        <p className="text-muted-foreground mt-2">
+          Hitung potongan harga dengan mudah untuk mengetahui besaran diskon dalam nominal dan persentase.
+        </p>
+      </div>
+      <div className="flex flex-1 items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+             <CardTitle className="text-center">Hitung Diskon Anda</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="original-price">Harga Asli (Sebelum Diskon)</Label>
+              <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                  <Input 
+                      id="original-price" 
+                      type="text"
+                      inputMode='numeric'
+                      placeholder="0" 
+                      value={formatDisplayValue(originalPrice)} 
+                      onChange={handlePriceChange(setOriginalPrice)}
+                      className="pl-8 font-semibold"
+                      maxLength={12}
+                  />
               </div>
-          )}
-          
-          <Button onClick={handleReset} variant="outline" className="w-full">
-            <RefreshCw className="mr-2 h-4 w-4"/> Reset
-          </Button>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="discounted-price">Harga Setelah Diskon</Label>
+               <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                  <Input 
+                      id="discounted-price" 
+                      type="text"
+                      inputMode='numeric'
+                      placeholder="0" 
+                      value={formatDisplayValue(discountedPrice)} 
+                      onChange={handlePriceChange(setDiscountedPrice)}
+                      className="pl-8 font-semibold"
+                      maxLength={12}
+                  />
+              </div>
+            </div>
+            
+             {(discountAmount !== null || discountPercentage !== null) && (
+                <div className="space-y-4 pt-4 border-t animate-in fade-in duration-300">
+                    <h3 className="text-lg font-semibold text-center">Hasil Perhitungan</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-muted rounded-lg text-center">
+                            <p className="text-sm text-muted-foreground">Potongan Harga</p>
+                            <p className="text-xl md:text-2xl font-bold text-primary">{formatCurrency(discountAmount ?? 0)}</p>
+                        </div>
+                        <div className="p-4 bg-muted rounded-lg text-center">
+                            <p className="text-sm text-muted-foreground">Persentase Diskon</p>
+                            <p className="text-xl md:text-2xl font-bold text-primary">{discountPercentage?.toFixed(1) ?? '0'}%</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            <Button onClick={handleReset} variant="outline" className="w-full">
+              <RefreshCw className="mr-2 h-4 w-4"/> Reset
+            </Button>
 
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
