@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tag, RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const formatCurrency = (value: number) => {
     if (isNaN(value)) return 'Rp 0';
@@ -60,6 +61,14 @@ export default function DiskonPage() {
       setDiscountAmount(null);
       setDiscountPercentage(null);
   }
+
+  const getDynamicFontSize = (text: string) => {
+    const length = text.length;
+    if (length > 15) return 'text-sm';
+    if (length > 12) return 'text-base';
+    if (length > 9) return 'text-lg';
+    return 'text-xl md:text-2xl';
+  };
 
 
   return (
@@ -116,9 +125,14 @@ export default function DiskonPage() {
                 <div className="space-y-4 pt-4 border-t animate-in fade-in duration-300">
                     <h3 className="text-lg font-semibold text-center">Hasil Perhitungan</h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-muted rounded-lg text-center">
+                        <div className="p-4 bg-muted rounded-lg text-center overflow-hidden">
                             <p className="text-sm text-muted-foreground">Potongan Harga</p>
-                            <p className="text-xl md:text-2xl font-bold text-primary">{formatCurrency(discountAmount ?? 0)}</p>
+                            <p className={cn(
+                                "font-bold text-primary break-words",
+                                getDynamicFontSize(formatCurrency(discountAmount ?? 0))
+                            )}>
+                                {formatCurrency(discountAmount ?? 0)}
+                            </p>
                         </div>
                         <div className="p-4 bg-muted rounded-lg text-center">
                             <p className="text-sm text-muted-foreground">Persentase Diskon</p>
