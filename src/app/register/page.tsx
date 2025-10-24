@@ -17,6 +17,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useRegisterPageConfig } from '@/lib/menu-store';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserStore } from '@/lib/user-store';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -75,7 +77,7 @@ export default function RegisterPage() {
       
       // 4. Create the Firestore user document directly, ensuring 'name' is captured.
       const userDocRef = doc(db, 'users', authUser.uid);
-      await setDoc(userDocRef, {
+      const userDocData = {
         uid: authUser.uid,
         email: authUser.email,
         fullName: name, // Use the 'name' state directly
@@ -83,6 +85,15 @@ export default function RegisterPage() {
         status: 'Aktif',
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         createdAt: serverTimestamp(),
+      };
+      
+      setDoc(userDocRef, userDocData).catch((serverError) => {
+          const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'create',
+              requestResourceData: userDocData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
       });
       
       // 5. Sign out the user immediately so they have to log in after verification.
@@ -100,8 +111,6 @@ export default function RegisterPage() {
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda dan coba lagi.';
       }
-      
-      console.error("Registration error:", error);
       
       toast({
         title: 'Pendaftaran Gagal',

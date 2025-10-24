@@ -11,6 +11,7 @@ import { AppSidebar } from '@/components/layout/sidebar';
 import { useUserStore } from '@/lib/user-store';
 import { useBudgetflowData } from '@/lib/budgetflow-store';
 import { usePresence } from '@/hooks/use-presence';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export type UserProfile = User & {
   id?: string;
@@ -35,6 +36,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <FirebaseErrorListener />
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
           <Header />
            <div className="flex flex-1">
