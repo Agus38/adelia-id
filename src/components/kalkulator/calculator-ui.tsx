@@ -166,12 +166,24 @@ export function CalculatorUI() {
     return 'text-5xl';
   }
   
-  const getHistoryFontSize = () => {
-      const len = history.length;
-      if (len > 35) return 'text-xs';
-      if (len > 25) return 'text-sm';
-      return 'text-lg';
+  const getHistoryDisplay = () => {
+    const len = history.length;
+    let text = history;
+    let fontSizeClass = 'text-lg';
+
+    if (len > 45) {
+        fontSizeClass = 'text-xs';
+        text = '... ' + history.slice(len - 40);
+    } else if (len > 35) {
+        fontSizeClass = 'text-xs';
+    } else if (len > 25) {
+        fontSizeClass = 'text-sm';
+    }
+    
+    return { text, fontSizeClass };
   }
+
+  const { text: historyText, fontSizeClass: historyFontSizeClass } = getHistoryDisplay();
 
   return (
     <Card className="p-4 bg-background shadow-neumorphic-light rounded-3xl">
@@ -180,9 +192,9 @@ export function CalculatorUI() {
            <div className="flex justify-end w-full h-7 overflow-hidden">
             <p className={cn(
                 "font-sans font-medium text-muted-foreground whitespace-nowrap shrink min-w-0",
-                getHistoryFontSize()
+                historyFontSizeClass
             )}>
-                {history || ' '}
+                {historyText || ' '}
             </p>
            </div>
           <p className={cn(
