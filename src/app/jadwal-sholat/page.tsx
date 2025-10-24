@@ -11,6 +11,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface City {
   id: string;
@@ -77,16 +78,14 @@ export default function JadwalSholatPage() {
   const [prayerData, setPrayerData] = React.useState<PrayerData | null>(null);
   const [isLoadingCities, setIsLoadingCities] = React.useState(true);
   const [isLoadingSchedule, setIsLoadingSchedule] = React.useState(true);
+  const [isDetectingLocation, setIsDetectingLocation] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [comboboxOpen, setComboboxOpen] = React.useState(false);
 
-  // Fetch all cities and then try to determine user location
+  // Fetch all cities only once
   React.useEffect(() => {
-    const fetchAndSetLocation = async () => {
+    const fetchCities = async () => {
       setIsLoadingCities(true);
-      
-      // 1. Fetch all cities from MyQuran API
-      let allCities: City[] = [];
       try {
         const response = await fetch('https://api.myquran.com/v2/sholat/kota/semua');
         if (!response.ok) throw new Error('Gagal mengambil daftar kota');
@@ -95,64 +94,73 @@ export default function JadwalSholatPage() {
         
         const sortedCities = data.data.sort((a: City, b: City) => a.lokasi.localeCompare(b.lokasi));
         setCities(sortedCities);
-        allCities = sortedCities;
+        
+        // Set default city after fetching
+        const defaultCity = sortedCities.find(c => c.id === DEFAULT_CITY_ID) || null;
+        setSelectedCity(defaultCity);
+
       } catch (err: any) {
         setError(err.message || 'Terjadi kesalahan saat memuat kota.');
-        const defaultCity = cities.find(c => c.id === DEFAULT_CITY_ID) || null;
-        setSelectedCity(defaultCity);
+      } finally {
         setIsLoadingCities(false);
-        return;
-      }
-      setIsLoadingCities(false);
-
-      // 2. Get user's geolocation
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const { latitude, longitude } = position.coords;
-            let closestCity: City | null = null;
-            let minDistance = Infinity;
-
-            // Fetch coordinates for all cities to find the closest one
-            const cityDetailsPromises = allCities.map(city => 
-                fetch(`https://api.myquran.com/v2/sholat/jadwal/${city.id}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`)
-                .then(res => res.json())
-            );
-            
-            const cityDetailsResults = await Promise.all(cityDetailsPromises);
-            
-            cityDetailsResults.forEach((result, index) => {
-                 if (result.status && result.data?.koordinat) {
-                    const cityLat = result.data.koordinat.lat;
-                    const cityLon = result.data.koordinat.lon;
-                    const distance = getDistance(latitude, longitude, cityLat, cityLon);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        closestCity = allCities[index];
-                    }
-                }
-            });
-
-            if (closestCity) {
-              setSelectedCity(closestCity);
-            } else {
-              setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
-            }
-          },
-          // Geolocation failed or denied
-          () => {
-            setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
-          },
-          { timeout: 10000 }
-        );
-      } else {
-        // Geolocation not supported
-        setSelectedCity(allCities.find(c => c.id === DEFAULT_CITY_ID) || null);
       }
     };
-    
-    fetchAndSetLocation();
-  }, []); // Run only once on component mount
+    fetchCities();
+  }, []);
+
+  const findClosestCity = async (latitude: number, longitude: number): Promise<City | null> => {
+      let closestCity: City | null = null;
+      let minDistance = Infinity;
+
+      // This is inefficient but required by the API structure. Consider caching.
+      const cityDetailsPromises = cities.map(city => 
+          fetch(`https://api.myquran.com/v2/sholat/jadwal/${city.id}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`)
+          .then(res => res.json())
+          .catch(() => null)
+      );
+      
+      const cityDetailsResults = await Promise.all(cityDetailsPromises);
+      
+      cityDetailsResults.forEach((result, index) => {
+           if (result && result.status && result.data?.koordinat) {
+              const cityLat = result.data.koordinat.lat;
+              const cityLon = result.data.koordinat.lon;
+              const distance = getDistance(latitude, longitude, cityLat, cityLon);
+              if (distance < minDistance) {
+                  minDistance = distance;
+                  closestCity = cities[index];
+              }
+          }
+      });
+      return closestCity;
+  }
+  
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Browser Anda tidak mendukung geolokasi.");
+      return;
+    }
+
+    setIsDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        const closest = await findClosestCity(latitude, longitude);
+        if (closest) {
+          setSelectedCity(closest);
+        } else {
+          setError("Tidak dapat menemukan kota terdekat.");
+        }
+        setIsDetectingLocation(false);
+      },
+      (err) => {
+        setError(`Gagal mendapatkan lokasi: ${err.message}`);
+        setIsDetectingLocation(false);
+      },
+      { timeout: 10000 }
+    );
+  };
+
 
   // Fetch schedule whenever selectedCity changes
   React.useEffect(() => {
@@ -202,57 +210,67 @@ export default function JadwalSholatPage() {
                 </div>
             </div>
             <div className="space-y-2 pt-4">
-                <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={comboboxOpen}
-                            className="w-full justify-between"
-                            disabled={isLoadingCities}
-                        >
-                            {isLoadingCities && !selectedCity ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Memuat kota...
-                                </>
-                            ) : selectedCity ? (
-                                <>
-                                  <MapPin className="mr-2 h-4 w-4 shrink-0" />
-                                  {selectedCity.lokasi}
-                                </>
-                            ) : (
-                                "Pilih kota..."
-                            )}
-                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0" style={{width: 'var(--radix-popover-trigger-width)'}}>
-                        <Command>
-                            <CommandInput placeholder="Cari kota..." />
-                            <CommandList>
-                                <CommandEmpty>Kota tidak ditemukan.</CommandEmpty>
-                                <CommandGroup>
-                                    {cities.map((city) => (
-                                        <CommandItem
-                                            key={city.id}
-                                            value={city.lokasi}
-                                            onSelect={() => {
-                                                setSelectedCity(city);
-                                                setComboboxOpen(false);
-                                            }}
-                                        >
-                                            <Check
-                                                className={cn("mr-2 h-4 w-4", selectedCity?.id === city.id ? "opacity-100" : "opacity-0")}
-                                            />
-                                            {city.lokasi}
-                                        </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                            </CommandList>
-                        </Command>
-                    </PopoverContent>
-                </Popover>
+                <div className="flex gap-2 items-center">
+                  <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                      <PopoverTrigger asChild>
+                          <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={comboboxOpen}
+                              className="w-full justify-between"
+                              disabled={isLoadingCities}
+                          >
+                              {isLoadingCities && !selectedCity ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Memuat kota...
+                                  </>
+                              ) : selectedCity ? (
+                                  selectedCity.lokasi
+                              ) : (
+                                  "Pilih kota..."
+                              )}
+                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" style={{width: 'var(--radix-popover-trigger-width)'}}>
+                          <Command>
+                              <CommandInput placeholder="Cari kota..." />
+                              <CommandList>
+                                  <CommandEmpty>Kota tidak ditemukan.</CommandEmpty>
+                                  <CommandGroup>
+                                      {cities.map((city) => (
+                                          <CommandItem
+                                              key={city.id}
+                                              value={city.lokasi}
+                                              onSelect={() => {
+                                                  setSelectedCity(city);
+                                                  setComboboxOpen(false);
+                                              }}
+                                          >
+                                              <Check
+                                                  className={cn("mr-2 h-4 w-4", selectedCity?.id === city.id ? "opacity-100" : "opacity-0")}
+                                              />
+                                              {city.lokasi}
+                                          </CommandItem>
+                                      ))}
+                                  </CommandGroup>
+                              </CommandList>
+                          </Command>
+                      </PopoverContent>
+                  </Popover>
+                  <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                             <Button variant="outline" size="icon" onClick={handleDetectLocation} disabled={isDetectingLocation || isLoadingCities}>
+                                {isDetectingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+                                <span className="sr-only">Deteksi Lokasi Saya</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Gunakan Lokasi Saya</p></TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -296,3 +314,4 @@ export default function JadwalSholatPage() {
     </div>
   );
 }
+
