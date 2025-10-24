@@ -158,12 +158,19 @@ export function CalculatorUI() {
     { label: '=', className: 'bg-primary/80 hover:bg-primary text-primary-foreground', action: handleEquals },
   ];
   
-  const getFontSize = () => {
+  const getDisplayFontSize = () => {
     const len = displayValue.length;
     if (len > 13) return 'text-2xl';
     if (len > 10) return 'text-3xl';
     if (len > 7) return 'text-4xl';
     return 'text-5xl';
+  }
+  
+  const getHistoryFontSize = () => {
+      const len = history.length;
+      if (len > 35) return 'text-xs';
+      if (len > 25) return 'text-sm';
+      return 'text-lg';
   }
 
   return (
@@ -171,13 +178,16 @@ export function CalculatorUI() {
       <CardContent className="p-0">
         <div className="h-28 flex flex-col items-end justify-end p-4 rounded-2xl bg-muted shadow-neumorphic-light-inset mb-4">
            <div className="flex justify-end w-full h-7 overflow-hidden">
-            <p className="font-sans font-medium text-lg text-muted-foreground whitespace-nowrap shrink min-w-0">
+            <p className={cn(
+                "font-sans font-medium text-muted-foreground whitespace-nowrap shrink min-w-0",
+                getHistoryFontSize()
+            )}>
                 {history || ' '}
             </p>
            </div>
           <p className={cn(
               "font-sans font-bold text-right break-all w-full",
-              getFontSize()
+              getDisplayFontSize()
           )}>
             {formatNumber(displayValue)}
           </p>
