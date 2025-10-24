@@ -109,7 +109,7 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.
     
     return { response: llmResponse.text };
 
-  } catch (error) => {
+  } catch (error: any) {
     console.error("AI Assistant Error:", error);
     throw new Error('Gagal menghubungi asisten AI. Silakan coba lagi nanti.');
   }
