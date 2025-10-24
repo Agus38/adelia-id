@@ -601,7 +601,7 @@ ${pemasukanText}
                   <SummaryRow label="Sisa Omset" value={formatCurrency(sisaOmset)} isBold />
                   <SummaryRow label="Omset + Pajak" value={formatCurrency(sisaOmsetPlusPajak)} isBold isPositive />
                   <Separator className="my-2" />
-                  <SummaryRow label="Total Akhir (Setor)" value={formatCurrency(totalAkhir)} isBold />
+                  <SummaryRow label="Total Akhir (Setor)" value={formatCurrency(totalAkhir)} isBold isPositive />
               </div>
             </div>
           </CardContent>
