@@ -68,7 +68,7 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.`;
 
   try {
     const response = await ai.generate({
-      model: 'gemini-pro',
+      model: 'googleai/gemini-2.0-flash',
       system: systemPrompt,
       prompt: currentPrompt,
       history: conversationHistory.map(h => ({
