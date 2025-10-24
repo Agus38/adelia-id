@@ -111,6 +111,7 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.
 
   } catch (error: any) {
     console.error("AI Assistant Error:", error);
-    throw new Error('Gagal menghubungi asisten AI. Silakan coba lagi nanti.');
+    // Return a friendly error message instead of throwing
+    return { response: 'Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.' };
   }
 }
