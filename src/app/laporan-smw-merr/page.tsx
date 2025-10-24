@@ -423,7 +423,7 @@ ${pemasukanText}
   };
 
   const SummaryRow = ({ label, value, isBold = false, isDestructive = false, isPositive = false }: { label: string, value: string, isBold?: boolean, isDestructive?: boolean, isPositive?: boolean }) => (
-    <div className="flex justify-between items-center">
+    <div className={cn("flex justify-between items-center")}>
       <Label className={cn("text-sm", isBold && "font-semibold")}>{label}</Label>
       <div className={cn(
         "text-sm font-semibold text-right",
@@ -600,7 +600,7 @@ ${pemasukanText}
                   <SummaryRow label="Sisa Omset" value={formatCurrency(sisaOmset)} isBold />
                   <SummaryRow label="Omset + Pajak" value={formatCurrency(sisaOmsetPlusPajak)} isBold isPositive />
                   <Separator className="my-2" />
-                  <SummaryRow label="Total Akhir (Setor)" value={formatCurrency(totalAkhir)} isBold isPositive />
+                  <SummaryRow label="Total Akhir (Setor)" value={formatCurrency(totalAkhir)} isBold />
               </div>
             </div>
           </CardContent>
