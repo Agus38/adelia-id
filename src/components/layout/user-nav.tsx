@@ -249,7 +249,7 @@ export function UserNav() {
                     </DialogClose>
                 </DialogContent>
                 </Dialog>
-                <Button size="icon" className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 border-2 border-background" type="button" onClick={handleAvatarButtonClick} disabled={isUploading}>
+                <Button size="icon" className="absolute bottom-0 right-0 rounded-full h-8 w-8 border-2 border-background" type="button" onClick={handleAvatarButtonClick} disabled={isUploading}>
                     {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4"/>}
                     <span className="sr-only">Ubah Foto</span>
                 </Button>
