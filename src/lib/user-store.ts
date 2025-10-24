@@ -51,8 +51,8 @@ export const useUserStore = create<UserState>((set) => ({
       if (authUser) {
         const userDocRef = doc(db, 'users', authUser.uid);
         
-        // The user document should now be created during registration.
-        // This listener is primarily for syncing data and handling real-time updates.
+        // This listener syncs user data in real-time.
+        // Document creation is now handled at registration.
         firestoreUnsubscribe = onSnapshot(userDocRef, (userDoc) => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -77,8 +77,7 @@ export const useUserStore = create<UserState>((set) => ({
             };
             set({ user: fullUserProfile, loading: false });
           } else {
-            // This might happen if the doc creation failed or was deleted.
-            // Sign the user out to prevent an inconsistent state.
+            // This case should be rare now, but as a fallback, sign out.
             signOut(auth);
             set({ user: null, loading: false });
           }

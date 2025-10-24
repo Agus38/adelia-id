@@ -35,26 +35,27 @@ export function LoginForm() {
         if (isSignInWithEmailLink(auth, window.location.href)) {
             let emailFromStorage = window.localStorage.getItem('emailForSignIn');
             if (!emailFromStorage) {
-                emailFromStorage = window.prompt('Harap berikan email Anda untuk konfirmasi');
+                // To prevent phishing attacks, we don't prompt for email anymore.
+                // We rely on the email being in local storage.
+                setError("Sesi verifikasi tidak valid atau telah kedaluwarsa. Silakan coba masuk secara manual.");
+                setIsVerifying(false);
+                return;
             }
 
-            if (emailFromStorage) {
-                try {
-                    // Sign in user with email link. This will trigger onAuthStateChanged.
-                    await signInWithEmailLink(auth, emailFromStorage, window.location.href);
-                    
-                    // The user-store listener will now handle document creation.
-                    setSuccess('Email Anda telah berhasil diverifikasi. Anda akan segera dialihkan...');
-                    window.localStorage.removeItem('emailForSignIn');
+            try {
+                // Sign in user with email link. This will trigger onAuthStateChanged.
+                const result = await signInWithEmailLink(auth, emailFromStorage, window.location.href);
+                
+                setSuccess('Email Anda telah berhasil diverifikasi. Anda akan segera dialihkan...');
+                window.localStorage.removeItem('emailForSignIn');
+                
+                // The main redirect logic is handled by the useEffect below
+                // after the user state is updated. We remove the oobCode from URL.
+                router.replace('/login');
 
-                    // No need to sign out. Let the user store handle the session.
-                    // The redirect will happen via the user/userLoading useEffect.
-                } catch (linkError) {
-                    setError("Tautan verifikasi tidak valid atau telah kedaluwarsa.");
-                    if(auth.currentUser) await signOut(auth);
-                }
-            } else {
-                 setError("Gagal memverifikasi email. Email tidak ditemukan.");
+            } catch (linkError) {
+                setError("Tautan verifikasi tidak valid atau telah kedaluwarsa.");
+                if(auth.currentUser) await signOut(auth);
             }
         }
         setIsVerifying(false);
@@ -71,18 +72,6 @@ export function LoginForm() {
         router.push(redirectPath);
     }
   }, [user, userLoading, router, searchParams]);
-
-  // This function is no longer needed here as the logic is moved to user-store.
-  // It's kept for reference but should be removed in a future cleanup.
-  const ensureUserDocument = async (authUser: import('firebase/auth').User) => {
-      const userDocRef = doc(db, "users", authUser.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-          // This logic is now in user-store.ts
-      }
-      return await getDoc(userDocRef);
-  }
 
   const handleResendVerification = async () => {
     setIsResending(true);
