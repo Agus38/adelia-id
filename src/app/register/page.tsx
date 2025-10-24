@@ -84,7 +84,7 @@ export default function RegisterPage() {
       case 2:
         return { score: 2, label: 'Sedang', color: 'bg-yellow-500', width: '50%' };
       case 3:
-        return { score: 3, label: 'Kuat', color: 'bg-yellow-500', width: '75%' }; // Changed from medium to strong
+        return { score: 3, label: 'Kuat', color: 'bg-green-500', width: '75%' };
       case 4:
         return { score: 4, label: 'Sangat Kuat', color: 'bg-green-500', width: '100%' };
       default:
@@ -332,4 +332,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
