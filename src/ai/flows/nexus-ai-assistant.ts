@@ -12,6 +12,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { reportIssue } from './report-issue-flow';
+import { Part } from '@genkit-ai/google-genai';
 
 // Define a schema for a single message in the chat history
 const MessageSchema = z.object({
@@ -91,19 +92,22 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.
         const augmentedInput = { ...toolRequest.input, userName, userAvatar };
         const toolResponse = await toolRequest.run(augmentedInput);
 
+        const toolResponseAsPart: Part = {
+            toolResponse: {
+                name: toolRequest.name,
+                response: toolResponse,
+            }
+        };
+
         // Send the tool's response back to the model to get a final text response
         const finalResponse = await ai.generate({
             model: 'googleai/gemini-2.0-flash',
             system: systemPrompt,
             history: [
-                // Include the previous history
                 ...conversationHistory.map(h => ({ role: h.role, content: [{ text: h.content }] })),
-                // Include the user's prompt that triggered the tool call
                 { role: 'user', content: [{ text: currentPrompt }] },
-                // Include the model's tool request
                 llmResponse.requestAsMessage,
-                // Include the tool's response
-                llmResponse.responseAsMessage(toolResponse)
+                { role: 'model', content: [toolResponseAsPart] }
             ]
         });
 
