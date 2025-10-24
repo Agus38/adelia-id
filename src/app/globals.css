@@ -23,8 +23,8 @@
     --muted: 220 10% 90%;
     --muted-foreground: 240 4% 46%;
 
-    --accent: 181 43% 76%; /* #A8DADC */
-    --accent-foreground: 240 10% 3.9%; /* Use dark text on light accent */
+    --accent: 226 83% 60%; /* #4560EC - Same as primary */
+    --accent-foreground: 0 0% 100%; /* Same as primary-foreground */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -79,8 +79,8 @@
     --muted: 222 24% 20%;
     --muted-foreground: 240 5% 65%;
 
-    --accent: 181 43% 76%; /* #A8DADC */
-    --accent-foreground: 240 10% 3.9%; /* Use dark text on light accent */
+    --accent: 226 83% 60%; /* #4560EC - Same as primary */
+    --accent-foreground: 0 0% 100%; /* Same as primary-foreground */
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
