@@ -242,10 +242,6 @@ export function UserNav() {
                         height={800}
                         className="rounded-lg object-contain w-full h-auto"
                     />
-                    <DialogClose className="absolute -top-2 -right-2 rounded-full p-1 bg-background text-muted-foreground opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
-                        <X className="h-5 w-5" />
-                        <span className="sr-only">Tutup</span>
-                    </DialogClose>
                 </DialogContent>
                 </Dialog>
                 <Button size="icon" className="absolute bottom-2 right-0 rounded-full h-8 w-8 border-2 border-background" type="button" onClick={handleAvatarButtonClick} disabled={isUploading}>
