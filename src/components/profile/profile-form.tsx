@@ -186,7 +186,7 @@ export function ProfileForm() {
                                     </div>
                                 )}
                             </Avatar>
-                            <Button size="icon" className="absolute bottom-0 right-0 rounded-full h-7 w-7" type="button" onClick={handleAvatarButtonClick} disabled={isUploading}>
+                            <Button size="icon" className="absolute bottom-0 right-0 rounded-full h-7 w-7 border-none" type="button" onClick={handleAvatarButtonClick} disabled={isUploading}>
                                 <Camera className="h-4 w-4"/>
                                 <span className="sr-only">Ubah Foto</span>
                             </Button>
