@@ -23,17 +23,71 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users, Loader2, Info, X } from 'lucide-react';
+import { LogIn, LogOut, Settings, User, Shield, LifeBuoy, FileText, Code, Users, Loader2, Info, X, Camera } from 'lucide-react';
 import Link from 'next/link';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/lib/user-store';
 import { Badge } from '../ui/badge';
 import Image from 'next/image';
+import { useRef, useState } from 'react';
+import { toast } from '@/hooks/use-toast';
+import { doc, updateDoc } from 'firebase/firestore';
 
 export function UserNav() {
   const router = useRouter();
   const { user, loading } = useUserStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+
+  const handleAvatarButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !auth.currentUser) return;
+
+    if (file.size > 1024 * 1024) {
+      toast({
+        title: "Ukuran File Terlalu Besar",
+        description: "Ukuran file gambar tidak boleh melebihi 1MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+      });
+      
+      const userDocRef = doc(db, 'users', auth.currentUser.uid);
+      await updateDoc(userDocRef, { avatarUrl: dataUrl });
+      
+      toast({
+          title: "Avatar Diperbarui",
+          description: "Foto profil Anda telah berhasil diubah.",
+      });
+
+    } catch (error) {
+         toast({
+            title: "Upload Gagal",
+            description: "Gagal memproses gambar. Coba lagi.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsUploading(false);
+    }
+  }
+
 
   const handleLogout = async () => {
     await auth.signOut();
@@ -169,34 +223,48 @@ export function UserNav() {
 
       <DialogContent className="sm:max-w-xs p-0 border-0">
          <div className="flex flex-col items-center text-center p-6 pb-4">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Avatar className="h-24 w-24 mb-4 cursor-zoom-in transition-transform hover:scale-105">
-                    <AvatarImage src={user.avatarUrl || user.photoURL || undefined} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
-                    <AvatarFallback className="text-4xl">{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
-                </Avatar>
-              </DialogTrigger>
-              <DialogContent className="p-0 border-none max-w-md bg-transparent shadow-none">
-                  <DialogHeader className="sr-only">
-                      <DialogTitle>Foto Profil {user.fullName}</DialogTitle>
-                      <DialogDescription>Tampilan foto profil yang diperbesar.</DialogDescription>
-                  </DialogHeader>
-                  <Image 
-                      src={user.avatarUrl || user.photoURL || "https://placehold.co/800x800.png"} 
-                      alt={user.fullName || "User Avatar"} 
-                      width={800} 
-                      height={800}
-                      className="rounded-lg object-contain w-full h-auto"
-                  />
-                  <DialogClose className="absolute -top-2 -right-2 rounded-full p-1 bg-background text-muted-foreground opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
-                      <X className="h-5 w-5" />
-                      <span className="sr-only">Tutup</span>
-                  </DialogClose>
-              </DialogContent>
-            </Dialog>
-            <DialogTitle className="text-2xl">{user.fullName || 'Pengguna'}</DialogTitle>
+            <div className="relative">
+                <Dialog>
+                <DialogTrigger asChild>
+                    <Avatar className="h-24 w-24 mb-4 cursor-zoom-in transition-transform hover:scale-105">
+                        <AvatarImage src={user.avatarUrl || user.photoURL || undefined} alt={user.fullName || user.email || ''} data-ai-hint="user avatar" />
+                        <AvatarFallback className="text-4xl">{getAvatarFallback(user.fullName, user.email)}</AvatarFallback>
+                    </Avatar>
+                </DialogTrigger>
+                <DialogContent className="p-0 border-none max-w-md bg-transparent shadow-none">
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Foto Profil {user.fullName}</DialogTitle>
+                        <DialogDescription>Tampilan foto profil yang diperbesar.</DialogDescription>
+                    </DialogHeader>
+                    <Image 
+                        src={user.avatarUrl || user.photoURL || "https://placehold.co/800x800.png"} 
+                        alt={user.fullName || "User Avatar"} 
+                        width={800} 
+                        height={800}
+                        className="rounded-lg object-contain w-full h-auto"
+                    />
+                    <DialogClose className="absolute -top-2 -right-2 rounded-full p-1 bg-background text-muted-foreground opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+                        <X className="h-5 w-5" />
+                        <span className="sr-only">Tutup</span>
+                    </DialogClose>
+                </DialogContent>
+                </Dialog>
+                <Button size="icon" className="absolute -bottom-1 -right-1 rounded-full h-8 w-8 border-2 border-background" type="button" onClick={handleAvatarButtonClick} disabled={isUploading}>
+                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4"/>}
+                    <span className="sr-only">Ubah Foto</span>
+                </Button>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    accept="image/png, image/jpeg"
+                    disabled={isUploading}
+                />
+            </div>
+            <DialogTitle className="text-2xl mt-4">{user.fullName || 'Pengguna'}</DialogTitle>
              {user.role && (
-                <Badge key={user.role} variant={roleBadgeVariant[user.role] || 'secondary'} className="w-fit mx-auto">
+                <Badge key={user.role} variant={roleBadgeVariant[user.role] || 'secondary'} className="w-fit mx-auto mt-1">
                     {user.role}
                 </Badge>
             )}
