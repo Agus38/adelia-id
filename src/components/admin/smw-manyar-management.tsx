@@ -232,7 +232,7 @@ export function SmwManyarManagement() {
   
   const DetailSection = ({ title, items, data }: { title: string, items: ReportItem[], data: { [key: string]: string }}) => {
     const total = items.reduce((sum, item) => sum + (Number(data[item.id]) || 0), 0);
-    const hasItems = items.some(item => data[item.id] && Number(data[item.id]) > 0);
+    const hasItems = items.some(item => data[item.id] !== undefined);
     return (
         <div className="space-y-2">
             <h3 className="font-semibold">{title}</h3>
@@ -241,11 +241,11 @@ export function SmwManyarManagement() {
                     <TableBody>
                         {hasItems ? items.map((item) => {
                             const value = data[item.id];
-                            if (!value || Number(value) === 0) return null;
+                            if (value === undefined) return null;
                             return (
                                 <TableRow key={item.id} className="border-none">
                                     <TableCell className="p-1">{item.label}</TableCell>
-                                    <TableCell className="p-1 text-right font-medium">{title.includes('Sales') ? formatCurrency(Number(value)) : value}</TableCell>
+                                    <TableCell className="p-1 text-right font-medium">{title.includes('Sales') ? formatCurrency(Number(value) || 0) : value}</TableCell>
                                 </TableRow>
                             )
                         }) : (
