@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -78,7 +77,7 @@ export default function DiskonPage() {
           <Tag className="h-8 w-8" />
           <h2 className="text-3xl font-bold tracking-tight">Kalkulator Diskon</h2>
         </div>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-muted-foreground mt-2 text-sm sm:text-base">
           Hitung potongan harga dengan mudah untuk mengetahui besaran diskon dalam nominal dan persentase.
         </p>
       </div>
