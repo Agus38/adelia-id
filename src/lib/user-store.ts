@@ -69,6 +69,7 @@ export const useUserStore = create<UserState>((set) => ({
                     createdAt: serverTimestamp(),
                 };
                 await setDoc(userDocRef, newUserProfile);
+                 await logActivity('mendaftar', 'Sistem');
             }
         } catch (error) {
              console.error("Error ensuring user document exists:", error);
