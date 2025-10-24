@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useUserStore } from '@/lib/user-store';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -28,6 +29,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -39,6 +41,14 @@ export default function RegisterPage() {
       router.push('/');
     }
   }, [user, userLoading, router]);
+
+  useEffect(() => {
+    if (password && confirmPassword && password !== confirmPassword) {
+      setPasswordError("Kata sandi dan konfirmasi tidak cocok.");
+    } else {
+      setPasswordError(null);
+    }
+  }, [password, confirmPassword]);
 
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -122,7 +132,7 @@ export default function RegisterPage() {
     }
   };
   
-  const isSubmitDisabled = isLoading || !name || !email || !password || !confirmPassword || !termsAccepted;
+  const isSubmitDisabled = isLoading || !name || !email || !password || !confirmPassword || !termsAccepted || !!passwordError;
 
   if (userLoading || user) {
     return (
@@ -193,6 +203,7 @@ export default function RegisterPage() {
                   disabled={isLoading}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={cn(passwordError && "border-destructive focus-visible:ring-destructive")}
                 />
                 <Button
                   type="button"
@@ -209,6 +220,7 @@ export default function RegisterPage() {
                   )}
                 </Button>
               </div>
+              {passwordError && <p className="text-xs text-destructive">{passwordError}</p>}
             </div>
             <div className="flex items-center space-x-2">
               <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(checked) => setTermsAccepted(checked as boolean)} disabled={isLoading} />
