@@ -599,12 +599,7 @@ ${pemasukanText}
                   <Separator className="my-2" />
                   <SummaryRow label="Total Pengeluaran" value={formatCurrency(totalPengeluaran)} isDestructive />
                   <SummaryRow label="Sisa Omset" value={formatCurrency(sisaOmset)} isBold />
-                  <div className="flex justify-between items-center">
-                      <Label className="text-sm font-semibold">Omset + Pajak</Label>
-                      <div className="text-base font-bold text-right text-positive">
-                          {formatCurrency(sisaOmsetPlusPajak)}
-                      </div>
-                  </div>
+                  <SummaryRow label="Omset + Pajak" value={formatCurrency(sisaOmsetPlusPajak)} isBold isPositive />
                   <Separator className="my-2" />
                   <SummaryRow label="Total Akhir (Setor)" value={formatCurrency(totalAkhir)} isBold />
               </div>
