@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -178,7 +179,7 @@ export default function StokProdukPage() {
         
         toast({
           title: 'Stok Disimpan!',
-          description: 'Laporan stok produk telah berhasil disimpan di database.',
+          description: 'Laporan stok produk telah berhasil disimpan.',
         });
         setIsDirty(false);
     } catch(error) {
