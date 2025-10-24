@@ -145,8 +145,10 @@ export function ChatInterface() {
       };
       
       try {
+        // Only send the last 5 messages for context
+        const limitedHistory = newHistory.slice(-5);
         const result = await nexusAIAssistant({ 
-          history: newHistory, 
+          history: limitedHistory, 
           appContext,
           userName: user?.fullName || 'Pengguna',
           userAvatar: user?.avatarUrl || user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || 'P')}`
