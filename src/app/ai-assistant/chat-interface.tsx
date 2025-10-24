@@ -109,13 +109,13 @@ export function ChatInterface() {
   }
 
   const handlePromptSuggestionClick = (prompt: string) => {
-      // No need to setInput, directly call handleSubmit
       const syntheticEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
       handleSubmit(syntheticEvent, prompt);
   };
 
   const handleClearChat = () => {
       setMessages([]);
+      localStorage.removeItem('nexus-chat-history');
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>, suggestedPrompt?: string) => {
@@ -124,12 +124,9 @@ export function ChatInterface() {
     if (!currentInput.trim()) return;
 
     const userMessage: Message = { role: 'user', content: currentInput };
-    // Create the new history array immediately
     const newHistory = [...messages, userMessage];
     
-    // Update the UI state
     setMessages(newHistory);
-    // Clear input field only if it wasn't a suggested prompt
     if (!suggestedPrompt) {
       setInput('');
     }
