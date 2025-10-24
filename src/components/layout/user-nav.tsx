@@ -152,7 +152,7 @@ export function UserNav() {
           {user && user.role === 'Admin' && (
             <>
               <Link href="/admin">
-                <DropdownMenuItem className="text-primary focus:text-primary">
+                <DropdownMenuItem className="text-primary focus:text-primary-foreground">
                   <Shield className="mr-2 h-4 w-4" />
                   <span>Panel Admin</span>
                 </DropdownMenuItem>
