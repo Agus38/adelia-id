@@ -121,6 +121,8 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
     .reduce((sum, item) => sum + (Number(formData[`terjual-${item.id}`]) || 0), 0) ?? 0;
   
   const grossTotal = smwManyarConfig?.onlineSalesItems.reduce((sum, item) => sum + (Number(formData[`online-${item.id}`]) || 0), 0) ?? 0;
+  const isFormEmpty = Object.values(formData).every(value => !value);
+
 
   const handleSaveReport = async () => {
     if (!date || !currentUser) {
@@ -302,12 +304,12 @@ ${onlineSalesText}\`\`\`
 
         </CardContent>
         <CardFooter className="flex flex-col-reverse sm:flex-row justify-between gap-4 border-t pt-6">
-          <Button onClick={handleSaveReport} disabled={isSaving} className="w-full sm:w-auto">
+          <Button onClick={handleSaveReport} disabled={isSaving || isFormEmpty} className="w-full sm:w-auto">
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Save className="mr-2 h-4 w-4" />
               Simpan Laporan
           </Button>
-          <Button onClick={handleSendWhatsApp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
+          <Button onClick={handleSendWhatsApp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700" disabled={isFormEmpty}>
             <Send className="mr-2 h-4 w-4" />
             Kirim Laporan
           </Button>
