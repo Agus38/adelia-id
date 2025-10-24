@@ -81,13 +81,22 @@ export default function RegisterPage() {
         photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
       });
       
-      // NOTE: We no longer create the Firestore document here.
-      // The document will be created upon first successful login, handled by the user-store.
+      // 4. Create the Firestore user document directly, ensuring 'name' is captured.
+      const userDocRef = doc(db, 'users', authUser.uid);
+      await setDoc(userDocRef, {
+        uid: authUser.uid,
+        email: authUser.email,
+        fullName: name, // Use the 'name' state directly
+        role: 'Pengguna',
+        status: 'Aktif',
+        avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+        createdAt: serverTimestamp(),
+      });
       
-      // 4. Sign out the user immediately so they have to log in after verification.
+      // 5. Sign out the user immediately so they have to log in after verification.
       await signOut(auth);
       
-      // 5. Redirect to the check-email page instead of showing a toast
+      // 6. Redirect to the check-email page instead of showing a toast
       router.push('/check-email');
 
     } catch (error: any) {

@@ -51,34 +51,8 @@ export const useUserStore = create<UserState>((set) => ({
       if (authUser) {
         const userDocRef = doc(db, 'users', authUser.uid);
         
-        // Use a one-time getDoc to check for existence and handle creation if needed.
-        // This is crucial for the first login after registration.
-        try {
-            const initialDoc = await getDoc(userDocRef);
-
-            if (!initialDoc.exists()) {
-                // User is authenticated but has no document. This is the first login.
-                // Create the user document now.
-                const newUserProfile = {
-                    uid: authUser.uid,
-                    email: authUser.email,
-                    fullName: authUser.displayName,
-                    role: 'Pengguna', // Default role
-                    status: 'Aktif', // Default status
-                    avatarUrl: authUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.displayName || 'A')}&background=random`,
-                    createdAt: serverTimestamp(),
-                };
-                await setDoc(userDocRef, newUserProfile);
-                 await logActivity('mendaftar', 'Sistem');
-            }
-        } catch (error) {
-             console.error("Error ensuring user document exists:", error);
-             signOut(auth); // Sign out if we can't even check/create the doc.
-             set({ user: null, loading: false });
-             return;
-        }
-
-        // Now that we're sure the document exists, set up the real-time listener.
+        // The user document should now be created during registration.
+        // This listener is primarily for syncing data and handling real-time updates.
         firestoreUnsubscribe = onSnapshot(userDocRef, (userDoc) => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -103,7 +77,8 @@ export const useUserStore = create<UserState>((set) => ({
             };
             set({ user: fullUserProfile, loading: false });
           } else {
-            // This case should no longer be reached due to the initial check, but as a safeguard:
+            // This might happen if the doc creation failed or was deleted.
+            // Sign the user out to prevent an inconsistent state.
             signOut(auth);
             set({ user: null, loading: false });
           }
