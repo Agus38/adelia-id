@@ -19,17 +19,14 @@ import type { User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { getSmwReport, addOrUpdateSmwReport } from '@/lib/smw-manyar-store';
 import { useSmwManyarConfig } from '@/lib/menu-store';
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning';
 
 
 type FormData = {
   [key: string]: string;
 };
 
-interface SmwManyarReportFormProps {
-    setIsDirty: (isDirty: boolean) => void;
-}
-
-export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
+export function SmwManyarReportForm() {
   const { smwManyarConfig, isLoading: isLoadingConfig } = useSmwManyarConfig();
   const [formData, setFormData] = React.useState<FormData>({});
   const [initialFormData, setInitialFormData] = React.useState<FormData>({});
@@ -39,7 +36,9 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
   const [isFetchingReport, setIsFetchingReport] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isExistingReport, setIsExistingReport] = React.useState(false);
+  const [isDirty, setIsDirty] = React.useState(false);
   const { toast } = useToast();
+  const { UnsavedChangesDialog } = useUnsavedChangesWarning(isDirty);
 
   React.useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -53,13 +52,13 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
     setFormData({});
     setInitialFormData({});
     setIsDirty(false);
-  }, [setIsDirty]);
+  }, []);
 
   const populateForm = React.useCallback((report: { formData: { [key: string]: string } }) => {
      setFormData(report.formData);
      setInitialFormData(report.formData);
      setIsDirty(false);
-  }, [setIsDirty]);
+  }, []);
   
   React.useEffect(() => {
     if (!date || !currentUser) return;
@@ -91,14 +90,16 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
     fetchReport();
   }, [date, currentUser, resetForm, populateForm, toast]);
 
+  // Safely check for dirtiness after render
+  React.useEffect(() => {
+    const dirty = JSON.stringify(formData) !== JSON.stringify(initialFormData);
+    setIsDirty(dirty);
+  }, [formData, initialFormData]);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    setFormData((prev) => {
-        const newState = { ...prev, [id]: value };
-        setIsDirty(JSON.stringify(newState) !== JSON.stringify(initialFormData));
-        return newState;
-    });
+    setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
   const handleNumericInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,11 +108,7 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
       if (/^\d*$/.test(rawValue) && rawValue.length <= 9) {
           const numValue = Number(rawValue);
           const newValue = numValue === 0 ? '' : numValue.toString();
-          setFormData(prev => {
-            const newState = { ...prev, [id]: newValue };
-            setIsDirty(JSON.stringify(newState) !== JSON.stringify(initialFormData));
-            return newState;
-          });
+          setFormData(prev => ({ ...prev, [id]: newValue }));
       }
   };
 
@@ -215,8 +212,6 @@ ${onlineSalesText}\`\`\`
 
   const isLoading = isLoadingUser || isLoadingConfig;
   
-  const isDirty = JSON.stringify(formData) !== JSON.stringify(initialFormData);
-
   const showUpdateButton = isExistingReport && isDirty;
 
   if (isLoading) {
@@ -228,6 +223,8 @@ ${onlineSalesText}\`\`\`
   }
 
   return (
+    <>
+      <UnsavedChangesDialog />
       <Card className="relative">
            {isFetchingReport && (
               <div className="absolute inset-0 bg-background/80 flex items-center justify-center rounded-lg z-10">
@@ -350,5 +347,6 @@ ${onlineSalesText}\`\`\`
           </Button>
         </CardFooter>
       </Card>
+    </>
   );
 }
