@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -844,7 +845,10 @@ export const useDeveloperInfoConfig = () => {
 
 export const saveDeveloperInfoConfig = async (info: DeveloperInfo) => {
     const infoToStore: DeveloperInfoDTO = {
-        ...info,
+        name: info.name,
+        title: info.title,
+        avatarUrl: info.avatarUrl,
+        bio: info.bio,
         socialLinks: info.socialLinks.map(link => ({
             id: link.id,
             name: link.name,
