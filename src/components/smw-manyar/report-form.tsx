@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -38,6 +37,7 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
   const [isLoadingUser, setIsLoadingUser] = React.useState(true);
   const [isFetchingReport, setIsFetchingReport] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isExistingReport, setIsExistingReport] = React.useState(false);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -53,7 +53,7 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
     setIsDirty(false);
   }, [setIsDirty]);
 
-  const populateForm = React.useCallback((report: { formData: FormData }) => {
+  const populateForm = React.useCallback((report: { formData: { [key: string]: string } }) => {
      setFormData(report.formData);
      setIsDirty(false);
   }, [setIsDirty]);
@@ -67,8 +67,10 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
         const report = await getSmwReport(date, currentUser.uid);
         if (report) {
           populateForm(report);
+          setIsExistingReport(true);
         } else {
           resetForm();
+          setIsExistingReport(false);
         }
       } catch (error) {
          toast({
@@ -77,6 +79,7 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
           variant: 'destructive',
         });
         resetForm();
+        setIsExistingReport(false);
       } finally {
         setIsFetchingReport(false);
       }
@@ -140,6 +143,7 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
         await addOrUpdateSmwReport(reportData);
         toast({ title: 'Laporan Disimpan', description: 'Data laporan SMW Manyar telah berhasil disimpan.' });
         setIsDirty(false);
+        setIsExistingReport(true);
     } catch (error) {
         toast({ title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan laporan.', variant: 'destructive' });
     } finally {
@@ -148,6 +152,15 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
   };
 
   const handleSendWhatsApp = () => {
+    if (isDirty) {
+        toast({
+            title: 'Simpan Perubahan Dahulu',
+            description: 'Anda memiliki perubahan yang belum disimpan. Silakan simpan laporan sebelum mengirimnya via WhatsApp.',
+            variant: 'destructive',
+        });
+        return;
+    }
+
     if (!smwManyarConfig) return;
     const reportDate = date ? format(date, 'eeee, dd-MM-yyyy', { locale: id }) : 'Belum diisi';
     
@@ -190,6 +203,10 @@ ${onlineSalesText}\`\`\`
   };
 
   const isLoading = isLoadingUser || isLoadingConfig;
+  const showUpdateButton = isExistingReport && isDirty;
+  const isDirty = Object.keys(formData).length > 0 && (
+    JSON.stringify(formData) !== JSON.stringify(isExistingReport ? (getSmwReport(date!, currentUser!.uid)) : {})
+  );
 
   if (isLoading) {
     return (
@@ -304,12 +321,19 @@ ${onlineSalesText}\`\`\`
 
         </CardContent>
         <CardFooter className="flex flex-col-reverse sm:flex-row justify-between gap-4 border-t pt-6">
-          <Button onClick={handleSaveReport} disabled={isSaving || isFormEmpty} className="w-full sm:w-auto">
+          <Button
+            onClick={handleSaveReport}
+            disabled={isSaving || isFormEmpty}
+            className={cn(
+                "w-full sm:w-auto",
+                showUpdateButton ? "bg-orange-500 hover:bg-orange-600" : ""
+            )}
+          >
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Save className="mr-2 h-4 w-4" />
-              Simpan Laporan
+              {showUpdateButton ? 'Update' : 'Simpan Laporan'}
           </Button>
-          <Button onClick={handleSendWhatsApp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700" disabled={isFormEmpty}>
+          <Button onClick={handleSendWhatsApp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700" disabled={isFormEmpty || isDirty}>
             <Send className="mr-2 h-4 w-4" />
             Kirim Laporan
           </Button>
