@@ -72,9 +72,7 @@ interface SocialLinkDTO {
   id: string; // Added for stable key
   name: string;
   url: string;
-  iconType: 'icon' | 'image';
   iconName?: string;
-  iconImageUrl?: string;
 }
 
 interface DeveloperInfoDTO {
@@ -185,9 +183,7 @@ export interface SocialLink {
     id: string; // Added for stable key
     name: string;
     url: string;
-    iconType: 'icon' | 'image';
     iconName?: string;
-    iconImageUrl?: string;
     icon: LucideIcon;
 }
 
@@ -339,10 +335,10 @@ const defaultDeveloperInfo: DeveloperInfo = {
   avatarUrl: 'https://placehold.co/150x150.png',
   bio: 'Saya adalah seorang pengembang perangkat lunak dengan hasrat untuk menciptakan solusi teknologi yang inovatif dan aplikasi yang ramah pengguna. Berkomitmen pada pembelajaran berkelanjutan dan keunggulan dalam pengembangan.',
   socialLinks: [
-    { id: 'dev-link-1', name: 'GitHub', url: 'https://github.com/aguseka', iconType: 'icon', iconName: 'Github', icon: getIconComponent('Github') },
-    { id: 'dev-link-2', name: 'LinkedIn', url: 'https://linkedin.com/in/aguseka', iconType: 'icon', iconName: 'Linkedin', icon: getIconComponent('Linkedin') },
-    { id: 'dev-link-3', name: 'Website', url: 'https://aguseka.dev', iconType: 'icon', iconName: 'Globe', icon: getIconComponent('Globe') },
-    { id: 'dev-link-4', name: 'Email', url: 'mailto:contact@aguseka.dev', iconType: 'icon', iconName: 'Mail', icon: getIconComponent('Mail') },
+    { id: 'dev-link-1', name: 'GitHub', url: 'https://github.com/aguseka', iconName: 'Github', icon: getIconComponent('Github') },
+    { id: 'dev-link-2', name: 'LinkedIn', url: 'https://linkedin.com/in/aguseka', iconName: 'Linkedin', icon: getIconComponent('Linkedin') },
+    { id: 'dev-link-3', name: 'Website', url: 'https://aguseka.dev', iconName: 'Globe', icon: getIconComponent('Globe') },
+    { id: 'dev-link-4', name: 'Email', url: 'mailto:contact@aguseka.dev', iconName: 'Mail', icon: getIconComponent('Mail') },
   ],
 };
 
@@ -818,7 +814,6 @@ const useDeveloperInfoStore = create<DeveloperInfoState>((set) => ({
                     socialLinks: (dto.socialLinks || []).map(link => ({
                         ...link,
                         id: link.id || `link-${Math.random()}`, // Ensure ID exists for key prop
-                        iconType: link.iconType || 'icon',
                         icon: getIconComponent(link.iconName),
                     })),
                 };
@@ -853,28 +848,10 @@ export const saveDeveloperInfoConfig = async (info: DeveloperInfo) => {
             id: link.id,
             name: link.name,
             url: link.url,
-            iconType: link.iconType,
             iconName: link.iconName,
-            iconImageUrl: link.iconImageUrl,
         })),
     };
     await setDoc(developerInfoDocRef, infoToStore);
-};
-
-export const saveSingleSocialLinkImage = async (linkId: string, imageUrl: string) => {
-    const docSnap = await getDoc(developerInfoDocRef);
-    if (!docSnap.exists()) {
-        throw new Error("Developer info document not found.");
-    }
-    const currentData = docSnap.data() as DeveloperInfoDTO;
-    const newSocialLinks = currentData.socialLinks.map(link => {
-        if (link.id === linkId) {
-            return { ...link, iconImageUrl: imageUrl };
-        }
-        return link;
-    });
-
-    await updateDoc(developerInfoDocRef, { socialLinks: newSocialLinks });
 };
 
 
