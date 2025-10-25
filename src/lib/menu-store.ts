@@ -853,7 +853,7 @@ export const saveDeveloperInfoConfig = async (info: DeveloperInfo) => {
             id: link.id,
             name: link.name,
             url: link.url,
-            iconType: link.iconType || 'icon',
+            iconType: link.iconType,
             iconName: link.iconName,
             iconImageUrl: link.iconImageUrl,
         })),
@@ -1239,3 +1239,4 @@ export const saveSupportPageConfig = async (config: SupportPageConfig) => {
 };
 
     
+
