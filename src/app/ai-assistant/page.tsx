@@ -4,16 +4,28 @@
 import { ChatInterface } from "./chat-interface";
 import { usePageAccess } from "@/hooks/use-page-access";
 import { Loader2, Bot } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function AiAssistantSkeleton() {
+    return (
+        <div className="flex flex-col flex-1 p-2 sm:p-4 md:p-6">
+            <div className="flex-shrink-0 mb-4 flex items-center gap-3">
+                <Skeleton className="h-12 w-12 rounded-lg" />
+                <div className="space-y-2">
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-32" />
+                </div>
+            </div>
+            <Skeleton className="w-full flex-1 rounded-2xl" />
+        </div>
+    );
+}
 
 export default function AiAssistantPage() {
   const { hasAccess, isLoading } = usePageAccess('nexus-ai');
 
   if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AiAssistantSkeleton />;
   }
 
   if (!hasAccess) {

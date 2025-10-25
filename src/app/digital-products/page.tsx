@@ -4,17 +4,36 @@
 import { ProductGrid } from '@/components/digital-products/product-grid';
 import { UserBalanceCard } from '@/components/digital-products/pulsa/user-balance-card';
 import { usePageAccess } from '@/hooks/use-page-access';
-import { Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function DigitalProductsSkeleton() {
+  return (
+    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-1/3" />
+        <Skeleton className="h-4 w-1/2" />
+      </div>
+
+      <div className="flex justify-center">
+        <Skeleton className="h-[90px] w-full max-w-lg rounded-lg" />
+      </div>
+
+      <div className="pt-6">
+         <div className="grid grid-cols-3 gap-4 md:grid-cols-4 md:gap-6">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton key={index} className="aspect-square rounded-2xl" />
+            ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function DigitalProductsPage() {
   const { hasAccess, isLoading } = usePageAccess('digital-products');
   
   if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-10rem)] w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <DigitalProductsSkeleton />;
   }
 
   if (!hasAccess) {
