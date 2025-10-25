@@ -21,6 +21,7 @@ import { useDeveloperInfoConfig, saveDeveloperInfoConfig, type DeveloperInfo, ty
 import { toast } from '@/hooks/use-toast';
 import { allIcons } from '@/lib/menu-items-v2';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 const iconMap: { [key: string]: React.ElementType } = allIcons;
 
@@ -29,6 +30,7 @@ export function DeveloperSettings() {
   const [localInfo, setLocalInfo] = useState<DeveloperInfo | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadingLinkIndex, setUploadingLinkIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -60,26 +62,29 @@ export function DeveloperSettings() {
   };
   
   const handleLinkChange = (index: number, field: keyof SocialLink, value: string) => {
-    if (!localInfo) return;
-    const newLinks = [...localInfo.socialLinks];
-    const linkToUpdate = { ...newLinks[index] };
-    
-    if (field === 'iconName') {
-        linkToUpdate.iconName = value;
-        linkToUpdate.icon = iconMap[value];
-    } else if (field === 'name' || field === 'url') {
-        linkToUpdate[field] = value;
-    }
-    
-    newLinks[index] = linkToUpdate;
-    setLocalInfo(prev => prev ? ({...prev, socialLinks: newLinks}) : null);
+      if (!localInfo) return;
+      const newLinks = [...localInfo.socialLinks];
+      const linkToUpdate = { ...newLinks[index] };
+
+      if (field === 'iconName') {
+          linkToUpdate.iconName = value;
+          linkToUpdate.icon = iconMap[value];
+      } else if (field === 'iconType') {
+          linkToUpdate[field] = value as 'icon' | 'image';
+      } else {
+          (linkToUpdate as any)[field] = value;
+      }
+      
+      newLinks[index] = linkToUpdate;
+      setLocalInfo(prev => prev ? ({...prev, socialLinks: newLinks}) : null);
   }
 
   const handleAddLink = () => {
     if (!localInfo) return;
     const newLink: SocialLink = {
-        name: '',
+        name: 'New Link',
         url: '',
+        iconType: 'icon',
         iconName: 'Globe',
         icon: Globe
     };
@@ -94,6 +99,49 @@ export function DeveloperSettings() {
     const newLinks = [...localInfo.socialLinks];
     newLinks.splice(index, 1);
     setLocalInfo({ ...localInfo, socialLinks: newLinks });
+  }
+
+  const handleLinkImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = event.target.files?.[0];
+    if (!file || !localInfo) return;
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      toast({
+        title: "Ukuran File Terlalu Besar",
+        description: "Ukuran file avatar tidak boleh melebihi 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingLinkIndex(index);
+    try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = (error) => reject(error);
+        });
+
+        handleLinkChange(index, 'iconImageUrl', dataUrl);
+        
+        toast({
+          title: "Gambar Diproses",
+          description: "Gambar ikon berhasil diproses. Jangan lupa simpan perubahan.",
+        });
+
+    } catch (error) {
+      toast({
+        title: "Gagal Memproses Gambar",
+        description: "Terjadi kesalahan saat memproses gambar.",
+        variant: "destructive",
+      });
+    } finally {
+        setUploadingLinkIndex(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    }
   }
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,7 +183,6 @@ export function DeveloperSettings() {
       });
     } finally {
         setIsUploading(false);
-        // Reset file input to allow re-uploading the same file
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -162,7 +209,7 @@ export function DeveloperSettings() {
     }
   };
   
-  const isSaveDisabled = isSaving || isUploading;
+  const isSaveDisabled = isSaving || isUploading || uploadingLinkIndex !== null;
 
   return (
     <Card>
@@ -238,36 +285,87 @@ export function DeveloperSettings() {
                 {localInfo.socialLinks.map((link, index) => {
                     const Icon = iconMap[link.iconName] || Globe;
                     return (
-                         <div key={index} className="flex items-center gap-2 p-2 border rounded-md">
-                            <Select value={link.iconName} onValueChange={(value) => handleLinkChange(index, 'iconName', value)}>
-                                <SelectTrigger className="w-[120px]">
-                                    <SelectValue>
-                                        <div className='flex items-center gap-2'>
-                                            <Icon className="h-4 w-4 text-muted-foreground" />
-                                            <span className='truncate'>{link.iconName}</span>
-                                        </div>
-                                    </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {Object.keys(iconMap).sort().map(iconName => (
-                                        <SelectItem key={iconName} value={iconName}>
-                                            <div className="flex items-center gap-2">
-                                                {React.createElement(iconMap[iconName], { className: "h-4 w-4" })}
-                                                <span>{iconName}</span>
-                                            </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                             <Input
-                                placeholder="URL Lengkap"
-                                value={link.url}
-                                onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
-                                className="flex-1"
-                            />
-                             <Button variant="ghost" size="icon" onClick={() => handleRemoveLink(index)}>
+                         <div key={link.name+index} className="space-y-4 p-4 border rounded-md relative">
+                            <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => handleRemoveLink(index)}>
                                 <Trash2 className="h-4 w-4 text-destructive" />
+                                <span className="sr-only">Hapus Tautan</span>
                             </Button>
+                             <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label>Label Tautan</Label>
+                                  <Input placeholder="Contoh: GitHub" value={link.name} onChange={(e) => handleLinkChange(index, 'name', e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>URL Lengkap</Label>
+                                  <Input placeholder="https://..." value={link.url} onChange={(e) => handleLinkChange(index, 'url', e.target.value)} />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Jenis Ikon</Label>
+                                <RadioGroup 
+                                    value={link.iconType || 'icon'} 
+                                    onValueChange={(value) => handleLinkChange(index, 'iconType', value)}
+                                    className="flex gap-4"
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="icon" id={`r-icon-${index}`} />
+                                        <Label htmlFor={`r-icon-${index}`} className="font-normal">Ikon Bawaan</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="image" id={`r-image-${index}`} />
+                                        <Label htmlFor={`r-image-${index}`} className="font-normal">Gambar URL/Unggah</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+                            
+                            {(link.iconType === 'icon' || !link.iconType) ? (
+                                <div className="space-y-2">
+                                  <Label>Ikon</Label>
+                                  <Select value={link.iconName} onValueChange={(value) => handleLinkChange(index, 'iconName', value)}>
+                                      <SelectTrigger>
+                                          <SelectValue>
+                                              <div className='flex items-center gap-2'>
+                                                  <Icon className="h-4 w-4 text-muted-foreground" />
+                                                  <span className='truncate'>{link.iconName}</span>
+                                              </div>
+                                          </SelectValue>
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          {Object.keys(iconMap).sort().map(iconName => (
+                                              <SelectItem key={iconName} value={iconName}>
+                                                  <div className="flex items-center gap-2">
+                                                      {React.createElement(iconMap[iconName], { className: "h-4 w-4" })}
+                                                      <span>{iconName}</span>
+                                                  </div>
+                                              </SelectItem>
+                                          ))}
+                                      </SelectContent>
+                                  </Select>
+                                </div>
+                            ) : (
+                               <div className="space-y-2">
+                                  <Label>URL Ikon atau Unggah</Label>
+                                  <div className="flex gap-2">
+                                      <Input
+                                          placeholder="https://.../icon.png"
+                                          value={link.iconImageUrl || ''}
+                                          onChange={(e) => handleLinkChange(index, 'iconImageUrl', e.target.value)}
+                                      />
+                                      <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} disabled={uploadingLinkIndex !== null}>
+                                        {(uploadingLinkIndex === index) ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+                                         <span className="sr-only">Unggah Ikon</span>
+                                      </Button>
+                                      <input
+                                          type="file"
+                                          ref={fileInputRef}
+                                          onChange={(e) => handleLinkImageUpload(e, index)}
+                                          className="hidden"
+                                          accept="image/png, image/jpeg, image/svg+xml, image/webp"
+                                          disabled={uploadingLinkIndex !== null}
+                                      />
+                                  </div>
+                               </div>
+                            )}
                         </div>
                     )
                 })}
@@ -279,7 +377,7 @@ export function DeveloperSettings() {
       </CardContent>
       <CardFooter>
         <Button onClick={handleSaveChanges} disabled={isSaveDisabled}>
-            {(isSaving || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {(isSaving || isUploading || uploadingLinkIndex !== null) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Simpan Perubahan
         </Button>
       </CardFooter>

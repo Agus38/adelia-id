@@ -70,7 +70,9 @@ interface RegisterPageConfigDTO {
 interface SocialLinkDTO {
   name: string;
   url: string;
-  iconName: string;
+  iconType: 'icon' | 'image';
+  iconName?: string;
+  iconImageUrl?: string;
 }
 
 interface DeveloperInfoDTO {
@@ -180,7 +182,9 @@ export interface RegisterPageConfig {
 export interface SocialLink {
     name: string;
     url: string;
-    iconName: string;
+    iconType: 'icon' | 'image';
+    iconName?: string;
+    iconImageUrl?: string;
     icon: LucideIcon;
 }
 
@@ -332,10 +336,10 @@ const defaultDeveloperInfo: DeveloperInfo = {
   avatarUrl: 'https://placehold.co/150x150.png',
   bio: 'Saya adalah seorang pengembang perangkat lunak dengan hasrat untuk menciptakan solusi teknologi yang inovatif dan aplikasi yang ramah pengguna. Berkomitmen pada pembelajaran berkelanjutan dan keunggulan dalam pengembangan.',
   socialLinks: [
-    { name: 'GitHub', url: 'https://github.com/aguseka', iconName: 'Github', icon: getIconComponent('Github') },
-    { name: 'LinkedIn', url: 'https://linkedin.com/in/aguseka', iconName: 'Linkedin', icon: getIconComponent('Linkedin') },
-    { name: 'Website', url: 'https://aguseka.dev', iconName: 'Globe', icon: getIconComponent('Globe') },
-    { name: 'Email', url: 'mailto:contact@aguseka.dev', iconName: 'Mail', icon: getIconComponent('Mail') },
+    { name: 'GitHub', url: 'https://github.com/aguseka', iconType: 'icon', iconName: 'Github', icon: getIconComponent('Github') },
+    { name: 'LinkedIn', url: 'https://linkedin.com/in/aguseka', iconType: 'icon', iconName: 'Linkedin', icon: getIconComponent('Linkedin') },
+    { name: 'Website', url: 'https://aguseka.dev', iconType: 'icon', iconName: 'Globe', icon: getIconComponent('Globe') },
+    { name: 'Email', url: 'mailto:contact@aguseka.dev', iconType: 'icon', iconName: 'Mail', icon: getIconComponent('Mail') },
   ],
 };
 
@@ -808,8 +812,9 @@ const useDeveloperInfoStore = create<DeveloperInfoState>((set) => ({
                 const dto = docSnap.data() as DeveloperInfoDTO;
                 const hydratedInfo: DeveloperInfo = {
                     ...dto,
-                    socialLinks: dto.socialLinks.map(link => ({
+                    socialLinks: (dto.socialLinks || []).map(link => ({
                         ...link,
+                        iconType: link.iconType || 'icon',
                         icon: getIconComponent(link.iconName),
                     })),
                 };
@@ -840,7 +845,9 @@ export const saveDeveloperInfoConfig = async (info: DeveloperInfo) => {
         socialLinks: info.socialLinks.map(link => ({
             name: link.name,
             url: link.url,
+            iconType: link.iconType || 'icon',
             iconName: link.iconName,
+            iconImageUrl: link.iconImageUrl,
         })),
     };
     await setDoc(developerInfoDocRef, infoToStore);

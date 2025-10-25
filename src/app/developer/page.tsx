@@ -8,6 +8,7 @@ import { Code, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useDeveloperInfoConfig } from '@/lib/menu-store';
 import { allIcons } from '@/lib/menu-items-v2';
+import Image from 'next/image';
 
 export default function DeveloperPage() {
   const { developerInfo, isLoading } = useDeveloperInfoConfig();
@@ -54,7 +55,17 @@ export default function DeveloperPage() {
          <CardFooter className="flex flex-col items-center gap-4 pt-6">
            <p className="text-sm text-muted-foreground">Terhubung dengan saya:</p>
            <div className="flex gap-4">
-             {developerInfo.socialLinks.map((link) => {
+             {developerInfo.socialLinks.map((link, index) => {
+                if (link.iconType === 'image' && link.iconImageUrl) {
+                    return (
+                        <Link href={link.url} key={index} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" size="icon">
+                              <Image src={link.iconImageUrl} alt={link.name} width={20} height={20} className="h-5 w-5 object-contain" />
+                              <span className="sr-only">{link.name}</span>
+                          </Button>
+                        </Link>
+                    )
+                }
                 const IconComponent = allIcons[link.iconName as keyof typeof allIcons];
                 if (!IconComponent) return null;
                 return (
