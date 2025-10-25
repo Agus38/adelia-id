@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Loader2, PlusCircle, Globe, UploadCloud } from 'lucide-react';
 import Image from 'next/image';
-import { useDeveloperInfoConfig, saveDeveloperInfoConfig, type DeveloperInfo, type SocialLink } from '@/lib/menu-store';
+import { useDeveloperInfoConfig, saveDeveloperInfoConfig, type DeveloperInfo, type SocialLink, saveSingleSocialLinkImage } from '@/lib/menu-store';
 import { toast } from '@/hooks/use-toast';
 import { allIcons } from '@/lib/menu-items-v2';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -32,6 +32,7 @@ export function DeveloperSettings() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingLinkIndex, setUploadingLinkIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const socialLinkFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (developerInfo) {
@@ -76,9 +77,10 @@ export function DeveloperSettings() {
 
       if (field === 'iconName') {
           linkToUpdate.iconName = value;
-          linkToUpdate.icon = iconMap[value];
+          // The actual icon component doesn't need to be in state.
+          // It's derived in the render logic.
       } else if (field === 'iconType') {
-          linkToUpdate[field] = value as 'icon' | 'image';
+          (linkToUpdate as any)[field] = value as 'icon' | 'image';
       } else {
           (linkToUpdate as any)[field] = value;
       }
@@ -110,14 +112,14 @@ export function DeveloperSettings() {
     setLocalInfo({ ...localInfo, socialLinks: newLinks });
   }
 
-  const handleLinkImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
+  const handleLinkImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, linkId: string, index: number) => {
     const file = event.target.files?.[0];
     if (!file || !localInfo) return;
 
     if (file.size > 2 * 1024 * 1024) { // 2MB limit
       toast({
         title: "Ukuran File Terlalu Besar",
-        description: "Ukuran file avatar tidak boleh melebihi 2MB.",
+        description: "Ukuran file ikon tidak boleh melebihi 2MB.",
         variant: "destructive",
       });
       return;
@@ -132,23 +134,24 @@ export function DeveloperSettings() {
             reader.onerror = (error) => reject(error);
         });
 
-        handleLinkChange(index, 'iconImageUrl', dataUrl);
+        // Directly save the image to Firestore for this specific link
+        await saveSingleSocialLinkImage(linkId, dataUrl);
         
         toast({
-          title: "Gambar Diproses",
-          description: "Gambar ikon berhasil diproses. Jangan lupa simpan perubahan.",
+          title: "Ikon Diperbarui",
+          description: "Ikon tautan telah berhasil diunggah dan disimpan. UI akan segera diperbarui.",
         });
 
     } catch (error) {
       toast({
-        title: "Gagal Memproses Gambar",
-        description: "Terjadi kesalahan saat memproses gambar.",
+        title: "Gagal Mengunggah Ikon",
+        description: "Terjadi kesalahan saat menyimpan gambar ikon.",
         variant: "destructive",
       });
     } finally {
         setUploadingLinkIndex(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
+        if (socialLinkFileInputRef.current) {
+            socialLinkFileInputRef.current.value = "";
         }
     }
   }
@@ -292,7 +295,7 @@ export function DeveloperSettings() {
             <Label>Tautan Sosial Media</Label>
             <div className="space-y-4 pt-2">
                 {localInfo.socialLinks.map((link, index) => {
-                    const Icon = iconMap[link.iconName] || Globe;
+                    const Icon = iconMap[link.iconName || ''] || Globe;
                     return (
                          <div key={link.id} className="space-y-4 p-4 border rounded-md relative">
                             <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => handleRemoveLink(index)}>
@@ -360,14 +363,14 @@ export function DeveloperSettings() {
                                           value={link.iconImageUrl || ''}
                                           onChange={(e) => handleLinkChange(index, 'iconImageUrl', e.target.value)}
                                       />
-                                      <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} disabled={uploadingLinkIndex !== null}>
+                                      <Button variant="outline" size="icon" onClick={() => socialLinkFileInputRef.current?.click()} disabled={uploadingLinkIndex !== null}>
                                         {(uploadingLinkIndex === index) ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
                                          <span className="sr-only">Unggah Ikon</span>
                                       </Button>
                                       <input
                                           type="file"
-                                          ref={fileInputRef}
-                                          onChange={(e) => handleLinkImageUpload(e, index)}
+                                          ref={socialLinkFileInputRef}
+                                          onChange={(e) => handleLinkImageUpload(e, link.id, index)}
                                           className="hidden"
                                           accept="image/png, image/jpeg, image/svg+xml, image/webp"
                                           disabled={uploadingLinkIndex !== null}
@@ -393,5 +396,3 @@ export function DeveloperSettings() {
     </Card>
   );
 }
-
-    

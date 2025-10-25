@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import {
   type MenuItem,
@@ -861,6 +861,23 @@ export const saveDeveloperInfoConfig = async (info: DeveloperInfo) => {
     await setDoc(developerInfoDocRef, infoToStore);
 };
 
+export const saveSingleSocialLinkImage = async (linkId: string, imageUrl: string) => {
+    const docSnap = await getDoc(developerInfoDocRef);
+    if (!docSnap.exists()) {
+        throw new Error("Developer info document not found.");
+    }
+    const currentData = docSnap.data() as DeveloperInfoDTO;
+    const newSocialLinks = currentData.socialLinks.map(link => {
+        if (link.id === linkId) {
+            return { ...link, iconImageUrl: imageUrl };
+        }
+        return link;
+    });
+
+    await updateDoc(developerInfoDocRef, { socialLinks: newSocialLinks });
+};
+
+
 // --- Session Config Store ---
 interface SessionConfigState {
   sessionConfig: SessionConfig;
@@ -1237,6 +1254,3 @@ export const saveSupportPageConfig = async (config: SupportPageConfig) => {
   };
   await setDoc(supportConfigDocRef, configToStore);
 };
-
-    
-
