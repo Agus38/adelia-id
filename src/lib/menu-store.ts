@@ -68,6 +68,7 @@ interface RegisterPageConfigDTO {
 
 
 interface SocialLinkDTO {
+  id: string; // Added for stable key
   name: string;
   url: string;
   iconType: 'icon' | 'image';
@@ -180,6 +181,7 @@ export interface RegisterPageConfig {
 }
 
 export interface SocialLink {
+    id: string; // Added for stable key
     name: string;
     url: string;
     iconType: 'icon' | 'image';
@@ -336,10 +338,10 @@ const defaultDeveloperInfo: DeveloperInfo = {
   avatarUrl: 'https://placehold.co/150x150.png',
   bio: 'Saya adalah seorang pengembang perangkat lunak dengan hasrat untuk menciptakan solusi teknologi yang inovatif dan aplikasi yang ramah pengguna. Berkomitmen pada pembelajaran berkelanjutan dan keunggulan dalam pengembangan.',
   socialLinks: [
-    { name: 'GitHub', url: 'https://github.com/aguseka', iconType: 'icon', iconName: 'Github', icon: getIconComponent('Github') },
-    { name: 'LinkedIn', url: 'https://linkedin.com/in/aguseka', iconType: 'icon', iconName: 'Linkedin', icon: getIconComponent('Linkedin') },
-    { name: 'Website', url: 'https://aguseka.dev', iconType: 'icon', iconName: 'Globe', icon: getIconComponent('Globe') },
-    { name: 'Email', url: 'mailto:contact@aguseka.dev', iconType: 'icon', iconName: 'Mail', icon: getIconComponent('Mail') },
+    { id: 'dev-link-1', name: 'GitHub', url: 'https://github.com/aguseka', iconType: 'icon', iconName: 'Github', icon: getIconComponent('Github') },
+    { id: 'dev-link-2', name: 'LinkedIn', url: 'https://linkedin.com/in/aguseka', iconType: 'icon', iconName: 'Linkedin', icon: getIconComponent('Linkedin') },
+    { id: 'dev-link-3', name: 'Website', url: 'https://aguseka.dev', iconType: 'icon', iconName: 'Globe', icon: getIconComponent('Globe') },
+    { id: 'dev-link-4', name: 'Email', url: 'mailto:contact@aguseka.dev', iconType: 'icon', iconName: 'Mail', icon: getIconComponent('Mail') },
   ],
 };
 
@@ -814,6 +816,7 @@ const useDeveloperInfoStore = create<DeveloperInfoState>((set) => ({
                     ...dto,
                     socialLinks: (dto.socialLinks || []).map(link => ({
                         ...link,
+                        id: link.id || `link-${Math.random()}`, // Ensure ID exists for key prop
                         iconType: link.iconType || 'icon',
                         icon: getIconComponent(link.iconName),
                     })),
@@ -843,6 +846,7 @@ export const saveDeveloperInfoConfig = async (info: DeveloperInfo) => {
     const infoToStore: DeveloperInfoDTO = {
         ...info,
         socialLinks: info.socialLinks.map(link => ({
+            id: link.id,
             name: link.name,
             url: link.url,
             iconType: link.iconType || 'icon',
@@ -1229,3 +1233,5 @@ export const saveSupportPageConfig = async (config: SupportPageConfig) => {
   };
   await setDoc(supportConfigDocRef, configToStore);
 };
+
+    

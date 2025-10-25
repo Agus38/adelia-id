@@ -35,7 +35,15 @@ export function DeveloperSettings() {
 
   useEffect(() => {
     if (developerInfo) {
-      setLocalInfo(JSON.parse(JSON.stringify(developerInfo)));
+      // Ensure all links have a unique ID for stable keys
+      const infoWithIds = {
+        ...developerInfo,
+        socialLinks: developerInfo.socialLinks.map(link => ({
+          ...link,
+          id: link.id || `link-${Math.random()}`
+        }))
+      };
+      setLocalInfo(JSON.parse(JSON.stringify(infoWithIds)));
     }
   }, [developerInfo]);
 
@@ -82,6 +90,7 @@ export function DeveloperSettings() {
   const handleAddLink = () => {
     if (!localInfo) return;
     const newLink: SocialLink = {
+        id: `link-${Date.now()}`, // Add a unique ID
         name: 'New Link',
         url: '',
         iconType: 'icon',
@@ -285,7 +294,7 @@ export function DeveloperSettings() {
                 {localInfo.socialLinks.map((link, index) => {
                     const Icon = iconMap[link.iconName] || Globe;
                     return (
-                         <div key={link.name+index} className="space-y-4 p-4 border rounded-md relative">
+                         <div key={link.id} className="space-y-4 p-4 border rounded-md relative">
                             <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => handleRemoveLink(index)}>
                                 <Trash2 className="h-4 w-4 text-destructive" />
                                 <span className="sr-only">Hapus Tautan</span>
@@ -384,3 +393,5 @@ export function DeveloperSettings() {
     </Card>
   );
 }
+
+    
