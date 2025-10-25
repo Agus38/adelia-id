@@ -32,6 +32,7 @@ interface SmwManyarReportFormProps {
 export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
   const { smwManyarConfig, isLoading: isLoadingConfig } = useSmwManyarConfig();
   const [formData, setFormData] = React.useState<FormData>({});
+  const [initialFormData, setInitialFormData] = React.useState<FormData>({});
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = React.useState(true);
@@ -50,11 +51,13 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
 
   const resetForm = React.useCallback(() => {
     setFormData({});
+    setInitialFormData({});
     setIsDirty(false);
   }, [setIsDirty]);
 
   const populateForm = React.useCallback((report: { formData: { [key: string]: string } }) => {
      setFormData(report.formData);
+     setInitialFormData(report.formData);
      setIsDirty(false);
   }, [setIsDirty]);
   
@@ -90,18 +93,25 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsDirty(true);
     const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
+    setFormData((prev) => {
+        const newState = { ...prev, [id]: value };
+        setIsDirty(JSON.stringify(newState) !== JSON.stringify(initialFormData));
+        return newState;
+    });
   };
 
   const handleNumericInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsDirty(true);
     const { id, value } = e.target;
     const rawValue = value.replace(/\./g, '');
       if (/^\d*$/.test(rawValue) && rawValue.length <= 9) {
           const numValue = Number(rawValue);
-          setFormData(prev => ({ ...prev, [id]: numValue === 0 ? '' : numValue.toString() }));
+          const newValue = numValue === 0 ? '' : numValue.toString();
+          setFormData(prev => {
+            const newState = { ...prev, [id]: newValue };
+            setIsDirty(JSON.stringify(newState) !== JSON.stringify(initialFormData));
+            return newState;
+          });
       }
   };
 
@@ -143,6 +153,7 @@ export function SmwManyarReportForm({ setIsDirty }: SmwManyarReportFormProps) {
         await addOrUpdateSmwReport(reportData);
         toast({ title: 'Laporan Disimpan', description: 'Data laporan SMW Manyar telah berhasil disimpan.' });
         setIsDirty(false);
+        setInitialFormData(formData); // Update snapshot after saving
         setIsExistingReport(true);
     } catch (error) {
         toast({ title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan laporan.', variant: 'destructive' });
@@ -203,10 +214,10 @@ ${onlineSalesText}\`\`\`
   };
 
   const isLoading = isLoadingUser || isLoadingConfig;
+  
+  const isDirty = JSON.stringify(formData) !== JSON.stringify(initialFormData);
+
   const showUpdateButton = isExistingReport && isDirty;
-  const isDirty = Object.keys(formData).length > 0 && (
-    JSON.stringify(formData) !== JSON.stringify(isExistingReport ? (getSmwReport(date!, currentUser!.uid)) : {})
-  );
 
   if (isLoading) {
     return (
@@ -323,7 +334,7 @@ ${onlineSalesText}\`\`\`
         <CardFooter className="flex flex-col-reverse sm:flex-row justify-between gap-4 border-t pt-6">
           <Button
             onClick={handleSaveReport}
-            disabled={isSaving || isFormEmpty}
+            disabled={isSaving || isFormEmpty || !isDirty}
             className={cn(
                 "w-full sm:w-auto",
                 showUpdateButton ? "bg-orange-500 hover:bg-orange-600" : ""
