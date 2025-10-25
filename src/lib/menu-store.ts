@@ -844,21 +844,27 @@ export const useDeveloperInfoConfig = () => {
 };
 
 export const saveDeveloperInfoConfig = async (info: DeveloperInfo) => {
-    const infoToStore: DeveloperInfoDTO = {
-        name: info.name,
-        title: info.title,
-        avatarUrl: info.avatarUrl,
-        bio: info.bio,
-        socialLinks: info.socialLinks.map(link => ({
-            id: link.id,
-            name: link.name,
-            url: link.url,
-            iconType: link.iconType,
-            iconName: link.iconName,
-            iconImageUrl: link.iconImageUrl,
-        })),
+  // Explicitly create DTOs to ensure no functions are passed to Firestore
+  const linksToStore: SocialLinkDTO[] = info.socialLinks.map(link => {
+    return {
+      id: link.id,
+      name: link.name,
+      url: link.url,
+      iconType: link.iconType,
+      iconName: link.iconName,
+      iconImageUrl: link.iconImageUrl,
     };
-    await setDoc(developerInfoDocRef, infoToStore);
+  });
+
+  const infoToStore: DeveloperInfoDTO = {
+    name: info.name,
+    title: info.title,
+    avatarUrl: info.avatarUrl,
+    bio: info.bio,
+    socialLinks: linksToStore,
+  };
+  
+  await setDoc(developerInfoDocRef, infoToStore);
 };
 
 export const saveSingleSocialLinkImage = async (linkId: string, imageUrl: string) => {
