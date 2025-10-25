@@ -70,20 +70,12 @@ export function DeveloperSettings() {
     setLocalInfo({ ...localInfo, [field]: value });
   };
   
-  const handleLinkChange = (index: number, field: keyof SocialLink, value: string) => {
+  const handleLinkChange = (index: number, field: keyof Omit<SocialLink, 'id' | 'icon'>, value: string | 'icon' | 'image') => {
       if (!localInfo) return;
       const newLinks = [...localInfo.socialLinks];
       const linkToUpdate = { ...newLinks[index] };
 
-      if (field === 'iconName') {
-          linkToUpdate.iconName = value;
-          // The actual icon component doesn't need to be in state.
-          // It's derived in the render logic.
-      } else if (field === 'iconType') {
-          (linkToUpdate as any)[field] = value as 'icon' | 'image';
-      } else {
-          (linkToUpdate as any)[field] = value;
-      }
+      (linkToUpdate as any)[field] = value;
       
       newLinks[index] = linkToUpdate;
       setLocalInfo(prev => prev ? ({...prev, socialLinks: newLinks}) : null);
@@ -333,7 +325,7 @@ export function DeveloperSettings() {
                             {(link.iconType === 'icon' || !link.iconType) ? (
                                 <div className="space-y-2">
                                   <Label>Ikon</Label>
-                                  <Select value={link.iconName} onValueChange={(value) => handleLinkChange(index, 'iconName', value)}>
+                                  <Select value={link.iconName} onValueChange={(value) => handleLinkChange(index, 'iconName', value as string)}>
                                       <SelectTrigger>
                                           <SelectValue>
                                               <div className='flex items-center gap-2'>
@@ -363,13 +355,16 @@ export function DeveloperSettings() {
                                           value={link.iconImageUrl || ''}
                                           onChange={(e) => handleLinkChange(index, 'iconImageUrl', e.target.value)}
                                       />
-                                      <Button variant="outline" size="icon" onClick={() => socialLinkFileInputRef.current?.click()} disabled={uploadingLinkIndex !== null}>
+                                      <Button variant="outline" size="icon" onClick={() => { 
+                                          const fileInput = document.getElementById(`file-input-${index}`) as HTMLInputElement;
+                                          fileInput?.click();
+                                      }} disabled={uploadingLinkIndex !== null}>
                                         {(uploadingLinkIndex === index) ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
                                          <span className="sr-only">Unggah Ikon</span>
                                       </Button>
                                       <input
+                                          id={`file-input-${index}`}
                                           type="file"
-                                          ref={socialLinkFileInputRef}
                                           onChange={(e) => handleLinkImageUpload(e, link.id, index)}
                                           className="hidden"
                                           accept="image/png, image/jpeg, image/svg+xml, image/webp"

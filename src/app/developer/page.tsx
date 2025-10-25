@@ -58,7 +58,7 @@ export default function DeveloperPage() {
              {developerInfo.socialLinks.map((link, index) => {
                 if (link.iconType === 'image' && link.iconImageUrl) {
                     return (
-                        <Link href={link.url} key={index} target="_blank" rel="noopener noreferrer">
+                        <Link href={link.url} key={link.id} target="_blank" rel="noopener noreferrer">
                           <Button variant="outline" size="icon">
                               <Image src={link.iconImageUrl} alt={link.name} width={20} height={20} className="h-5 w-5 object-contain" />
                               <span className="sr-only">{link.name}</span>
