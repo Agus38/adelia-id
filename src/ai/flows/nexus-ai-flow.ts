@@ -60,24 +60,18 @@ export const nexusAssistantFlow = ai.defineFlow(
   async (input) => {
     const { history, appContext } = input;
     
-    // Construct the history, adding the system prompt and user context at the beginning
-    const fullHistory = [
-      { 
-        role: 'system' as const, 
-        content: [{ 
-          text: systemPrompt + `\nYou are currently interacting with a user named "${appContext.userName || 'Pengguna'}" who has the role of "${appContext.userRole || 'Pengguna'}".`
-        }]
-      },
-      ...history.map(msg => ({
+    // The history needs to be in the format the model expects.
+    const modelHistory = history.map(msg => ({
         role: msg.role,
         content: [{ text: msg.content }]
-      }))
-    ];
+    }));
+    
+    const fullSystemPrompt = systemPrompt + `\nYou are currently interacting with a user named "${appContext.userName || 'Pengguna'}" who has the role of "${appContext.userRole || 'Pengguna'}".`;
 
     const { stream } = await ai.generateStream({
         model: 'googleai/gemini-2.0-flash',
-        history: fullHistory,
-        prompt: '', // The prompt is now part of the history
+        system: fullSystemPrompt,
+        history: modelHistory,
         tools: [getDeveloperInfo, getCurrentTime],
     });
 
