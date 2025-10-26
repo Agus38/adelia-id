@@ -6,69 +6,69 @@ import { useRouter } from 'next/navigation';
 import { useMenuConfig } from '@/lib/menu-store';
 import { useUserStore } from '@/lib/user-store';
 
+type AccessStatus = 'loading' | 'granted' | 'denied_maintenance' | 'denied_auth' | 'denied_role';
+
 export function usePageAccess(pageId: string) {
   const router = useRouter();
   const { menuItems, isLoading: isLoadingMenu } = useMenuConfig();
   const { user, loading: isLoadingUser } = useUserStore();
-  const [hasAccess, setHasAccess] = useState(false);
-
+  const [accessStatus, setAccessStatus] = useState<AccessStatus>('loading');
   const isLoading = isLoadingMenu || isLoadingUser;
 
   useEffect(() => {
     if (isLoading) {
+      setAccessStatus('loading');
       return;
     }
 
     const menuItem = menuItems.find(item => item.id === pageId);
     
-    // Default to accessible if page isn't in menu config (e.g., /profile, /settings, /)
     if (!menuItem) {
-      setHasAccess(true);
+      setAccessStatus('granted');
       return;
     }
 
-    // 1. Check for maintenance mode (for non-admins)
     if (menuItem.isUnderMaintenance && user?.role !== 'Admin') {
-        router.push('/maintenance');
-        setHasAccess(false);
-        return;
+      setAccessStatus('denied_maintenance');
+      return;
     }
     
-    // 2. Check for pages that require authentication but user is not logged in
     if (menuItem.requiresAuth && !user) {
-      router.push('/login?redirect=' + pageId);
-      setHasAccess(false);
+      setAccessStatus('denied_auth');
       return;
     }
 
-    // 3. Check for role-based access
     if (menuItem.access && menuItem.access !== 'all') {
-      if (!user) { // Should be caught by requiresAuth, but as a safeguard
-        router.push('/login?redirect=' + pageId);
-        setHasAccess(false);
+      if (!user) {
+        setAccessStatus('denied_auth');
         return;
       }
-      // Admins have access to everything
-      if (user.role === 'Admin') {
-        setHasAccess(true);
-        return;
-      }
-      // Check if user's role matches the required role
-      if (user.role?.toLowerCase() !== menuItem.access.toLowerCase()) {
-         router.push('/unauthorized');
-         setHasAccess(false);
+      if (user.role !== 'Admin' && user.role?.toLowerCase() !== menuItem.access.toLowerCase()) {
+         setAccessStatus('denied_role');
          return;
       }
     }
 
+    setAccessStatus('granted');
 
-    // If none of the above conditions are met, grant access.
-    setHasAccess(true);
+  }, [isLoading, menuItems, user, pageId]);
+  
+  useEffect(() => {
+    // This effect handles the actual navigation based on the status.
+    // It runs separately from the logic that determines the status,
+    // preventing render-cycle conflicts.
+    if (accessStatus === 'denied_maintenance') {
+      router.push('/maintenance');
+    } else if (accessStatus === 'denied_auth') {
+      router.push('/login?redirect=' + pageId);
+    } else if (accessStatus === 'denied_role') {
+      router.push('/unauthorized');
+    }
+  }, [accessStatus, router, pageId]);
 
-  }, [isLoading, menuItems, user, pageId, router]);
 
   return {
-    hasAccess,
-    isLoading
+    hasAccess: accessStatus === 'granted',
+    isLoading: accessStatus === 'loading'
   };
 }
