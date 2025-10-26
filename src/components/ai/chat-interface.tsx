@@ -6,7 +6,7 @@ import type { AssistantInput } from '@/ai/flows/nexus-ai-flow';
 import { z } from 'zod';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea'; // Changed from Input
 import { useUserStore } from '@/lib/user-store';
 import { Bot, Send, User, Sparkles, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { useRef, useState, useEffect, useTransition } from 'react';
@@ -56,6 +56,7 @@ export function ChatInterface() {
   const [input, setInput] = useState('');
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useUserStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -86,11 +87,19 @@ export function ChatInterface() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isPending]);
 
+   // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+        const scrollHeight = textareaRef.current.scrollHeight;
+        textareaRef.current.style.height = `${scrollHeight}px`;
+    }
+  }, [input]);
 
   const handlePromptSuggestionClick = (prompt: string) => {
       setInput(prompt);
-      const syntheticEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
-      handleSubmit(syntheticEvent, prompt);
+      // Directly call handleSubmit logic, as we don't have a form event
+      handleSubmit(new Event('submit') as any, prompt);
   };
 
   const handleClearChat = () => {
@@ -98,22 +107,22 @@ export function ChatInterface() {
       sessionStorage.removeItem('nexus-chat-history');
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>, suggestedPrompt?: string) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLTextAreaElement>, suggestedPrompt?: string) => {
     e.preventDefault();
     const currentInput = suggestedPrompt || input;
     if (!currentInput.trim() || isPending) return;
 
     setError(null);
     const userMessage: Message = { role: 'user', content: currentInput };
-    const newMessages = [...messages, userMessage];
-
-    setMessages(newMessages);
+    
+    // Optimistically update the UI
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     
     startTransition(async () => {
       try {
         const assistantInput: AssistantInput = {
-          history: newMessages,
+          history: [...messages, userMessage],
           appContext: {
             userName: user?.fullName || 'Pengguna',
             userRole: user?.role || 'Pengguna',
@@ -127,10 +136,19 @@ export function ChatInterface() {
       } catch (err: any) {
         console.error('AI Error:', err);
         setError('Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.');
-        setMessages(newMessages); // Revert to messages before the failed attempt
+        // Revert optimistic update on error
+        setMessages(prev => prev.filter(msg => msg !== userMessage));
       }
     });
   };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmit(e);
+    }
+  };
+
 
   return (
     <div className="flex h-full flex-col bg-card rounded-lg">
@@ -244,13 +262,16 @@ export function ChatInterface() {
       </main>
 
       <footer className="border-t p-2 sm:p-4 flex-shrink-0">
-        <form ref={formRef} onSubmit={handleSubmit} className="flex w-full items-center gap-2">
-          <Input
+        <form ref={formRef} onSubmit={(e) => handleSubmit(e)} className="flex w-full items-start gap-2">
+          <Textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ketik pesan Anda..."
+            onKeyDown={handleKeyDown}
+            placeholder="Ketik pesan Anda... (Shift+Enter untuk baris baru)"
             disabled={isPending}
-            className="flex-1"
+            className="flex-1 resize-none max-h-40"
+            rows={1}
           />
           <Button type="submit" disabled={isPending || !input.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
             {isPending ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5" />}
