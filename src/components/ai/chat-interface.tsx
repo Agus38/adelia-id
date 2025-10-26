@@ -29,8 +29,8 @@ interface Message {
 
 const promptSuggestions = [
     "Apa yang bisa kamu lakukan?",
-    "Beri aku ringkasan laporan hari ini",
-    "Laporkan ada bug di halaman profil",
+    "Jelaskan tentang fitur BudgetFlow",
+    "Siapa yang membuat aplikasi ini?",
 ];
 
 export function ChatInterface() {
@@ -75,6 +75,7 @@ export function ChatInterface() {
 
   const handleClearChat = () => {
       setMessages([]);
+      sessionStorage.removeItem('nexus-chat-history');
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>, suggestedPrompt?: string) => {
@@ -84,28 +85,35 @@ export function ChatInterface() {
 
     setError(null);
     const userMessage: Message = { role: 'user', content: currentInput };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput('');
+    
+    // Use functional update to get the most recent state
+    setMessages((prevMessages) => {
+        const newMessages: Message[] = [...prevMessages, userMessage];
 
-    startTransition(async () => {
-      try {
-        const assistantInput: AssistantInput = {
-          history: [...messages, userMessage],
-          appContext: {
-            userName: user?.fullName || 'Pengguna',
-            userAvatar: user?.avatarUrl || user?.photoURL || undefined,
-            userRole: user?.role || 'Pengguna',
+        startTransition(async () => {
+          try {
+            const assistantInput: AssistantInput = {
+              history: newMessages,
+              appContext: {
+                userName: user?.fullName || 'Pengguna',
+                userAvatar: user?.avatarUrl || user?.photoURL || undefined,
+                userRole: user?.role || 'Pengguna',
+              }
+            };
+
+            const result = await nexusAssistant(assistantInput);
+            const assistantMessage: Message = { role: 'model', content: result.response };
+            setMessages((prev) => [...prev, assistantMessage]);
+          } catch (err: any) {
+            console.error("AI Error:", err);
+            setError("Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.");
           }
-        };
+        });
 
-        const result = await nexusAssistant(assistantInput);
-        const assistantMessage: Message = { role: 'model', content: result.response };
-        setMessages((prev) => [...prev, assistantMessage]);
-      } catch (err: any) {
-        console.error("AI Error:", err);
-        setError("Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.");
-      }
+        return newMessages;
     });
+
+    setInput('');
   };
 
   return (
