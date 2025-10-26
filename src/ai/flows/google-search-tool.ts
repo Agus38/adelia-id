@@ -14,7 +14,7 @@ export const googleSearch = ai.defineTool(
     outputSchema: z.string().describe('A summary of the search results.'),
   },
   async (input) => {
-    const apiKey = 'AIzaSyCs92aPhIwFnOHIL3CM0vyMZxVffLabCk4';
+    const apiKey = process.env.GOOGLE_API_KEY;
     const cx = process.env.GOOGLE_CX;
 
     if (!apiKey || !cx) {
