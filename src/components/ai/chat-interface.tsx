@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useUserStore } from '@/lib/user-store';
-import { Bot, Send, User, Sparkles, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { Bot, Send, User, Sparkles, Trash2, Loader2, AlertCircle, Copy, Pencil } from 'lucide-react';
 import { useRef, useState, useEffect, useTransition } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -66,6 +66,7 @@ export function ChatInterface() {
   const [error, setError] = useState<string | null>(null);
   const [promptSuggestions, setPromptSuggestions] = useState<string[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [activeMessageIndex, setActiveMessageIndex] = useState<number | null>(null);
 
   // Firestore document reference for chat history
   const chatHistoryRef = user ? doc(db, `users/${user.uid}/ai-assistant-chats`, 'nexus') : null;
@@ -142,6 +143,30 @@ export function ChatInterface() {
       // Directly call handleSubmit logic, as we don't have a form event
       handleSubmit(new Event('submit') as any, prompt);
   };
+  
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+        title: "Pesan disalin!",
+        description: "Teks telah disalin ke clipboard Anda.",
+    });
+  };
+
+  const handleEdit = (text: string, index: number) => {
+    setInput(text);
+    const remainingMessages = messages.slice(0, index);
+    setMessages(remainingMessages);
+    setActiveMessageIndex(null);
+    textareaRef.current?.focus();
+  };
+
+  const toggleMessageActions = (index: number) => {
+    if (activeMessageIndex === index) {
+      setActiveMessageIndex(null);
+    } else {
+      setActiveMessageIndex(index);
+    }
+  };
 
   const handleClearChat = async () => {
     if (!chatHistoryRef) return;
@@ -169,23 +194,14 @@ export function ChatInterface() {
     const userMessage: Message = { role: 'user', content: currentInput };
     
     // Optimistically update the UI with the user's message
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput('');
     
     startTransition(async () => {
-        const historyForGenkit = [...messages, userMessage];
-
-        const lastMessage = historyForGenkit[historyForGenkit.length - 1];
-        const history = historyForGenkit.slice(0, -1);
-
-        const formattedHistory = history.map(h => ({
-            role: h.role,
-            content: [{ text: h.content }],
-        }));
-
       try {
         const assistantInput: AssistantInput = {
-          history: historyForGenkit,
+          history: updatedMessages,
           appContext: {
             userName: user?.fullName || 'Pengguna',
             userRole: user?.role || 'Pengguna',
@@ -195,8 +211,9 @@ export function ChatInterface() {
         const result = await nexusAssistant(assistantInput);
         const modelMessage: Message = { role: 'model', content: result.response };
         
-        setMessages((prevMessages) => [...prevMessages, modelMessage]);
-        saveHistoryToFirestore([...historyForGenkit, modelMessage]);
+        const finalMessages = [...updatedMessages, modelMessage];
+        setMessages(finalMessages);
+        saveHistoryToFirestore(finalMessages);
 
       } catch (err: any) {
         console.error('AI Error:', err);
@@ -252,7 +269,7 @@ export function ChatInterface() {
           )}
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2">
         {isHistoryLoading ? (
              <div className="flex flex-1 items-center justify-center h-full">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -278,23 +295,35 @@ export function ChatInterface() {
         )}
 
         {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`flex items-start max-w-[85%] sm:max-w-[75%] ${
-              msg.role === 'user' ? 'ml-auto justify-end' : 'mr-auto justify-start'
-            }`}
-          >
-            <div
-              className={`rounded-2xl p-3 text-sm ${
-                msg.role === 'user'
-                  ? 'bg-primary text-primary-foreground rounded-br-none'
-                  : 'bg-muted rounded-bl-none'
-              }`}
-            >
-              <div className="prose prose-sm dark:prose-invert max-w-full leading-relaxed">
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
+          <div key={index} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+              <div
+                onClick={() => msg.role === 'user' && toggleMessageActions(index)}
+                className={`flex items-start max-w-[85%] sm:max-w-[75%] ${
+                  msg.role === 'user' ? 'ml-auto justify-end' : 'mr-auto justify-start'
+                }`}
+              >
+                <div
+                  className={`rounded-2xl p-3 text-sm ${
+                    msg.role === 'user'
+                      ? 'bg-primary text-primary-foreground rounded-br-none cursor-pointer'
+                      : 'bg-muted rounded-bl-none'
+                  }`}
+                >
+                  <div className="prose prose-sm dark:prose-invert max-w-full leading-relaxed">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                </div>
               </div>
-            </div>
+              {activeMessageIndex === index && msg.role === 'user' && (
+                <div className="flex gap-1 mt-1.5 mr-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleCopy(msg.content)}>
+                        <Copy className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(msg.content, index)}>
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                </div>
+              )}
           </div>
         ))}
         
