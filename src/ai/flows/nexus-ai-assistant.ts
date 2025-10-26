@@ -12,7 +12,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { reportIssue } from './report-issue-flow';
-import { Part } from '@genkit-ai/google-genai';
+import { type Part } from '@genkit-ai/google-genai';
 
 // Define a schema for a single message in the chat history
 const MessageSchema = z.object({
@@ -69,10 +69,10 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.
   
   // The user's latest message is the new prompt. The rest is history.
   const currentPrompt = history.length > 0 ? history[history.length - 1].content : "Sapa pengguna.";
-  const conversationHistory = history.slice(0, -1);
-
+  // Send the full history for better context
+  const conversationHistory = history.slice(0, -1); 
+  
   try {
-    // First call to the model
     const llmResponse = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       system: systemPrompt,
@@ -86,20 +86,17 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.
 
     const toolRequest = llmResponse.toolRequest();
     
-    // If the model requests to use a tool
     if (toolRequest) {
-        // Augment the input for the tool with user data from the main flow
         const augmentedInput = { ...toolRequest.input, userName, userAvatar };
         const toolResponse = await toolRequest.run(augmentedInput);
 
-        const toolResponseAsPart: Part = {
+        const toolResponsePart: Part = {
             toolResponse: {
                 name: toolRequest.name,
                 response: toolResponse,
             }
         };
 
-        // Send the tool's response back to the model to get a final text response
         const finalResponse = await ai.generate({
             model: 'googleai/gemini-2.0-flash',
             system: systemPrompt,
@@ -107,20 +104,17 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.
                 ...conversationHistory.map(h => ({ role: h.role, content: [{ text: h.content }] })),
                 { role: 'user', content: [{ text: currentPrompt }] },
                 llmResponse.requestAsMessage,
-                { role: 'model', content: [toolResponseAsPart] }
+                { role: 'model', content: [toolResponsePart] }
             ]
         });
 
-        // The final text response after the tool call
         return { response: finalResponse.text };
     }
     
-    // If no tool is called, return the initial text response
     return { response: llmResponse.text };
 
   } catch (error: any) {
     console.error("AI Assistant Error:", error);
-    // Return a friendly error message instead of throwing
     return { response: 'Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.' };
   }
 }
