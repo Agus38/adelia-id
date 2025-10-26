@@ -163,17 +163,17 @@ export function ChatInterface() {
   
   const handleLike = (index: number) => {
     const newLiked = new Set(likedMessages);
-    let isLiking = false;
+    let shouldToast = false;
     if (newLiked.has(index)) {
       newLiked.delete(index);
     } else {
       newLiked.add(index);
-      isLiking = true;
+      shouldToast = true;
     }
     setLikedMessages(newLiked);
 
-    if (isLiking) {
-       toast({ title: 'Terima kasih atas masukan Anda!' });
+    if (shouldToast) {
+        toast({ title: 'Terima kasih atas masukan Anda!' });
     }
   };
   
@@ -281,7 +281,7 @@ export function ChatInterface() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey && !/Mobi|Android/i.test(navigator.userAgent)) {
+    if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSubmit(e);
     }
@@ -445,15 +445,15 @@ export function ChatInterface() {
       </main>
 
       <footer className="border-t p-2 sm:p-4 flex-shrink-0">
-        <form onSubmit={(e) => handleSubmit(e)} className="flex w-full items-start gap-2">
+        <form onSubmit={(e) => handleSubmit(e)} className="flex w-full items-end gap-2">
           <Textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ketik pesan Anda... (Shift+Enter untuk baris baru)"
+            placeholder="Ketik pesan Anda..."
             disabled={isPending}
-            className="flex-1 resize-none max-h-40"
+            className="flex-1 resize-none max-h-40 transition-all duration-200"
             rows={1}
           />
           <Button type="submit" disabled={isPending || !input.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
