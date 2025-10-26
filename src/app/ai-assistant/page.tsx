@@ -26,19 +26,10 @@ export default function AiAssistantPage() {
 
   // Once loading is complete and access is granted, render the chat interface.
   return (
-    <div className="flex flex-1 flex-col p-4 pt-6 md:p-8">
-      <div className="flex items-center space-x-2">
-        <Bot className="h-8 w-8" />
-        <h2 className="text-3xl font-bold tracking-tight">Nexus AI Assistant</h2>
-      </div>
-      <p className="text-muted-foreground mt-2">
-        Ajukan pertanyaan, minta bantuan, atau laporkan masalah. Asisten AI kami siap membantu.
-      </p>
-      <div className="mt-6 flex-1">
-        <div className="h-[calc(100vh-16rem)] rounded-lg border bg-card shadow-sm">
+    <div className="flex flex-1 flex-col h-full p-0">
+        <div className="h-full rounded-lg border bg-card shadow-sm">
             <ChatInterface />
         </div>
-      </div>
     </div>
   );
 }
