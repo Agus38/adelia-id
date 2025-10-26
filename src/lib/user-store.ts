@@ -11,6 +11,7 @@ import { toast } from '@/hooks/use-toast';
 interface UserState {
   user: UserProfile | null;
   loading: boolean;
+  loginToastShown: boolean; // Flag to track if the login toast has been shown
   initializeUserListener: () => () => void;
   setUserProfile: (profile: UserProfile) => void;
   clearUser: () => void;
@@ -40,6 +41,7 @@ export const logActivity = async (action: string, target: string) => {
 export const useUserStore = create<UserState>((set, get) => ({
   user: null,
   loading: true,
+  loginToastShown: false,
   initializeUserListener: () => {
     let firestoreUnsubscribe: (() => void) | null = null;
     
@@ -80,12 +82,13 @@ export const useUserStore = create<UserState>((set, get) => ({
             set({ user: fullUserProfile, loading: false });
             
             // Show welcome toast only on initial login, not on every data refresh
-            if (!wasUser) {
+            if (!get().loginToastShown) {
                 toast({
                     title: `Selamat Datang Kembali, ${userData.fullName || 'Pengguna'}!`,
                     description: 'Anda berhasil masuk ke akun Anda.',
                 });
-                 logActivity('login', 'Aplikasi');
+                set({ loginToastShown: true });
+                logActivity('login', 'Aplikasi');
             }
           } else {
             // This case should be rare now, but as a fallback, sign out.
@@ -107,7 +110,7 @@ export const useUserStore = create<UserState>((set, get) => ({
                 variant: "destructive",
             });
         }
-        set({ user: null, loading: false });
+        set({ user: null, loading: false, loginToastShown: false }); // Reset toast flag on logout
       }
     });
 
@@ -119,5 +122,5 @@ export const useUserStore = create<UserState>((set, get) => ({
   setUserProfile: (profile) => {
     set({ user: profile, loading: false });
   },
-  clearUser: () => set({ user: null, loading: false }),
+  clearUser: () => set({ user: null, loading: false, loginToastShown: false }),
 }));
