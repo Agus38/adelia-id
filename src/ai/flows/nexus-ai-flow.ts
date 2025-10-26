@@ -51,10 +51,15 @@ const nexusAssistantPrompt = ai.definePrompt(
       Use the provided conversation history to maintain context.
     `;
     
+    // Ensure there's always at least one message for the model.
+    const messages = input.history.length > 0 
+      ? input.history.map(msg => ({ role: msg.role, content: [{ text: msg.content }] }))
+      : [{ role: 'user', content: [{ text: 'Hello!' }] }];
+
+
     return {
       system: systemPrompt,
-      history: input.history.map(msg => ({ role: msg.role, content: [{ text: msg.content }] })),
-      messages: [],
+      messages,
     };
   }
 );
