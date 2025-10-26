@@ -281,7 +281,7 @@ export function ChatInterface() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !/Mobi|Android/i.test(navigator.userAgent)) {
         e.preventDefault();
         handleSubmit(e);
     }
@@ -348,13 +348,13 @@ export function ChatInterface() {
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`flex flex-col ${
-              msg.role === 'user' ? 'items-end' : 'items-start'
+            className={`flex items-start gap-3 max-w-[85%] sm:max-w-[75%] ${
+              msg.role === 'model' ? 'mr-auto' : 'ml-auto flex-row-reverse'
             }`}
           >
             <div
               onClick={() => toggleMessageActions(index)}
-              className="max-w-[85%] cursor-pointer sm:max-w-[75%]"
+              className="max-w-full cursor-pointer"
             >
               <div
                 className={`rounded-2xl p-3 text-sm ${
@@ -369,7 +369,7 @@ export function ChatInterface() {
               </div>
             </div>
             {activeMessageIndex === index && msg.role === 'user' && (
-              <div className="mt-1.5 flex gap-1">
+              <div className="mt-1.5 flex gap-1 self-end">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -426,11 +426,6 @@ export function ChatInterface() {
         
         {isPending && (
           <div className="flex items-start gap-3 animate-in fade-in duration-300">
-             <div className="flex-shrink-0 mr-3">
-                 <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center">
-                    <Bot className="w-5 h-5"/>
-                 </div>
-              </div>
             <div className="rounded-2xl p-3 bg-muted flex items-center gap-2 rounded-bl-none">
               <Loader2 className="h-4 w-4 animate-spin"/>
               <p className="text-sm text-muted-foreground">Mengetik...</p>
