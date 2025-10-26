@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -13,7 +14,7 @@ export const googleSearch = ai.defineTool(
     outputSchema: z.string().describe('A summary of the search results.'),
   },
   async (input) => {
-    const apiKey = process.env.GOOGLE_API_KEY;
+    const apiKey = 'AIzaSyCs92aPhIwFnOHIL3CM0vyMZxVffLabCk4';
     const cx = process.env.GOOGLE_CX;
 
     if (!apiKey || !cx) {
