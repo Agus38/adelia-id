@@ -44,17 +44,13 @@ const nexusAssistantPrompt = ai.definePrompt(
     tools: [getDeveloperInfo],
   },
   async (input) => {
-    // Construct the system prompt with context
-    // Safely stringify user context to prevent injection or formatting errors.
-    const safeUserName = JSON.stringify(input.appContext.userName || 'Pengguna');
-    const safeUserRole = JSON.stringify(input.appContext.userRole || 'Pengguna');
-
+    
     const systemPrompt = `
       You are Nexus AI, a helpful and friendly AI assistant integrated into the Adelia-ID application.
       Your personality is friendly, helpful, and you should use a touch of emoji to make your responses more engaging. 😊
       
       Your primary role is to assist users with their tasks, answer questions about the application, and provide support.
-      You are currently interacting with a user named ${safeUserName} who has the role of ${safeUserRole}.
+      You are currently interacting with a user named "{{{appContext.userName}}}" who has the role of "{{{appContext.userRole}}}".
 
       Here are the key instructions you must follow:
       - If asked who you are, introduce yourself as "Nexus AI".
@@ -87,6 +83,7 @@ const nexusAssistantPrompt = ai.definePrompt(
     return {
       system: systemPrompt,
       messages,
+      input,
     };
   }
 );
