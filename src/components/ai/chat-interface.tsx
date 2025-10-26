@@ -24,6 +24,8 @@ import {
 import { doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from '@/hooks/use-toast';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 // Define Message schema locally for client-side state
 const MessageSchema = z.object({
@@ -75,18 +77,26 @@ export function ChatInterface() {
     }
 
     setIsHistoryLoading(true);
-    const unsubscribe = onSnapshot(chatHistoryRef, (docSnap) => {
-      if (docSnap.exists() && docSnap.data().messages) {
-        setMessages(docSnap.data().messages);
-      } else {
-        setMessages([]);
+    const unsubscribe = onSnapshot(chatHistoryRef, 
+      (docSnap) => {
+        if (docSnap.exists() && docSnap.data().messages) {
+          setMessages(docSnap.data().messages);
+        } else {
+          setMessages([]);
+        }
+        setIsHistoryLoading(false);
+      }, 
+      (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: chatHistoryRef.path,
+          operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error("Original onSnapshot error:", serverError);
+        setError("Gagal memuat riwayat obrolan karena masalah izin.");
+        setIsHistoryLoading(false);
       }
-      setIsHistoryLoading(false);
-    }, (err) => {
-      console.error("Failed to load chat history:", err);
-      toast({ title: "Gagal memuat riwayat", variant: "destructive" });
-      setIsHistoryLoading(false);
-    });
+    );
 
     return () => unsubscribe();
   }, [user, chatHistoryRef]);
@@ -94,14 +104,19 @@ export function ChatInterface() {
 
   // Effect to save chat history to Firestore whenever it changes
   useEffect(() => {
-    if (chatHistoryRef && messages.length > 0) {
-      // Debounce saving to avoid too many writes
-      const timer = setTimeout(() => {
-          setDoc(chatHistoryRef, { messages }, { merge: true });
-      }, 1000);
-      return () => clearTimeout(timer);
+    if (chatHistoryRef && messages.length > 0 && !isHistoryLoading) { // Don't save on initial load
+      setDoc(chatHistoryRef, { messages }, { merge: true }).catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: chatHistoryRef.path,
+          operation: 'write',
+          requestResourceData: { messages }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error("Error saving chat history:", serverError);
+        setError("Gagal menyimpan pesan karena masalah izin.");
+      });
     }
-  }, [messages, chatHistoryRef]);
+  }, [messages, chatHistoryRef, isHistoryLoading]);
 
   useEffect(() => {
     setPromptSuggestions(getShuffledPrompts(allPromptSuggestions, 3));
@@ -132,9 +147,14 @@ export function ChatInterface() {
         await deleteDoc(chatHistoryRef);
         setMessages([]); // Optimistically update UI
         toast({ title: "Riwayat percakapan dihapus."});
-    } catch (err) {
-        console.error("Failed to clear chat history:", err);
-        toast({ title: "Gagal menghapus riwayat", variant: "destructive" });
+    } catch (serverError) {
+        const permissionError = new FirestorePermissionError({
+          path: chatHistoryRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error("Failed to clear chat history:", serverError);
+        setError("Gagal menghapus riwayat karena masalah izin.");
     }
   }
 
@@ -225,7 +245,7 @@ export function ChatInterface() {
              <div className="flex flex-1 items-center justify-center h-full">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-        ) : messages.length === 0 && !isPending && (
+        ) : messages.length === 0 && !isPending && !error && (
              <div className="text-center text-muted-foreground space-y-8 animate-in fade-in duration-500 pt-8">
                 <div className="flex justify-center">
                     <div className="p-5 bg-primary/10 rounded-full w-fit shadow-inner">
@@ -234,7 +254,6 @@ export function ChatInterface() {
                 </div>
                 <div>
                     <p className="font-semibold text-xl text-foreground">Halo, {user?.fullName || 'Sobat'}!</p>
-                    <p className="text-sm">Saya asisten AI Anda. Apa yang bisa saya bantu hari ini?</p>
                 </div>
                  <div className="flex flex-wrap justify-center gap-2 px-4">
                     {promptSuggestions.map((prompt, index) => (

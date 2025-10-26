@@ -26,7 +26,7 @@ export default function AiAssistantPage() {
 
   // Once loading is complete and access is granted, render the chat interface.
   return (
-    <div className="flex flex-1 flex-col h-full p-0">
+    <div className="flex flex-1 flex-col h-full p-4 pt-6 md:p-8">
         <div className="h-full rounded-lg border bg-card shadow-sm">
             <ChatInterface />
         </div>
