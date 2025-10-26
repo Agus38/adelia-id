@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useUserStore } from '@/lib/user-store';
 import { Bot, Send, User, Sparkles, Trash2, Loader2, AlertCircle } from 'lucide-react';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useTransition } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   AlertDialog,
@@ -36,7 +36,7 @@ const promptSuggestions = [
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const { user } = useUserStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -64,7 +64,7 @@ export function ChatInterface() {
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+  }, [messages, isPending]);
 
 
   const handlePromptSuggestionClick = (prompt: string) => {
@@ -81,56 +81,35 @@ export function ChatInterface() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>, suggestedPrompt?: string) => {
     e.preventDefault();
     const currentInput = suggestedPrompt || input;
-    if (!currentInput.trim() || isLoading) return;
+    if (!currentInput.trim() || isPending) return;
 
     setError(null);
-    setIsLoading(true);
     const userMessage: Message = { role: 'user', content: currentInput };
     const newMessages = [...messages, userMessage];
 
     setMessages(newMessages);
     setInput('');
     
-    // Add an empty message for the model that will be populated
-    setMessages(prev => [...prev, { role: 'model', content: '' }]);
+    startTransition(async () => {
+      try {
+        const assistantInput: AssistantInput = {
+          history: newMessages,
+          appContext: {
+            userName: user?.fullName || 'Pengguna',
+            userRole: user?.role || 'Pengguna',
+          },
+        };
 
-    try {
-      const assistantInput: AssistantInput = {
-        history: newMessages, // Send history up to the user's message
-        appContext: {
-          userName: user?.fullName || 'Pengguna',
-          userRole: user?.role || 'Pengguna',
-        },
-      };
+        const result = await nexusAssistant(assistantInput);
+        const modelMessage: Message = { role: 'model', content: result.response };
+        setMessages(prev => [...prev, modelMessage]);
 
-      const stream = await nexusAssistant(assistantInput);
-      const reader = stream.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
-
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        if (value) {
-          const chunk = decoder.decode(value, { stream: true });
-          setMessages(prev => {
-            const lastMessage = prev[prev.length - 1];
-            if (lastMessage.role === 'model') {
-              lastMessage.content += chunk;
-              return [...prev.slice(0, -1), lastMessage];
-            }
-            // This case should ideally not happen if we've added the empty message
-            return [...prev, { role: 'model', content: chunk }];
-          });
-        }
+      } catch (err: any) {
+        console.error('AI Error:', err);
+        setError('Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.');
+        setMessages(newMessages); // Revert to messages before the failed attempt
       }
-    } catch (err: any) {
-      console.error('AI Error:', err);
-      setError('Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.');
-       setMessages(prev => prev.slice(0, -1)); // Remove the empty model message on error
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   return (
@@ -151,7 +130,7 @@ export function ChatInterface() {
           {messages.length > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isLoading}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isPending}>
                     <Trash2 className="h-4 w-4 text-muted-foreground"/>
                   </Button>
                 </AlertDialogTrigger>
@@ -172,7 +151,7 @@ export function ChatInterface() {
       </header>
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-        {messages.length === 0 && !isLoading && (
+        {messages.length === 0 && !isPending && (
              <div className="text-center text-muted-foreground space-y-8 animate-in fade-in duration-500 pt-8">
                 <div className="flex justify-center">
                     <div className="p-5 bg-primary/10 rounded-full w-fit shadow-inner">
@@ -213,13 +192,22 @@ export function ChatInterface() {
             }`}>
               <div className="prose prose-sm dark:prose-invert max-w-full leading-relaxed">
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  {isLoading && msg.role === 'model' && index === messages.length - 1 && (
-                     <span className="inline-block h-4 w-1 animate-pulse bg-foreground ml-1" />
-                  )}
               </div>
             </div>
           </div>
         ))}
+        
+        {isPending && (
+          <div className="flex items-start gap-3 animate-in fade-in duration-300">
+             <Avatar className="w-8 h-8 flex-shrink-0">
+                <AvatarFallback className="bg-primary/20 text-primary"><Bot className="w-5 h-5"/></AvatarFallback>
+              </Avatar>
+            <div className="rounded-2xl p-3 bg-muted flex items-center gap-2 rounded-bl-none">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Mengetik...</p>
+            </div>
+          </div>
+        )}
         
         {error && (
              <div className="flex items-start gap-3">
@@ -241,11 +229,11 @@ export function ChatInterface() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ketik pesan Anda..."
-            disabled={isLoading}
+            disabled={isPending}
             className="flex-1"
           />
-          <Button type="submit" disabled={isLoading || !input.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
-            {isLoading ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5" />}
+          <Button type="submit" disabled={isPending || !input.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
+            {isPending ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5" />}
           </Button>
         </form>
       </footer>

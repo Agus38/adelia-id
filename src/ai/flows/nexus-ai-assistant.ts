@@ -4,7 +4,7 @@
 /**
  * @fileOverview Server-side entrypoint for the Nexus AI Assistant.
  * This file is exposed to client components as a Server Action and is responsible
- * for executing the prompt and streaming the response.
+ * for executing the prompt and returning the complete response.
  */
 
 import { ai } from '@/ai/genkit';
@@ -12,8 +12,11 @@ import { getDeveloperInfo } from './get-developer-info-tool';
 import { getCurrentTime } from './get-current-time-tool';
 import type { AssistantInput } from './nexus-ai-flow';
 
+interface NexusAssistantOutput {
+  response: string;
+}
 
-export async function nexusAssistant(input: AssistantInput): Promise<ReadableStream<string>> {
+export async function nexusAssistant(input: AssistantInput): Promise<NexusAssistantOutput> {
   
   // The main system prompt that defines the AI's personality and rules.
   const systemPrompt = `You are Nexus AI, a helpful and friendly AI assistant integrated into the Adelia-ID application. Your personality is friendly, helpful, and you MUST use a touch of emoji to make your responses more engaging. 😊
@@ -38,28 +41,13 @@ Here are the key instructions you MUST follow:
   - **Diskon**: A tool to easily calculate discounts.
 - Always be polite, professional, and concise, but with a friendly tone. Use the provided conversation history to maintain context.`;
 
-  // Execute the generate call with streaming enabled
-  const { stream } = await ai.generate({
+  // Execute the generate call and wait for the full response
+  const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       system: systemPrompt,
       history: input.history.map(h => ({ role: h.role, content: [{ text: h.content }] })),
       tools: [getDeveloperInfo, getCurrentTime],
-      streaming: true,
   });
 
-  // Create a ReadableStream to pipe the Genkit stream to the client
-  const encoder = new TextEncoder();
-  const readableStream = new ReadableStream({
-    async start(controller) {
-      for await (const chunk of stream) {
-        // Ensure the chunk has content before trying to encode it
-        if (chunk.content) {
-          controller.enqueue(encoder.encode(chunk.content[0].text));
-        }
-      }
-      controller.close();
-    },
-  });
-
-  return readableStream;
+  return { response: response.text };
 }
