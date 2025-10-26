@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useUserStore } from '@/lib/user-store';
-import { Bot, Send, User, Sparkles, Trash2, Loader2, AlertCircle, Copy, Pencil } from 'lucide-react';
+import { Bot, Send, User, Sparkles, Trash2, Loader2, AlertCircle, Copy, Pencil, ThumbsUp, RefreshCw } from 'lucide-react';
 import { useRef, useState, useEffect, useTransition } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -158,6 +158,50 @@ export function ChatInterface() {
     setActiveMessageIndex(null);
     textareaRef.current?.focus();
   };
+  
+  const handleLike = () => {
+    toast({ title: "Terima kasih atas masukan Anda!" });
+  };
+  
+  const handleRegenerate = (aiMessageIndex: number) => {
+    const historyUpToUserPrompt = messages.slice(0, aiMessageIndex);
+    const userPromptMessage = historyUpToUserPrompt[historyUpToUserPrompt.length - 1];
+
+    if (userPromptMessage?.role !== 'user') {
+        setError("Tidak dapat membuat ulang respons. Prompt pengguna tidak ditemukan.");
+        return;
+    }
+    
+    setMessages(historyUpToUserPrompt);
+    setError(null);
+    setActiveMessageIndex(null);
+
+    startTransition(async () => {
+      try {
+        const assistantInput: AssistantInput = {
+          history: historyUpToUserPrompt,
+          appContext: {
+            userName: user?.fullName || 'Pengguna',
+            userRole: user?.role || 'Pengguna',
+          },
+        };
+
+        const result = await nexusAssistant(assistantInput);
+        const modelMessage: Message = { role: 'model', content: result.response };
+        
+        const finalMessages = [...historyUpToUserPrompt, modelMessage];
+        setMessages(finalMessages);
+        saveHistoryToFirestore(finalMessages);
+
+      } catch (err: any) {
+        console.error('AI Error on regenerate:', err);
+        setError('Maaf, terjadi kesalahan saat mencoba membuat ulang respons.');
+        // Restore the original messages if regeneration fails
+        setMessages([...historyUpToUserPrompt, messages[aiMessageIndex]]);
+      }
+    });
+  }
+
 
   const toggleMessageActions = (index: number) => {
     if (activeMessageIndex === index) {
@@ -246,7 +290,7 @@ export function ChatInterface() {
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isPending}>
-                    <Trash2 className="h-4 w-4 text-muted-foreground"/>
+                    <Trash2 className="h-4 w-4"/>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -293,20 +337,15 @@ export function ChatInterface() {
         {messages.map((msg, index) => (
           <div key={index} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
               <div
-                onClick={() => msg.role === 'user' && toggleMessageActions(index)}
-                className={`flex items-start max-w-[85%] sm:max-w-[75%] ${
-                  msg.role === 'user' ? 'justify-end' : 'justify-start'
+                onClick={() => toggleMessageActions(index)}
+                className={`flex items-start max-w-[85%] sm:max-w-[75%] cursor-pointer ${
+                  msg.role === 'user' ? 'ml-auto' : ''
                 }`}
               >
-                {msg.role === 'model' && (
-                  <div className="rounded-full h-8 w-8 flex items-center justify-center bg-primary/20 text-primary mr-3 flex-shrink-0">
-                    <Bot className="w-5 h-5"/>
-                  </div>
-                )}
                 <div
                   className={`rounded-2xl p-3 text-sm ${
                     msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-br-none cursor-pointer'
+                      ? 'bg-primary text-primary-foreground rounded-br-none'
                       : 'bg-muted rounded-bl-none'
                   }`}
                 >
@@ -325,16 +364,26 @@ export function ChatInterface() {
                     </Button>
                 </div>
               )}
+               {activeMessageIndex === index && msg.role === 'model' && (
+                <div className="flex gap-1 mt-1.5 ml-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleCopy(msg.content)}>
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleLike}>
+                        <ThumbsUp className="h-4 w-4" />
+                    </Button>
+                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRegenerate(index)}>
+                        <RefreshCw className="h-4 w-4" />
+                    </Button>
+                </div>
+              )}
           </div>
         ))}
         
         {isPending && (
           <div className="flex items-start gap-3 animate-in fade-in duration-300">
-            <div className="rounded-full h-8 w-8 flex items-center justify-center bg-primary/20 text-primary mr-3 flex-shrink-0">
-                <Bot className="w-5 h-5"/>
-            </div>
             <div className="rounded-2xl p-3 bg-muted flex items-center gap-2 rounded-bl-none">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <Loader2 className="h-4 w-4 animate-spin"/>
               <p className="text-sm text-muted-foreground">Mengetik...</p>
             </div>
           </div>
