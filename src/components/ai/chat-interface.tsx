@@ -99,7 +99,6 @@ export function ChatInterface() {
         history: newMessages, // Send history up to the user's message
         appContext: {
           userName: user?.fullName || 'Pengguna',
-          userAvatar: user?.avatarUrl || user?.photoURL || undefined,
           userRole: user?.role || 'Pengguna',
         },
       };
