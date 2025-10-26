@@ -45,16 +45,29 @@ Here are the key instructions you MUST follow:
   // We must map it to the format Genkit expects.
   const formattedHistory = input.history.map(h => ({
     role: h.role,
-    content: [{ text: h.content }], // This is the correct format for Genkit v1.x history
+    content: [{ text: h.content }],
   }));
   
-  // Execute the generate call and wait for the full response
-  const response = await ai.generate({
-      model: 'googleai/gemini-2.0-flash',
-      system: systemPrompt,
-      history: formattedHistory,
-      tools: [getDeveloperInfo, getCurrentTime],
-  });
+  let response;
+
+  if (formattedHistory.length > 1) {
+    // If there is history, use it with the system prompt
+     response = await ai.generate({
+        model: 'googleai/gemini-2.0-flash',
+        system: systemPrompt,
+        history: formattedHistory,
+        tools: [getDeveloperInfo, getCurrentTime],
+    });
+  } else {
+    // If this is the first message, combine system prompt with user's prompt
+    const firstPrompt = `${systemPrompt}\n\n${input.history[0]?.content || ''}`;
+    response = await ai.generate({
+        model: 'googleai/gemini-2.0-flash',
+        prompt: firstPrompt,
+        tools: [getDeveloperInfo, getCurrentTime],
+    });
+  }
 
   return { response: response.text };
 }
+
