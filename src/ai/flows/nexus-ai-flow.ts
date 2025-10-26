@@ -49,15 +49,11 @@ export const nexusAssistantFlow = ai.defineFlow(
       Use the provided conversation history to maintain context.
     `;
 
-    // Extract the latest user message from the history to use as the prompt
-    const latestUserMessage = input.history.findLast(msg => msg.role === 'user');
-
-    // Generate the response from the model
+    // Generate the response from the model, using the full history
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       system: systemPrompt,
       history: input.history.map(msg => ({ role: msg.role, content: [{ text: msg.content }] })),
-      prompt: latestUserMessage?.content || "Hello.", // Use latest message or a default greeting
       config: { temperature: 0.7 },
     });
 
