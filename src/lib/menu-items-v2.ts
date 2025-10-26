@@ -1,3 +1,4 @@
+
 import {
   MessageSquare,
   Package,
@@ -132,6 +133,13 @@ export const menuItems: MenuItem[] = [
     title: 'BudgetFlow',
     href: '/budgetflow',
     icon: TrendingUp,
+    requiresAuth: true,
+  },
+  {
+    id: 'nexus-ai',
+    title: 'Nexus AI',
+    href: '/ai-assistant',
+    icon: Bot,
     requiresAuth: true,
   },
   {
