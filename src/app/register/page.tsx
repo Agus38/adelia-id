@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -142,6 +141,7 @@ export default function RegisterPage() {
       });
 
       // 3. **CRITICAL STEP**: Sign in the user explicitly to get an authenticated state for Firestore rules.
+      // This is temporary and will be signed out after Firestore operations.
       await signInWithEmailAndPassword(auth, email, password);
       
       // 4. Now that the user is authenticated, create their Firestore document.
@@ -168,9 +168,11 @@ export default function RegisterPage() {
       });
       
       // 5. Send verification email.
+      // We must be signed in to send a verification email to the current user.
       await sendEmailVerification(authUser);
       
       // 6. Sign out the user immediately so they have to verify before logging in.
+      // This prevents the onAuthStateChanged listener from picking up a logged-in user prematurely.
       await signOut(auth);
       
       // 7. Redirect to the check-email page.
@@ -345,3 +347,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+    

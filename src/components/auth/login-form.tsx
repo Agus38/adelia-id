@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -33,10 +32,9 @@ export function LoginForm() {
     // Handle email verification link
     const handleVerification = async () => {
         if (isSignInWithEmailLink(auth, window.location.href)) {
+            setIsVerifying(true);
             let emailFromStorage = window.localStorage.getItem('emailForSignIn');
             if (!emailFromStorage) {
-                // To prevent phishing attacks, we don't prompt for email anymore.
-                // We rely on the email being in local storage.
                 setError("Sesi verifikasi tidak valid atau telah kedaluwarsa. Silakan coba masuk secara manual.");
                 setIsVerifying(false);
                 return;
@@ -44,27 +42,29 @@ export function LoginForm() {
 
             try {
                 // Sign in user with email link. This will trigger onAuthStateChanged.
-                const result = await signInWithEmailLink(auth, emailFromStorage, window.location.href);
-                
-                setSuccess('Email Anda telah berhasil diverifikasi. Anda akan segera dialihkan...');
+                await signInWithEmailLink(auth, emailFromStorage, window.location.href);
                 window.localStorage.removeItem('emailForSignIn');
                 
+                setSuccess('Email Anda telah berhasil diverifikasi. Anda akan segera dialihkan...');
                 // The main redirect logic is handled by the useEffect below
-                // after the user state is updated. We remove the oobCode from URL.
+                // after the user state is updated. We just need to clean up the URL.
+                 // We use router.replace to remove the verification code from the URL without adding to history.
                 router.replace('/login');
 
             } catch (linkError) {
-                setError("Tautan verifikasi tidak valid atau telah kedaluwarsa.");
+                setError("Tautan verifikasi tidak valid atau telah kedaluwarsa. Silakan coba masuk.");
                 if(auth.currentUser) await signOut(auth);
+                setIsVerifying(false);
             }
+        } else {
+            setIsVerifying(false);
         }
-        setIsVerifying(false);
     };
     
     handleVerification();
   // We only want to run this once on component mount.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (!userLoading && user) {
@@ -79,12 +79,7 @@ export function LoginForm() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       if (userCredential.user && !userCredential.user.emailVerified) {
-        const actionCodeSettings = {
-            url: `${window.location.origin}/login`,
-            handleCodeInApp: true,
-        };
-        await sendEmailVerification(userCredential.user, actionCodeSettings);
-        window.localStorage.setItem('emailForSignIn', email);
+        await sendEmailVerification(userCredential.user);
         toast({
           title: 'Email Verifikasi Terkirim',
           description: 'Email verifikasi baru telah dikirimkan. Harap periksa kotak masuk dan folder spam Anda.',
@@ -134,6 +129,8 @@ export function LoginForm() {
       if (!authUser.emailVerified && userRole !== 'Admin') {
           await signOut(auth);
           setError('Email Anda belum diverifikasi. Silakan periksa kotak masuk Anda atau kirim ulang email verifikasi.');
+          // Save email to local storage to make "Resend" button work without re-typing.
+          window.localStorage.setItem('emailForSignIn', email);
           setIsLoading(false);
           return;
       }
@@ -265,3 +262,4 @@ export function LoginForm() {
     </div>
   );
 }
+    

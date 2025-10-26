@@ -1,4 +1,3 @@
-
 'use client';
 
 import { create } from 'zustand';
@@ -51,10 +50,21 @@ export const useUserStore = create<UserState>((set, get) => ({
       const wasUser = !!get().user; // Check if there was a user before this state change
 
       if (authUser) {
+        // If the user's email is not verified, and they are not an admin, don't let them proceed.
+        // This is a crucial security check.
+        const userDocForRole = await getDoc(doc(db, 'users', authUser.uid));
+        const role = userDocForRole.data()?.role;
+
+        if (!authUser.emailVerified && role !== 'Admin') {
+            // Don't set the user in the store, effectively keeping them logged out from the app's perspective.
+            // But don't sign out from Firebase yet, to allow them to be on the login page
+            // where they can see the "resend verification" option.
+            set({ user: null, loading: false });
+            return;
+        }
+
         const userDocRef = doc(db, 'users', authUser.uid);
         
-        // This listener syncs user data in real-time.
-        // Document creation is now handled at registration.
         firestoreUnsubscribe = onSnapshot(userDocRef, (userDoc) => {
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -68,7 +78,6 @@ export const useUserStore = create<UserState>((set, get) => ({
                   duration: 5000,
                 });
               });
-              // State is cleared by the onAuthStateChanged listener recursively
               return; 
             }
 
@@ -79,8 +88,6 @@ export const useUserStore = create<UserState>((set, get) => ({
             };
             set({ user: fullUserProfile, loading: false });
             
-            // Show welcome toast only on initial login, not on every data refresh
-            // Use sessionStorage to persist across refreshes within the same tab session.
             const loginToastShown = sessionStorage.getItem('loginToastShown');
             if (!loginToastShown) {
                 toast({
@@ -91,7 +98,6 @@ export const useUserStore = create<UserState>((set, get) => ({
                 logActivity('login', 'Aplikasi');
             }
           } else {
-            // This case should be rare now, but as a fallback, sign out.
             signOut(auth);
             set({ user: null, loading: false });
           }
@@ -102,15 +108,14 @@ export const useUserStore = create<UserState>((set, get) => ({
         });
 
       } else {
-        // No authenticated user
-        if (wasUser) { // If there was a user before, it means they just logged out
+        if (wasUser) {
             toast({
                 title: `Anda Telah Keluar`,
                 description: 'Sesi Anda telah berhasil diakhiri.',
                 variant: "destructive",
             });
         }
-        sessionStorage.removeItem('loginToastShown'); // Clear the flag on logout.
+        sessionStorage.removeItem('loginToastShown');
         set({ user: null, loading: false });
       }
     });
@@ -128,3 +133,4 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ user: null, loading: false });
   },
 }));
+    
