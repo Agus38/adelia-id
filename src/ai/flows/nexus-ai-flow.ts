@@ -27,7 +27,8 @@ export const AssistantInputSchema = z.object({
 });
 export type AssistantInput = z.infer<typeof AssistantInputSchema>;
 
-// Define the output schema for the assistant's response
+// The output is now a stream of strings. The schema here is for the input.
+// The final, non-streamed output would conform to the old schema, but the flow itself streams text.
 export const AssistantOutputSchema = z.object({
   response: z.string().describe("The AI assistant's final response to the user."),
 });
@@ -40,7 +41,7 @@ export const nexusAssistantFlow = ai.defineFlow(
   {
     name: 'nexusAssistantFlow',
     inputSchema: AssistantInputSchema,
-    outputSchema: AssistantOutputSchema,
+    // The output is now a stream, not a Zod schema object.
   },
   async (input) => {
     const { history, appContext } = input;
@@ -53,7 +54,7 @@ export const nexusAssistantFlow = ai.defineFlow(
     }));
 
 
-    const response = await ai.generate({
+    const { stream } = await ai.generateStream({
         model: 'googleai/gemini-2.0-flash',
         system: systemPrompt.replace('{{appContext.userName}}', appContext.userName || 'Pengguna')
                            .replace('{{appContext.userRole}}', appContext.userRole || 'Pengguna'),
@@ -62,6 +63,18 @@ export const nexusAssistantFlow = ai.defineFlow(
         tools: [getDeveloperInfo, getCurrentTime],
     });
 
-    return { response: response.text };
+    const encoder = new TextEncoder();
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        for await (const chunk of stream) {
+          if (chunk.content) {
+            controller.enqueue(encoder.encode(chunk.content[0].text));
+          }
+        }
+        controller.close();
+      },
+    });
+
+    return readableStream;
   }
 );
