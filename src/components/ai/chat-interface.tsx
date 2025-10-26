@@ -163,13 +163,18 @@ export function ChatInterface() {
   
   const handleLike = (index: number) => {
     const newLiked = new Set(likedMessages);
+    let isLiking = false;
     if (newLiked.has(index)) {
       newLiked.delete(index);
     } else {
       newLiked.add(index);
-      toast({ title: 'Terima kasih atas masukan Anda!' });
+      isLiking = true;
     }
     setLikedMessages(newLiked);
+
+    if (isLiking) {
+       toast({ title: 'Terima kasih atas masukan Anda!' });
+    }
   };
   
   const handleRegenerate = (aiMessageIndex: number) => {
@@ -341,55 +346,81 @@ export function ChatInterface() {
         )}
 
         {messages.map((msg, index) => (
-          <div key={index} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+          <div
+            key={index}
+            className={`flex flex-col ${
+              msg.role === 'user' ? 'items-end' : 'items-start'
+            }`}
+          >
+            <div
+              onClick={() => toggleMessageActions(index)}
+              className="max-w-[85%] cursor-pointer sm:max-w-[75%]"
+            >
               <div
-                onClick={() => toggleMessageActions(index)}
-                className={`flex items-start max-w-[85%] sm:max-w-[75%] cursor-pointer ${
-                  msg.role === 'user' ? 'ml-auto' : 'mr-auto'
+                className={`rounded-2xl p-3 text-sm ${
+                  msg.role === 'user'
+                    ? 'bg-primary text-primary-foreground rounded-br-none'
+                    : 'bg-muted rounded-bl-none'
                 }`}
               >
-                {msg.role === 'model' && (
-                  <div className="flex-shrink-0 mr-3">
-                     <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center">
-                        <Bot className="w-5 h-5"/>
-                     </div>
-                  </div>
-                )}
-                <div
-                  className={`rounded-2xl p-3 text-sm ${
-                    msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-br-none'
-                      : 'bg-muted rounded-bl-none'
-                  }`}
-                >
-                  <div className="prose prose-sm dark:prose-invert max-w-full leading-relaxed">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  </div>
+                <div className="prose prose-sm dark:prose-invert max-w-full leading-relaxed">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               </div>
-              {activeMessageIndex === index && msg.role === 'user' && (
-                <div className="flex gap-1 mt-1.5 mr-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleCopy(msg.content)}>
-                        <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(msg.content, index)}>
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                </div>
-              )}
-               {activeMessageIndex === index && msg.role === 'model' && (
-                <div className="flex gap-1 mt-1.5 ml-11">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleCopy(msg.content)}>
-                        <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleLike(index)}>
-                        <ThumbsUp className={cn("h-4 w-4", likedMessages.has(index) && 'text-blue-500 fill-blue-500')} />
-                    </Button>
-                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRegenerate(index)}>
-                        <RefreshCw className="h-4 w-4" />
-                    </Button>
-                </div>
-              )}
+            </div>
+            {activeMessageIndex === index && msg.role === 'user' && (
+              <div className="mt-1.5 flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleCopy(msg.content)}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleEdit(msg.content, index)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            {activeMessageIndex === index && msg.role === 'model' && (
+              <div className="mt-1.5 flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleCopy(msg.content)}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleLike(index)}
+                >
+                  <ThumbsUp
+                    className={cn(
+                      'h-4 w-4',
+                      likedMessages.has(index) && 'fill-blue-500 text-blue-500'
+                    )}
+                  />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleRegenerate(index)}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         ))}
         
