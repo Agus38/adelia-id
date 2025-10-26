@@ -40,11 +40,16 @@ Here are the key instructions you MUST follow:
   - **Diskon**: A tool to easily calculate discounts.
 - Always be polite, professional, and concise, but with a friendly tone. Use the provided conversation history to maintain context.`;
 
+  // Separate the last message as the prompt and the rest as history.
+  const history = input.history.slice(0, -1);
+  const lastUserMessage = input.history[input.history.length - 1];
+
   // Execute the generate call and wait for the full response
   const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       system: systemPrompt,
-      history: input.history.map(h => ({ role: h.role, content: [{ text: h.content }] })),
+      history: history,
+      prompt: lastUserMessage.content,
       tools: [getDeveloperInfo, getCurrentTime],
   });
 
