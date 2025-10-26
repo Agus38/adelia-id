@@ -337,7 +337,7 @@ export default function RegisterPage() {
           alt="Image"
           width="1887"
           height="1258"
-          data-ai-hint={registerPageConfig.aiHint}
+          data-ai-hint={registerPage-config.aiHint}
           className="h-full w-full object-cover dark:brightness-[0.3]"
         />
         )}
