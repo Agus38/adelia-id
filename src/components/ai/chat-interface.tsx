@@ -31,11 +31,25 @@ const MessageSchema = z.object({
 
 type Message = z.infer<typeof MessageSchema>;
 
-const promptSuggestions = [
+const allPromptSuggestions = [
     "Apa yang bisa kamu lakukan?",
     "Jelaskan tentang fitur BudgetFlow",
     "Siapa yang membuat aplikasi ini?",
+    "Jam berapa sekarang?",
+    "Fitur apa saja yang ada di aplikasi ini?",
+    "Bantu saya membuat laporan harian",
+    "Bagaimana cara kerja fitur Stok Produk?",
+    "Apa fungsi dari halaman Cek Usia?",
+    "Ceritakan lelucon tentang teknologi",
+    "Beri saya kutipan motivasi",
 ];
+
+// Helper function to shuffle an array and pick the first N items
+const getShuffledPrompts = (arr: string[], num: number) => {
+    const shuffled = [...arr].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, num);
+};
+
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -45,8 +59,10 @@ export function ChatInterface() {
   const { user } = useUserStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [promptSuggestions, setPromptSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
+    setPromptSuggestions(getShuffledPrompts(allPromptSuggestions, 3));
     try {
         const savedMessages = sessionStorage.getItem('nexus-chat-history');
         if (savedMessages) {
@@ -105,7 +121,6 @@ export function ChatInterface() {
         };
 
         const result = await nexusAssistant(assistantInput);
-        // Correctly access the 'response' property from the result object
         const modelMessage: Message = { role: 'model', content: result.response };
         setMessages(prev => [...prev, modelMessage]);
 
