@@ -31,12 +31,11 @@ export const AssistantOutputSchema = z.object({
 export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
 
 
-// Define the Genkit flow for the Nexus AI Assistant
-export const nexusAssistantFlow = ai.defineFlow(
+const nexusAssistantPrompt = ai.definePrompt(
   {
-    name: 'nexusAssistantFlow',
-    inputSchema: AssistantInputSchema,
-    outputSchema: AssistantOutputSchema,
+    name: 'nexusAssistantPrompt',
+    input: { schema: AssistantInputSchema },
+    output: { schema: AssistantOutputSchema },
   },
   async (input) => {
     // Construct the system prompt with context
@@ -48,15 +47,28 @@ export const nexusAssistantFlow = ai.defineFlow(
       Always be polite, professional, and concise.
       Use the provided conversation history to maintain context.
     `;
-
-    // Generate the response from the model, using the full history
-    const response = await ai.generate({
+    
+    return {
       model: 'googleai/gemini-2.0-flash',
       system: systemPrompt,
       history: input.history.map(msg => ({ role: msg.role, content: [{ text: msg.content }] })),
       config: { temperature: 0.7 },
-    });
+    };
+  }
+);
 
-    return { response: response.text };
+
+// Define the Genkit flow for the Nexus AI Assistant
+export const nexusAssistantFlow = ai.defineFlow(
+  {
+    name: 'nexusAssistantFlow',
+    inputSchema: AssistantInputSchema,
+    outputSchema: AssistantOutputSchema,
+  },
+  async (input) => {
+    // Generate the response from the model, using the full history
+    const response = await nexusAssistantPrompt(input);
+
+    return { response: response.output.response };
   }
 );
