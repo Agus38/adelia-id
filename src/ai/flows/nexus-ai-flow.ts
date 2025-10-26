@@ -70,19 +70,20 @@ export const nexusAssistantFlow = ai.defineFlow(
   async (input) => {
     const { history, appContext } = input;
     
-    // Construct the prompt with history for the ai.generate call
-    const prompt = [
-        ...history.map(msg => ({
-            role: msg.role,
-            content: [{ text: msg.content }]
-        }))
-    ];
+    // Extract the latest user message for the main prompt, and the rest for history
+    const latestUserMessage = history.length > 0 ? history[history.length - 1].content : "";
+    const conversationHistory = history.slice(0, -1).map(msg => ({
+        role: msg.role,
+        content: [{ text: msg.content }]
+    }));
+
 
     const response = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         system: systemPrompt.replace('{{appContext.userName}}', appContext.userName || 'Pengguna')
                            .replace('{{appContext.userRole}}', appContext.userRole || 'Pengguna'),
-        prompt: prompt,
+        history: conversationHistory,
+        prompt: latestUserMessage,
         tools: [getDeveloperInfo],
         output: {
             schema: AssistantOutputSchema,
