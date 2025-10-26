@@ -1,5 +1,7 @@
 
 
+'use server';
+
 /**
  * @fileOverview This file contains the actual Genkit flow and schema definitions
  * for the Nexus AI Assistant. It is NOT marked with "use server" and is intended
@@ -39,7 +41,6 @@ const nexusAssistantPrompt = ai.definePrompt(
   {
     name: 'nexusAssistantPrompt',
     model: 'googleai/gemini-2.0-flash',
-    config: { temperature: 0.7 },
     tools: [getDeveloperInfo],
     system: `
       You are Nexus AI, a helpful and friendly AI assistant integrated into the Adelia-ID application.
@@ -69,19 +70,12 @@ const nexusAssistantPrompt = ai.definePrompt(
       Always be polite, professional, and concise, but with a friendly tone.
       Use the provided conversation history to maintain context.
     `,
-  },
-  async (input: AssistantInput) => {
-    // Ensure there's always at least one message for the model.
-    const messages = input.history.length > 0 
-      ? input.history.map(msg => ({ role: msg.role, content: [{ text: msg.content }] }))
-      : [{ role: 'user', content: [{ text: 'Hello!' }] }];
-
-
-    return {
-      messages,
-      // Pass the appContext to the prompt template engine
-      context: { appContext: input.appContext },
-    };
+    input: {
+      schema: AssistantInputSchema,
+    },
+    output: {
+      schema: AssistantOutputSchema,
+    },
   }
 );
 
@@ -97,6 +91,6 @@ export const nexusAssistantFlow = ai.defineFlow(
     // Generate the response from the model, using the full history
     const response = await nexusAssistantPrompt(input);
 
-    return { response: response.output()!.response };
+    return response.output!;
   }
 );
