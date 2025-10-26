@@ -162,16 +162,14 @@ export function ChatInterface() {
   };
   
   const handleLike = (index: number) => {
-    setLikedMessages(prev => {
-        const newLiked = new Set(prev);
-        if (newLiked.has(index)) {
-            newLiked.delete(index);
-        } else {
-            newLiked.add(index);
-            toast({ title: "Terima kasih atas masukan Anda!" });
-        }
-        return newLiked;
-    });
+    const newLiked = new Set(likedMessages);
+    if (newLiked.has(index)) {
+      newLiked.delete(index);
+    } else {
+      newLiked.add(index);
+      toast({ title: 'Terima kasih atas masukan Anda!' });
+    }
+    setLikedMessages(newLiked);
   };
   
   const handleRegenerate = (aiMessageIndex: number) => {
@@ -289,9 +287,6 @@ export function ChatInterface() {
     <div className="flex h-full flex-col bg-card rounded-lg">
       <header className="p-4 border-b flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
-              <div className="relative">
-                 {/* AI Avatar */}
-              </div>
               <div>
                   <p className="font-semibold">Nexus AI Assistant</p>
                   <p className="text-xs text-muted-foreground">Online</p>
@@ -350,7 +345,7 @@ export function ChatInterface() {
               <div
                 onClick={() => toggleMessageActions(index)}
                 className={`flex items-start max-w-[85%] sm:max-w-[75%] cursor-pointer ${
-                  msg.role === 'user' ? 'ml-auto' : ''
+                  msg.role === 'user' ? 'ml-auto' : 'mr-auto'
                 }`}
               >
                 {msg.role === 'model' && (
@@ -383,7 +378,7 @@ export function ChatInterface() {
                 </div>
               )}
                {activeMessageIndex === index && msg.role === 'model' && (
-                <div className="flex gap-1 mt-1.5 ml-12">
+                <div className="flex gap-1 mt-1.5 ml-11">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleCopy(msg.content)}>
                         <Copy className="h-4 w-4" />
                     </Button>
