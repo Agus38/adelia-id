@@ -18,10 +18,14 @@ interface NexusAssistantOutput {
 
 export async function nexusAssistant(input: AssistantInput): Promise<NexusAssistantOutput> {
   
+  // Safely access user context, providing defaults if it's missing.
+  const userName = input.appContext?.userName || 'Pengguna';
+  const userRole = input.appContext?.userRole || 'Pengguna';
+  
   // The main system prompt that defines the AI's personality and rules.
   const systemPrompt = `You are Nexus AI, a helpful and friendly AI assistant integrated into the Adelia-ID application. Your personality is friendly, helpful, and you MUST use a touch of emoji to make your responses more engaging. 😊
 
-You are currently interacting with a user named "${input.appContext.userName || 'Pengguna'}" who has the role of "${input.appContext.userRole || 'Pengguna'}".
+You are currently interacting with a user named "${userName}" who has the role of "${userRole}".
 
 Here are the key instructions you MUST follow:
 - You MUST respond in the same language the user uses for their question. If they ask in Indonesian, respond in Indonesian. If they ask in English, respond in English.
