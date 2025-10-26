@@ -32,13 +32,7 @@ export const AssistantOutputSchema = z.object({
 });
 export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
 
-
-const nexusAssistantPrompt = ai.definePrompt(
-  {
-    name: 'nexusAssistantPrompt',
-    model: 'googleai/gemini-2.0-flash',
-    tools: [getDeveloperInfo],
-    system: `You are Nexus AI, a helpful and friendly AI assistant integrated into the Adelia-ID application.
+const systemPrompt = `You are Nexus AI, a helpful and friendly AI assistant integrated into the Adelia-ID application.
 Your personality is friendly, helpful, and you MUST use a touch of emoji to make your responses more engaging. 😊
 
 Your primary role is to assist users with their tasks, answer questions about the application, and provide support.
@@ -64,16 +58,7 @@ Here is a summary of the application's features:
 
 Always be polite, professional, and concise, but with a friendly tone.
 Use the provided conversation history to maintain context.
-`,
-    input: {
-      schema: AssistantInputSchema,
-    },
-    output: {
-      schema: AssistantOutputSchema,
-    },
-  }
-);
-
+`;
 
 // Define the Genkit flow for the Nexus AI Assistant
 export const nexusAssistantFlow = ai.defineFlow(
@@ -83,13 +68,25 @@ export const nexusAssistantFlow = ai.defineFlow(
     outputSchema: AssistantOutputSchema,
   },
   async (input) => {
-    // Separate the history from the rest of the input for the prompt
     const { history, appContext } = input;
     
-    // Generate the response from the model, using the full history
-    const response = await nexusAssistantPrompt({
-      history,
-      appContext,
+    // Construct the prompt with history for the ai.generate call
+    const prompt = [
+        ...history.map(msg => ({
+            role: msg.role,
+            content: [{ text: msg.content }]
+        }))
+    ];
+
+    const response = await ai.generate({
+        model: 'googleai/gemini-2.0-flash',
+        system: systemPrompt.replace('{{appContext.userName}}', appContext.userName || 'Pengguna')
+                           .replace('{{appContext.userRole}}', appContext.userRole || 'Pengguna'),
+        prompt: prompt,
+        tools: [getDeveloperInfo],
+        output: {
+            schema: AssistantOutputSchema,
+        },
     });
 
     return response.output!;
