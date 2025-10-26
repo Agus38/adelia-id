@@ -1,3 +1,4 @@
+
 'use client';
 
 import { nexusAssistant } from '@/ai/flows/nexus-ai-assistant';
@@ -76,6 +77,7 @@ export function ChatInterface() {
       return;
     }
 
+    // Set loading state only on initial setup
     setIsHistoryLoading(true);
     const unsubscribe = onSnapshot(chatHistoryRef, 
       (docSnap) => {
@@ -99,32 +101,17 @@ export function ChatInterface() {
     );
 
     return () => unsubscribe();
-  }, [user, chatHistoryRef]);
+  }, [user]); // Rerun only when user changes
   
-
-  // Effect to save chat history to Firestore whenever it changes
-  useEffect(() => {
-    if (chatHistoryRef && messages.length > 0 && !isHistoryLoading) { // Don't save on initial load
-      setDoc(chatHistoryRef, { messages }, { merge: true }).catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: chatHistoryRef.path,
-          operation: 'write',
-          requestResourceData: { messages }
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        console.error("Error saving chat history:", serverError);
-        setError("Gagal menyimpan pesan karena masalah izin.");
-      });
-    }
-  }, [messages, chatHistoryRef, isHistoryLoading]);
-
-  useEffect(() => {
-    setPromptSuggestions(getShuffledPrompts(allPromptSuggestions, 3));
-  }, []);
-  
+  // This effect handles scrolling to the bottom of the chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isPending]);
+
+  // This effect sets the initial prompt suggestions
+  useEffect(() => {
+    setPromptSuggestions(getShuffledPrompts(allPromptSuggestions, 3));
+  }, []);
 
    // Auto-resize textarea
   useEffect(() => {
@@ -134,6 +121,21 @@ export function ChatInterface() {
         textareaRef.current.style.height = `${scrollHeight}px`;
     }
   }, [input]);
+  
+  const saveHistoryToFirestore = (updatedMessages: Message[]) => {
+    if (!chatHistoryRef) return;
+    
+    setDoc(chatHistoryRef, { messages: updatedMessages }, { merge: true }).catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: chatHistoryRef.path,
+            operation: 'write',
+            requestResourceData: { messages: updatedMessages }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error("Error saving chat history:", serverError);
+        setError("Gagal menyimpan pesan karena masalah izin.");
+    });
+  }
 
   const handlePromptSuggestionClick = (prompt: string) => {
       setInput(prompt);
@@ -171,6 +173,9 @@ export function ChatInterface() {
     setMessages(newMessages);
     setInput('');
     
+    // Save history with the new user message immediately
+    saveHistoryToFirestore(newMessages);
+    
     startTransition(async () => {
       try {
         const assistantInput: AssistantInput = {
@@ -183,13 +188,19 @@ export function ChatInterface() {
 
         const result = await nexusAssistant(assistantInput);
         const modelMessage: Message = { role: 'model', content: result.response };
-        setMessages(prev => [...prev, modelMessage]);
+        
+        // Update state and save again with model's response
+        const finalMessages = [...newMessages, modelMessage];
+        setMessages(finalMessages);
+        saveHistoryToFirestore(finalMessages);
 
       } catch (err: any) {
         console.error('AI Error:', err);
         setError('Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.');
         // Revert optimistic update on error
         setMessages(prev => prev.filter(msg => msg !== userMessage));
+        // Also revert in Firestore
+        saveHistoryToFirestore(messages);
       }
     });
   };
@@ -336,3 +347,5 @@ export function ChatInterface() {
     </div>
   );
 }
+
+    
