@@ -61,6 +61,6 @@ export const nexusAssistantFlow = ai.defineFlow(
         tools: [getDeveloperInfo],
     });
 
-    return response.output!;
+    return { response: response.text };
   }
 );
