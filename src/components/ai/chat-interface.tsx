@@ -26,6 +26,7 @@ import { db } from '@/lib/firebase';
 import { toast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { cn } from '@/lib/utils';
 
 // Define Message schema locally for client-side state
 const MessageSchema = z.object({
@@ -66,6 +67,7 @@ export function ChatInterface() {
   const [promptSuggestions, setPromptSuggestions] = useState<string[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [activeMessageIndex, setActiveMessageIndex] = useState<number | null>(null);
+  const [likedMessages, setLikedMessages] = useState<Set<number>>(new Set());
 
   // Firestore document reference for chat history
   const chatHistoryRef = user ? doc(db, `users/${user.uid}/ai-assistant-chats`, 'nexus') : null;
@@ -159,8 +161,17 @@ export function ChatInterface() {
     textareaRef.current?.focus();
   };
   
-  const handleLike = () => {
-    toast({ title: "Terima kasih atas masukan Anda!" });
+  const handleLike = (index: number) => {
+    setLikedMessages(prev => {
+        const newLiked = new Set(prev);
+        if (newLiked.has(index)) {
+            newLiked.delete(index);
+        } else {
+            newLiked.add(index);
+            toast({ title: "Terima kasih atas masukan Anda!" });
+        }
+        return newLiked;
+    });
   };
   
   const handleRegenerate = (aiMessageIndex: number) => {
@@ -342,6 +353,13 @@ export function ChatInterface() {
                   msg.role === 'user' ? 'ml-auto' : ''
                 }`}
               >
+                {msg.role === 'model' && (
+                  <div className="flex-shrink-0 mr-3">
+                     <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center">
+                        <Bot className="w-5 h-5"/>
+                     </div>
+                  </div>
+                )}
                 <div
                   className={`rounded-2xl p-3 text-sm ${
                     msg.role === 'user'
@@ -365,12 +383,12 @@ export function ChatInterface() {
                 </div>
               )}
                {activeMessageIndex === index && msg.role === 'model' && (
-                <div className="flex gap-1 mt-1.5 ml-1">
+                <div className="flex gap-1 mt-1.5 ml-12">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleCopy(msg.content)}>
                         <Copy className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleLike}>
-                        <ThumbsUp className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleLike(index)}>
+                        <ThumbsUp className={cn("h-4 w-4", likedMessages.has(index) && 'text-blue-500 fill-blue-500')} />
                     </Button>
                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRegenerate(index)}>
                         <RefreshCw className="h-4 w-4" />
@@ -382,6 +400,11 @@ export function ChatInterface() {
         
         {isPending && (
           <div className="flex items-start gap-3 animate-in fade-in duration-300">
+             <div className="flex-shrink-0 mr-3">
+                 <div className="h-8 w-8 rounded-full bg-primary/20 text-primary flex items-center justify-center">
+                    <Bot className="w-5 h-5"/>
+                 </div>
+              </div>
             <div className="rounded-2xl p-3 bg-muted flex items-center gap-2 rounded-bl-none">
               <Loader2 className="h-4 w-4 animate-spin"/>
               <p className="text-sm text-muted-foreground">Mengetik...</p>
