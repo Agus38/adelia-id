@@ -20,10 +20,13 @@ const serviceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG
   : undefined;
 
 // Use a unique name for the admin app instance to avoid conflicts
-const adminApp = getApps().find(app => app.name === 'log-deletion') || initializeApp({
-    credential: serviceAccount ? cert(serviceAccount) : undefined,
-    projectId: serviceAccount ? undefined : 'aeromenu',
-}, 'log-deletion');
+const adminApp = getApps().find(app => app.name === 'log-deletion') || initializeApp(
+    serviceAccount
+        ? { credential: cert(serviceAccount) }
+        : { projectId: 'aeromenu' },
+    'log-deletion'
+);
+
 
 const adminDb = getFirestore(adminApp);
 
@@ -91,15 +94,20 @@ const deleteActivityLogsFlow = ai.defineFlow(
             throw new Error('Permission denied. User is not an admin.');
         }
 
-        let query = adminDb.collection('activityLogs');
-        const todayStart = Timestamp.fromDate(new Date());
-        todayStart.seconds = todayStart.seconds - (todayStart.seconds % 86400);
+        let query = adminDb.collection('activityLogs') as FirebaseFirestore.Query;
+        
+        if (filter === 'today' || filter === 'older') {
+          const today = new Date();
+          today.setHours(0,0,0,0);
+          const todayStart = Timestamp.fromDate(today);
 
-        if (filter === 'today') {
-            query = query.where('timestamp', '>=', todayStart);
-        } else if (filter === 'older') {
-            query = query.where('timestamp', '<', todayStart);
+          if (filter === 'today') {
+              query = query.where('timestamp', '>=', todayStart);
+          } else { // 'older'
+              query = query.where('timestamp', '<', todayStart);
+          }
         }
+
 
         const deletedCount = await new Promise<number>((resolve, reject) => deleteQueryBatch(query, resolve, reject));
         

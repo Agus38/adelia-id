@@ -19,10 +19,13 @@ const serviceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG
   : undefined;
 
 // Use a unique name for the admin app instance to avoid conflicts
-const adminApp = getApps().find(app => app.name === 'issue-reporting') || initializeApp({
-    credential: serviceAccount ? cert(serviceAccount) : undefined,
-    projectId: serviceAccount ? undefined : 'aeromenu',
-}, 'issue-reporting');
+const adminApp = getApps().find(app => app.name === 'issue-reporting') || initializeApp(
+    serviceAccount 
+        ? { credential: cert(serviceAccount) }
+        : { projectId: 'aeromenu' },
+    'issue-reporting'
+);
+
 
 const adminDb = getFirestore(adminApp);
 
