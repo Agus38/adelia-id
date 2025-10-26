@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview This file contains the actual Genkit flow and schema definitions
  * for the Nexus AI Assistant. It is NOT marked with "use server" and is intended
@@ -36,6 +37,8 @@ const nexusAssistantPrompt = ai.definePrompt(
     name: 'nexusAssistantPrompt',
     input: { schema: AssistantInputSchema },
     output: { schema: AssistantOutputSchema },
+    model: 'googleai/gemini-2.0-flash',
+    config: { temperature: 0.7 },
   },
   async (input) => {
     // Construct the system prompt with context
@@ -49,10 +52,9 @@ const nexusAssistantPrompt = ai.definePrompt(
     `;
     
     return {
-      model: 'googleai/gemini-2.0-flash',
       system: systemPrompt,
       history: input.history.map(msg => ({ role: msg.role, content: [{ text: msg.content }] })),
-      config: { temperature: 0.7 },
+      messages: [],
     };
   }
 );
@@ -69,6 +71,6 @@ export const nexusAssistantFlow = ai.defineFlow(
     // Generate the response from the model, using the full history
     const response = await nexusAssistantPrompt(input);
 
-    return { response: response.output.response };
+    return { response: response.output!.response };
   }
 );
