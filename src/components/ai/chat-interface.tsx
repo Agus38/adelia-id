@@ -173,12 +173,19 @@ export function ChatInterface() {
     setInput('');
     
     startTransition(async () => {
-        const currentHistory = [...messages, userMessage];
-        // Save history with the new user message immediately
-        saveHistoryToFirestore(currentHistory);
+        const historyForGenkit = [...messages, userMessage];
+
+        const lastMessage = historyForGenkit[historyForGenkit.length - 1];
+        const history = historyForGenkit.slice(0, -1);
+
+        const formattedHistory = history.map(h => ({
+            role: h.role,
+            content: [{ text: h.content }],
+        }));
+
       try {
         const assistantInput: AssistantInput = {
-          history: currentHistory,
+          history: historyForGenkit,
           appContext: {
             userName: user?.fullName || 'Pengguna',
             userRole: user?.role || 'Pengguna',
@@ -188,14 +195,12 @@ export function ChatInterface() {
         const result = await nexusAssistant(assistantInput);
         const modelMessage: Message = { role: 'model', content: result.response };
         
-        // Update state and save again with model's response
         setMessages((prevMessages) => [...prevMessages, modelMessage]);
-        saveHistoryToFirestore([...currentHistory, modelMessage]);
+        saveHistoryToFirestore([...historyForGenkit, modelMessage]);
 
       } catch (err: any) {
         console.error('AI Error:', err);
         setError('Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.');
-        // Revert optimistic update on error
         setMessages(messages);
       }
     });
@@ -273,14 +278,21 @@ export function ChatInterface() {
         )}
 
         {messages.map((msg, index) => (
-          <div key={index} className={`flex items-start gap-3 max-w-[85%] sm:max-w-[75%] ${msg.role === 'user' ? 'ml-auto' : ''}`}>
-            <div className={`rounded-2xl p-3 text-sm ${
-              msg.role === 'user' 
-                ? 'bg-primary text-primary-foreground rounded-br-none' 
-                : 'bg-muted rounded-bl-none'
-            }`}>
+          <div
+            key={index}
+            className={`flex items-start max-w-[85%] sm:max-w-[75%] ${
+              msg.role === 'user' ? 'ml-auto justify-end' : 'mr-auto justify-start'
+            }`}
+          >
+            <div
+              className={`rounded-2xl p-3 text-sm ${
+                msg.role === 'user'
+                  ? 'bg-primary text-primary-foreground rounded-br-none'
+                  : 'bg-muted rounded-bl-none'
+              }`}
+            >
               <div className="prose prose-sm dark:prose-invert max-w-full leading-relaxed">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                <ReactMarkdown>{msg.content}</ReactMarkdown>
               </div>
             </div>
           </div>
@@ -288,9 +300,6 @@ export function ChatInterface() {
         
         {isPending && (
           <div className="flex items-start gap-3 animate-in fade-in duration-300">
-             <Avatar className="w-8 h-8 flex-shrink-0">
-                <AvatarFallback className="bg-primary/20 text-primary"><Bot className="w-5 h-5"/></AvatarFallback>
-              </Avatar>
             <div className="rounded-2xl p-3 bg-muted flex items-center gap-2 rounded-bl-none">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               <p className="text-sm text-muted-foreground">Mengetik...</p>
@@ -300,9 +309,6 @@ export function ChatInterface() {
         
         {error && (
              <div className="flex items-start gap-3">
-                 <Avatar className="w-8 h-8 flex-shrink-0">
-                    <AvatarFallback className="bg-destructive/20 text-destructive"><Bot className="w-5 h-5"/></AvatarFallback>
-                </Avatar>
                 <div className="rounded-2xl p-3 bg-destructive/10 text-sm text-destructive flex items-center gap-2 rounded-bl-none">
                     <AlertCircle className="h-4 w-4" />
                     <p>{error}</p>
