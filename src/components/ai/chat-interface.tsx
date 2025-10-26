@@ -162,19 +162,16 @@ export function ChatInterface() {
   };
   
  const handleLike = (index: number) => {
-    const newLiked = new Set(likedMessages);
-    let shouldToast = false;
-    if (newLiked.has(index)) {
-        newLiked.delete(index);
-    } else {
-        newLiked.add(index);
-        shouldToast = true;
-    }
-    setLikedMessages(newLiked);
-
-    if (shouldToast) {
-        toast({ title: 'Terima kasih atas masukan Anda!' });
-    }
+    setLikedMessages(prev => {
+        const newLiked = new Set(prev);
+        if (newLiked.has(index)) {
+            newLiked.delete(index);
+        } else {
+            newLiked.add(index);
+            toast({ title: 'Terima kasih atas masukan Anda!' });
+        }
+        return newLiked;
+    });
  };
   
   const handleRegenerate = (aiMessageIndex: number) => {
