@@ -85,35 +85,30 @@ export function ChatInterface() {
 
     setError(null);
     const userMessage: Message = { role: 'user', content: currentInput };
-    
-    // Use functional update to get the most recent state
-    setMessages((prevMessages) => {
-        const newMessages: Message[] = [...prevMessages, userMessage];
+    const newMessages = [...messages, userMessage];
 
-        startTransition(async () => {
-          try {
-            const assistantInput: AssistantInput = {
-              history: newMessages,
-              appContext: {
-                userName: user?.fullName || 'Pengguna',
-                userAvatar: user?.avatarUrl || user?.photoURL || undefined,
-                userRole: user?.role || 'Pengguna',
-              }
-            };
-
-            const result = await nexusAssistant(assistantInput);
-            const assistantMessage: Message = { role: 'model', content: result.response };
-            setMessages((prev) => [...prev, assistantMessage]);
-          } catch (err: any) {
-            console.error("AI Error:", err);
-            setError("Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.");
-          }
-        });
-
-        return newMessages;
-    });
-
+    setMessages(newMessages);
     setInput('');
+
+    startTransition(async () => {
+      try {
+        const assistantInput: AssistantInput = {
+          history: newMessages,
+          appContext: {
+            userName: user?.fullName || 'Pengguna',
+            userAvatar: user?.avatarUrl || user?.photoURL || undefined,
+            userRole: user?.role || 'Pengguna',
+          },
+        };
+
+        const result = await nexusAssistant(assistantInput);
+        const assistantMessage: Message = { role: 'model', content: result.response };
+        setMessages((prev) => [...prev, assistantMessage]);
+      } catch (err: any) {
+        console.error('AI Error:', err);
+        setError('Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.');
+      }
+    });
   };
 
   return (
