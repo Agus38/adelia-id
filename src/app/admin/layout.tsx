@@ -1,9 +1,9 @@
+
 'use client';
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/lib/user-store';
-import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function AdminDashboardSkeleton() {
@@ -35,18 +35,16 @@ export default function AdminLayout({
   const { user, loading } = useUserStore();
 
   React.useEffect(() => {
-    if (loading) {
-      return;
-    }
-
-    if (!user) {
-      router.push('/login');
-    } else if (user.role !== 'Admin') {
-      router.push('/unauthorized');
+    if (!loading) {
+        if (!user) {
+          router.push('/login?redirect=/admin');
+        } else if (user.role !== 'Admin') {
+          router.push('/unauthorized');
+        }
     }
   }, [user, loading, router]);
 
-  // While loading or if user is not an admin (before redirect finishes), show loading.
+  // While loading, or if user is not an admin (before redirect finishes), show a skeleton.
   if (loading || !user || user.role !== 'Admin') {
     return <AdminDashboardSkeleton />;
   }

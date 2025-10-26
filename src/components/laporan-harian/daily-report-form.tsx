@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -42,7 +41,6 @@ import { addOrUpdateReport, getReport } from '@/lib/report-store';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
 import type { User } from 'firebase/auth';
-import { usePageAccess } from '@/hooks/use-page-access';
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning';
 
 
@@ -57,8 +55,7 @@ type DeletionInfo = {
   id: number;
 } | null;
 
-export default function DailyReportPage() {
-  const { hasAccess, isLoading: isLoadingAccess } = usePageAccess('laporan-smw-merr');
+export default function DailyReportForm() {
   const [date, setDate] = React.useState<Date | undefined>(undefined);
   const [shift, setShift] = React.useState<'pagi' | 'sore'>('pagi');
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
@@ -440,16 +437,12 @@ ${pemasukanText}
     </div>
   );
   
-  if (isLoading || isLoadingAccess) {
+  if (isLoading) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
         </div>
     );
-  }
-
-  if (!hasAccess) {
-    return null; // The hook handles redirection
   }
 
   const showUpdateButton = isExistingReport && isDirty;
