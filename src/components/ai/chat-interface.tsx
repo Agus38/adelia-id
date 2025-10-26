@@ -1,7 +1,9 @@
+
 'use client';
 
 import { nexusAssistant } from '@/ai/flows/nexus-ai-assistant';
-import type { AssistantInput, MessageSchema } from '@/ai/flows/nexus-ai-flow';
+import type { AssistantInput } from '@/ai/flows/nexus-ai-flow';
+import { z } from 'zod';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +22,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { z } from 'zod';
+
+// Define Message schema locally for client-side state
+const MessageSchema = z.object({
+  role: z.enum(['user', 'model']),
+  content: z.string(),
+});
 
 type Message = z.infer<typeof MessageSchema>;
 
@@ -98,6 +105,7 @@ export function ChatInterface() {
         };
 
         const result = await nexusAssistant(assistantInput);
+        // Correctly access the 'response' property from the result object
         const modelMessage: Message = { role: 'model', content: result.response };
         setMessages(prev => [...prev, modelMessage]);
 
