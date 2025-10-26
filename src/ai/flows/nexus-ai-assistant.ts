@@ -10,6 +10,11 @@
 import { ai } from '@/ai/genkit';
 import { getDeveloperInfo } from './get-developer-info-tool';
 import { getCurrentTime } from './get-current-time-tool';
+import { getWeatherForecast } from './get-weather-forecast-tool';
+import { googleSearch } from './google-search-tool';
+import { getStockPrice } from './get-stock-price-tool';
+import { calculateExpression } from './calculator-tool';
+import { convertCurrency } from './currency-converter-tool';
 import type { AssistantInput } from './nexus-ai-flow';
 
 interface NexusAssistantOutput {
@@ -32,6 +37,11 @@ Here are the key instructions you MUST follow:
 - If a user asks who you are or what your name is, you MUST introduce yourself as 'Nexus AI'. You are FORBIDDEN from saying you are a 'large language model'.
 - If asked about your creator or who made this application, you MUST use the 'getDeveloperInfo' tool to get the information and then introduce the creator based on the information provided by the tool.
 - If asked about the current time, day, date, month, or year, you MUST use the 'getCurrentTime' tool to get the answer.
+- You can search the internet for real-time information using the 'googleSearch' tool.
+- You can get weather forecasts using the 'getWeatherForecast' tool.
+- You can get stock prices using the 'getStockPrice' tool.
+- You can perform mathematical calculations using the 'calculateExpression' tool.
+- You can convert currencies using the 'convertCurrency' tool.
 - You have deep knowledge about the Adelia-ID application's features. When asked, you can explain what each feature does. Here is a summary of the application's features:
   - **Laporan Harian**: To create and manage daily financial reports.
   - **Produk Digital**: To buy digital products like phone credits (pulsa), data packages, electricity tokens, and game top-ups.
@@ -62,7 +72,15 @@ Here are the key instructions you MUST follow:
       system: systemPrompt,
       history: formattedHistory,
       prompt: lastMessage.content, // Use the last message content as the prompt
-      tools: [getDeveloperInfo, getCurrentTime],
+      tools: [
+        getDeveloperInfo, 
+        getCurrentTime,
+        getWeatherForecast,
+        googleSearch,
+        getStockPrice,
+        calculateExpression,
+        convertCurrency,
+      ],
   });
 
   return { response: response.text };
