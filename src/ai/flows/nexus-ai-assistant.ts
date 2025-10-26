@@ -1,18 +1,39 @@
-
 'use server';
 
 /**
  * @fileOverview Titik masuk (entrypoint) sisi server untuk Nexus AI Assistant.
- * File ini diekspos ke komponen klien sebagai Server Action.
+ * File ini diekspos ke komponen klien sebagai Server Action dan bertanggung jawab
+ * untuk mengeksekusi prompt dan mengalirkan respons.
  */
 
-import type { AssistantInput } from './nexus-ai-flow';
-import { nexusAssistantFlow } from './nexus-ai-flow';
+import { nexusAssistantPrompt, type AssistantInput } from './nexus-ai-flow';
+import { streamToReadableStream } from 'ai';
 
-// This is the main exported function that client components will call.
-// It adheres to the 'use server' constraint and is now adapted for streaming.
 export async function nexusAssistant(input: AssistantInput): Promise<ReadableStream<string>> {
-  // The actual Genkit flow logic is in a separate file.
-  // The flow itself will now return a stream.
-  return nexusAssistantFlow(input);
+  
+  const fullSystemPrompt = {
+    role: 'system',
+    content: `You are currently interacting with a user named "${input.appContext.userName || 'Pengguna'}" who has the role of "${input.appContext.userRole || 'Pengguna'}".`
+  };
+
+  const { stream } = await nexusAssistantPrompt(
+    {
+        history: [fullSystemPrompt, ...input.history]
+    },
+    { streaming: true }
+  );
+
+  const encoder = new TextEncoder();
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      for await (const chunk of stream) {
+        if (chunk.content) {
+          controller.enqueue(encoder.encode(chunk.content[0].text));
+        }
+      }
+      controller.close();
+    },
+  });
+
+  return readableStream;
 }
