@@ -11,7 +11,6 @@ import { toast } from '@/hooks/use-toast';
 interface UserState {
   user: UserProfile | null;
   loading: boolean;
-  loginToastShown: boolean; // Flag to track if the login toast has been shown
   initializeUserListener: () => () => void;
   setUserProfile: (profile: UserProfile) => void;
   clearUser: () => void;
@@ -41,7 +40,6 @@ export const logActivity = async (action: string, target: string) => {
 export const useUserStore = create<UserState>((set, get) => ({
   user: null,
   loading: true,
-  loginToastShown: false,
   initializeUserListener: () => {
     let firestoreUnsubscribe: (() => void) | null = null;
     
@@ -82,12 +80,14 @@ export const useUserStore = create<UserState>((set, get) => ({
             set({ user: fullUserProfile, loading: false });
             
             // Show welcome toast only on initial login, not on every data refresh
-            if (!get().loginToastShown) {
+            // Use sessionStorage to persist across refreshes within the same tab session.
+            const loginToastShown = sessionStorage.getItem('loginToastShown');
+            if (!loginToastShown) {
                 toast({
                     title: `Selamat Datang Kembali, ${userData.fullName || 'Pengguna'}!`,
                     description: 'Anda berhasil masuk ke akun Anda.',
                 });
-                set({ loginToastShown: true });
+                sessionStorage.setItem('loginToastShown', 'true');
                 logActivity('login', 'Aplikasi');
             }
           } else {
@@ -110,7 +110,8 @@ export const useUserStore = create<UserState>((set, get) => ({
                 variant: "destructive",
             });
         }
-        set({ user: null, loading: false, loginToastShown: false }); // Reset toast flag on logout
+        sessionStorage.removeItem('loginToastShown'); // Clear the flag on logout.
+        set({ user: null, loading: false });
       }
     });
 
@@ -122,5 +123,8 @@ export const useUserStore = create<UserState>((set, get) => ({
   setUserProfile: (profile) => {
     set({ user: profile, loading: false });
   },
-  clearUser: () => set({ user: null, loading: false, loginToastShown: false }),
+  clearUser: () => {
+    sessionStorage.removeItem('loginToastShown');
+    set({ user: null, loading: false });
+  },
 }));
