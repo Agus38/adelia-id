@@ -25,7 +25,7 @@ service cloud.firestore {
       
       // Allow users to access their own AI chat history
       match /ai-assistant-chats/{chatId} {
-        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+        allow read, write, delete, create: if request.auth != null && request.auth.uid == userId;
       }
     }
     
@@ -162,3 +162,5 @@ export default function FirestoreRulesPage() {
     </div>
   );
 }
+
+    
