@@ -37,7 +37,7 @@ export const logActivity = async (action: string, target: string) => {
 };
 
 
-export const useUserStore = create<UserState>((set) => ({
+export const useUserStore = create<UserState>((set, get) => ({
   user: null,
   loading: true,
   initializeUserListener: () => {
@@ -48,6 +48,7 @@ export const useUserStore = create<UserState>((set) => ({
       if (firestoreUnsubscribe) firestoreUnsubscribe();
       
       firestoreUnsubscribe = null;
+      const wasUser = !!get().user;
 
       if (authUser) {
         const userDocRef = doc(db, 'users', authUser.uid);
@@ -77,8 +78,15 @@ export const useUserStore = create<UserState>((set) => ({
               ...userData,
             };
             set({ user: fullUserProfile, loading: false });
-            // Log user login after setting the user profile
-            logActivity('login', 'Aplikasi');
+            
+            // Show welcome toast only on initial login, not on every data refresh
+            if (!wasUser) {
+                toast({
+                    title: `Selamat Datang Kembali, ${userData.fullName || 'Pengguna'}!`,
+                    description: 'Anda berhasil masuk ke akun Anda.',
+                });
+                 logActivity('login', 'Aplikasi');
+            }
           } else {
             // This case should be rare now, but as a fallback, sign out.
             signOut(auth);
