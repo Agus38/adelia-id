@@ -43,31 +43,20 @@ Here are the key instructions you MUST follow:
 - Always be polite, professional, and concise, but with a friendly tone. Use the provided conversation history to maintain context.`;
 
   // The entire history, including the last message, is needed for context.
-  // We must map it to the format Genkit expects.
+  // We must map it to the format Genkit expects for the history property.
   const formattedHistory = input.history.map(h => ({
     role: h.role,
     content: [{ text: h.content }],
   }));
   
-  let response;
-
-  if (formattedHistory.length > 1) {
-    // If there is history, use it with the system prompt
-     response = await ai.generate({
-        model: 'googleai/gemini-2.0-flash',
-        system: systemPrompt,
-        history: formattedHistory,
-        tools: [getDeveloperInfo, getCurrentTime],
-    });
-  } else {
-    // If this is the first message, combine system prompt with user's prompt
-    const firstPrompt = `${systemPrompt}\n\n${input.history[0]?.content || ''}`;
-    response = await ai.generate({
-        model: 'googleai/gemini-2.0-flash',
-        prompt: firstPrompt,
-        tools: [getDeveloperInfo, getCurrentTime],
-    });
-  }
+  // Execute the generate call and wait for the full response.
+  // We pass the system prompt, the full formatted history, and the available tools.
+  const response = await ai.generate({
+      model: 'googleai/gemini-2.0-flash',
+      system: systemPrompt,
+      history: formattedHistory,
+      tools: [getDeveloperInfo, getCurrentTime],
+  });
 
   return { response: response.text };
 }
