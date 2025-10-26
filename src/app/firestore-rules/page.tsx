@@ -22,6 +22,11 @@ service cloud.firestore {
       allow list, read, update: if request.auth != null && (isDbAdmin(request.auth.uid) || request.auth.uid == userId);
       allow create: if request.auth != null && request.auth.uid == userId;
       allow delete: if request.auth != null && isDbAdmin(request.auth.uid);
+      
+      // Allow users to access their own AI chat history
+      match /ai-assistant-chats/{chatId} {
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+      }
     }
     
     match /userGroups/{groupId} {
@@ -119,7 +124,7 @@ export default function FirestoreRulesPage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>PERINGATAN KEAMANAN: Aturan Diperbarui!</AlertTitle>
           <AlertDescription>
-            Aturan keamanan telah diperbarui untuk memperbaiki error "permission denied" saat registrasi. Anda <strong>WAJIB</strong> menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan fungsionalitas registrasi berjalan lancar.
+            Aturan keamanan telah diperbarui untuk memperbaiki error "permission denied". Anda <strong>WAJIB</strong> menyalin aturan di bawah ini dan menempelkannya di Firebase Console pada tab <strong>Firestore Database {'>'} Rules</strong> untuk memastikan fitur berjalan lancar.
           </AlertDescription>
        </Alert>
        
