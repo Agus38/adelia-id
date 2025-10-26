@@ -67,9 +67,7 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.
 - Fitur Utama: ${appContext.features.join(', ')}
 - Developer: ${appContext.developerName}, yang merupakan ${appContext.developerTitle}.`;
   
-  // The user's latest message is the new prompt. The rest is history.
   const currentPrompt = history.length > 0 ? history[history.length - 1].content : "Sapa pengguna.";
-  // Send the full history for better context
   const conversationHistory = history.slice(0, -1); 
   
   try {
