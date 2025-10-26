@@ -1,4 +1,3 @@
-
 'use client';
 
 import { nexusAssistant } from '@/ai/flows/nexus-ai-assistant';
@@ -6,7 +5,7 @@ import type { AssistantInput } from '@/ai/flows/nexus-ai-flow';
 import { z } from 'zod';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea'; // Changed from Input
+import { Textarea } from '@/components/ui/textarea';
 import { useUserStore } from '@/lib/user-store';
 import { Bot, Send, User, Sparkles, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { useRef, useState, useEffect, useTransition } from 'react';
@@ -22,6 +21,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { toast } from '@/hooks/use-toast';
 
 // Define Message schema locally for client-side state
 const MessageSchema = z.object({
@@ -55,33 +57,55 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isPending, startTransition] = useTransition();
-  const formRef = useRef<HTMLFormElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useUserStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [promptSuggestions, setPromptSuggestions] = useState<string[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+
+  // Firestore document reference for chat history
+  const chatHistoryRef = user ? doc(db, `users/${user.uid}/ai-assistant-chats`, 'nexus') : null;
+
+  // Effect to load and listen for chat history from Firestore
+  useEffect(() => {
+    if (!chatHistoryRef) {
+      setIsHistoryLoading(false);
+      return;
+    }
+
+    setIsHistoryLoading(true);
+    const unsubscribe = onSnapshot(chatHistoryRef, (docSnap) => {
+      if (docSnap.exists() && docSnap.data().messages) {
+        setMessages(docSnap.data().messages);
+      } else {
+        setMessages([]);
+      }
+      setIsHistoryLoading(false);
+    }, (err) => {
+      console.error("Failed to load chat history:", err);
+      toast({ title: "Gagal memuat riwayat", variant: "destructive" });
+      setIsHistoryLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, chatHistoryRef]);
+  
+
+  // Effect to save chat history to Firestore whenever it changes
+  useEffect(() => {
+    if (chatHistoryRef && messages.length > 0) {
+      // Debounce saving to avoid too many writes
+      const timer = setTimeout(() => {
+          setDoc(chatHistoryRef, { messages }, { merge: true });
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [messages, chatHistoryRef]);
 
   useEffect(() => {
     setPromptSuggestions(getShuffledPrompts(allPromptSuggestions, 3));
-    try {
-        const savedMessages = sessionStorage.getItem('nexus-chat-history');
-        if (savedMessages) {
-            setMessages(JSON.parse(savedMessages));
-        }
-    } catch (error) {
-        console.error("Failed to parse chat history from sessionStorage", error);
-        sessionStorage.removeItem('nexus-chat-history');
-    }
   }, []);
-
-  useEffect(() => {
-      if (messages.length > 0) {
-          sessionStorage.setItem('nexus-chat-history', JSON.stringify(messages));
-      } else {
-          sessionStorage.removeItem('nexus-chat-history');
-      }
-  }, [messages]);
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -102,9 +126,16 @@ export function ChatInterface() {
       handleSubmit(new Event('submit') as any, prompt);
   };
 
-  const handleClearChat = () => {
-      setMessages([]);
-      sessionStorage.removeItem('nexus-chat-history');
+  const handleClearChat = async () => {
+    if (!chatHistoryRef) return;
+    try {
+        await deleteDoc(chatHistoryRef);
+        setMessages([]); // Optimistically update UI
+        toast({ title: "Riwayat percakapan dihapus."});
+    } catch (err) {
+        console.error("Failed to clear chat history:", err);
+        toast({ title: "Gagal menghapus riwayat", variant: "destructive" });
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLTextAreaElement>, suggestedPrompt?: string) => {
@@ -116,13 +147,14 @@ export function ChatInterface() {
     const userMessage: Message = { role: 'user', content: currentInput };
     
     // Optimistically update the UI
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInput('');
     
     startTransition(async () => {
       try {
         const assistantInput: AssistantInput = {
-          history: [...messages, userMessage],
+          history: newMessages,
           appContext: {
             userName: user?.fullName || 'Pengguna',
             userRole: user?.role || 'Pengguna',
@@ -189,7 +221,11 @@ export function ChatInterface() {
       </header>
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-        {messages.length === 0 && !isPending && (
+        {isHistoryLoading ? (
+             <div className="flex flex-1 items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        ) : messages.length === 0 && !isPending && (
              <div className="text-center text-muted-foreground space-y-8 animate-in fade-in duration-500 pt-8">
                 <div className="flex justify-center">
                     <div className="p-5 bg-primary/10 rounded-full w-fit shadow-inner">
@@ -262,7 +298,7 @@ export function ChatInterface() {
       </main>
 
       <footer className="border-t p-2 sm:p-4 flex-shrink-0">
-        <form ref={formRef} onSubmit={(e) => handleSubmit(e)} className="flex w-full items-start gap-2">
+        <form onSubmit={(e) => handleSubmit(e)} className="flex w-full items-start gap-2">
           <Textarea
             ref={textareaRef}
             value={input}
