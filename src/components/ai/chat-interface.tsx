@@ -1,7 +1,7 @@
 'use client';
 
 import { nexusAssistant } from '@/ai/flows/nexus-ai-assistant';
-import type { AssistantInput } from '@/ai/flows/nexus-ai-flow';
+import type { AssistantInput, MessageSchema } from '@/ai/flows/nexus-ai-flow';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import type { Message } from 'genkit';
+import { z } from 'zod';
+
+type Message = z.infer<typeof MessageSchema>;
 
 const promptSuggestions = [
     "Apa yang bisa kamu lakukan?",
@@ -79,7 +81,7 @@ export function ChatInterface() {
     if (!currentInput.trim() || isPending) return;
 
     setError(null);
-    const userMessage: Message = { role: 'user', content: [{ text: currentInput }] };
+    const userMessage: Message = { role: 'user', content: currentInput };
     const newMessages = [...messages, userMessage];
 
     setMessages(newMessages);
@@ -96,7 +98,7 @@ export function ChatInterface() {
         };
 
         const result = await nexusAssistant(assistantInput);
-        const modelMessage: Message = { role: 'model', content: [{ text: result.response }] };
+        const modelMessage: Message = { role: 'model', content: result.response };
         setMessages(prev => [...prev, modelMessage]);
 
       } catch (err: any) {
@@ -106,17 +108,6 @@ export function ChatInterface() {
       }
     });
   };
-
-  const getMessageContent = (msg: Message): string => {
-      if (typeof msg.content === 'string') {
-          return msg.content;
-      }
-      if (Array.isArray(msg.content) && msg.content[0]?.text) {
-          return msg.content[0].text;
-      }
-      return '';
-  }
-
 
   return (
     <div className="flex h-full flex-col bg-card rounded-lg">
@@ -197,7 +188,7 @@ export function ChatInterface() {
                 : 'bg-muted rounded-bl-none'
             }`}>
               <div className="prose prose-sm dark:prose-invert max-w-full leading-relaxed">
-                  <ReactMarkdown>{getMessageContent(msg)}</ReactMarkdown>
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
               </div>
             </div>
           </div>

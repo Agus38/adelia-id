@@ -44,7 +44,7 @@ Here are the key instructions you MUST follow:
   const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       system: systemPrompt,
-      history: input.history,
+      history: input.history.map(h => ({ role: h.role, content: [{ text: h.content }] })),
       tools: [getDeveloperInfo, getCurrentTime],
   });
 
