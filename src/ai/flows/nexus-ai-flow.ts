@@ -54,7 +54,7 @@ export const nexusAssistantFlow = ai.defineFlow(
 
     // Generate the response from the model
     const response = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
+      model: 'googleai/gemini-2.0-flash',
       system: systemPrompt,
       history: input.history.map(msg => ({ role: msg.role, content: [{ text: msg.content }] })),
       prompt: latestUserMessage?.content || "Hello.", // Use latest message or a default greeting
