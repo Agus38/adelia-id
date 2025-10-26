@@ -70,4 +70,3 @@ Here are the key instructions you MUST follow:
 
   return { response: response.text };
 }
-
