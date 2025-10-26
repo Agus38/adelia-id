@@ -46,19 +46,22 @@ Here are the key instructions you MUST follow:
   - **Diskon**: A tool to easily calculate discounts.
 - Always be polite, professional, and concise, but with a friendly tone. Use the provided conversation history to maintain context.`;
 
-  // The entire history, including the last message, is needed for context.
-  // We must map it to the format Genkit expects for the history property.
-  const formattedHistory = input.history.map(h => ({
+  // Separate the last message as the prompt and the rest as history.
+  const history = input.history;
+  const lastMessage = history[history.length - 1];
+  const historyForGenkit = history.slice(0, -1);
+  
+  const formattedHistory = historyForGenkit.map(h => ({
     role: h.role,
     content: [{ text: h.content }],
   }));
-  
-  // Execute the generate call and wait for the full response.
-  // We pass the system prompt, the full formatted history, and the available tools.
+
+  // Execute the generate call.
   const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       system: systemPrompt,
       history: formattedHistory,
+      prompt: lastMessage.content, // Use the last message content as the prompt
       tools: [getDeveloperInfo, getCurrentTime],
   });
 
