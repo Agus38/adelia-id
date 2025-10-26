@@ -2,6 +2,7 @@
 'use client';
 
 import { nexusAssistant } from '@/ai/flows/nexus-ai-assistant';
+import type { AssistantInput } from '@/ai/flows/nexus-ai-flow';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
 interface Message {
@@ -87,14 +89,16 @@ export function ChatInterface() {
 
     startTransition(async () => {
       try {
-        const result = await nexusAssistant({
+        const assistantInput: AssistantInput = {
           history: [...messages, userMessage],
           appContext: {
             userName: user?.fullName || 'Pengguna',
             userAvatar: user?.avatarUrl || user?.photoURL || undefined,
             userRole: user?.role || 'Pengguna',
           }
-        });
+        };
+
+        const result = await nexusAssistant(assistantInput);
         const assistantMessage: Message = { role: 'model', content: result.response };
         setMessages((prev) => [...prev, assistantMessage]);
       } catch (err: any) {
