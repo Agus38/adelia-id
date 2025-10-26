@@ -161,21 +161,21 @@ export function ChatInterface() {
     textareaRef.current?.focus();
   };
   
-  const handleLike = (index: number) => {
+ const handleLike = (index: number) => {
     const newLiked = new Set(likedMessages);
     let shouldToast = false;
     if (newLiked.has(index)) {
-      newLiked.delete(index);
+        newLiked.delete(index);
     } else {
-      newLiked.add(index);
-      shouldToast = true;
+        newLiked.add(index);
+        shouldToast = true;
     }
     setLikedMessages(newLiked);
 
     if (shouldToast) {
         toast({ title: 'Terima kasih atas masukan Anda!' });
     }
-  };
+ };
   
   const handleRegenerate = (aiMessageIndex: number) => {
     const historyUpToUserPrompt = messages.slice(0, aiMessageIndex);
@@ -242,7 +242,7 @@ export function ChatInterface() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLTextAreaElement>, suggestedPrompt?: string) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>, suggestedPrompt?: string) => {
     e.preventDefault();
     const currentInput = suggestedPrompt || input;
     if (!currentInput.trim() || isPending) return;
@@ -278,13 +278,6 @@ export function ChatInterface() {
         setMessages(messages);
       }
     });
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSubmit(e);
-    }
   };
 
 
@@ -445,12 +438,11 @@ export function ChatInterface() {
       </main>
 
       <footer className="border-t p-2 sm:p-4 flex-shrink-0">
-        <form onSubmit={(e) => handleSubmit(e)} className="flex w-full items-end gap-2">
+        <form onSubmit={handleSubmit} className="flex w-full items-end gap-2">
           <Textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
             placeholder="Ketik pesan Anda..."
             disabled={isPending}
             className="flex-1 resize-none max-h-40 transition-all duration-200"
