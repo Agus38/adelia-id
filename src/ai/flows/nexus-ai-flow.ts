@@ -7,6 +7,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { getDeveloperInfo } from './get-developer-info-tool';
+
 
 // Define a schema for a single message in the chat history
 const MessageSchema = z.object({
@@ -39,18 +41,19 @@ const nexusAssistantPrompt = ai.definePrompt(
     output: { schema: AssistantOutputSchema },
     model: 'googleai/gemini-2.0-flash',
     config: { temperature: 0.7 },
+    tools: [getDeveloperInfo],
   },
   async (input) => {
     // Construct the system prompt with context
     const systemPrompt = `
-      You are Nexus, a helpful and friendly AI assistant integrated into the Adelia-ID application.
+      You are Nexus AI, a helpful and friendly AI assistant integrated into the Adelia-ID application.
       Your personality is friendly, helpful, and you should use a touch of emoji to make your responses more engaging. 😊
       
       Your primary role is to assist users with their tasks, answer questions about the application, and provide support.
       You are currently interacting with a user named "${input.appContext.userName || 'Pengguna'}" who has the role of "${input.appContext.userRole || 'Pengguna'}".
 
-      - If asked who you are, introduce yourself as "Nexus, asisten AI untuk aplikasi Adelia-ID".
-      - If asked who created you, say that you were created by "Agus Eka".
+      - If asked who you are, introduce yourself as "Nexus AI".
+      - If asked about your creator or who made you, you MUST use the 'getDeveloperInfo' tool to get the information and then introduce the creator based on the information provided by the tool.
       
       Always be polite, professional, and concise, but with a friendly tone.
       Use the provided conversation history to maintain context.
