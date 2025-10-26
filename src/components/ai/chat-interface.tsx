@@ -4,7 +4,6 @@
 import { nexusAssistant } from '@/ai/flows/nexus-ai-assistant';
 import type { AssistantInput } from '@/ai/flows/nexus-ai-flow';
 import { z } from 'zod';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useUserStore } from '@/lib/user-store';
@@ -236,10 +235,7 @@ export function ChatInterface() {
       <header className="p-4 border-b flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
               <div className="relative">
-                 <Avatar>
-                    <AvatarFallback><Bot /></AvatarFallback>
-                </Avatar>
-                 <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
+                 {/* AI Avatar */}
               </div>
               <div>
                   <p className="font-semibold">Nexus AI Assistant</p>
@@ -299,9 +295,14 @@ export function ChatInterface() {
               <div
                 onClick={() => msg.role === 'user' && toggleMessageActions(index)}
                 className={`flex items-start max-w-[85%] sm:max-w-[75%] ${
-                  msg.role === 'user' ? 'ml-auto justify-end' : 'mr-auto justify-start'
+                  msg.role === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
+                {msg.role === 'model' && (
+                  <div className="rounded-full h-8 w-8 flex items-center justify-center bg-primary/20 text-primary mr-3 flex-shrink-0">
+                    <Bot className="w-5 h-5"/>
+                  </div>
+                )}
                 <div
                   className={`rounded-2xl p-3 text-sm ${
                     msg.role === 'user'
@@ -317,10 +318,10 @@ export function ChatInterface() {
               {activeMessageIndex === index && msg.role === 'user' && (
                 <div className="flex gap-1 mt-1.5 mr-1">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleCopy(msg.content)}>
-                        <Copy className="h-4 w-4 text-muted-foreground" />
+                        <Copy className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(msg.content, index)}>
-                        <Pencil className="h-4 w-4 text-muted-foreground" />
+                        <Pencil className="h-4 w-4" />
                     </Button>
                 </div>
               )}
@@ -329,6 +330,9 @@ export function ChatInterface() {
         
         {isPending && (
           <div className="flex items-start gap-3 animate-in fade-in duration-300">
+            <div className="rounded-full h-8 w-8 flex items-center justify-center bg-primary/20 text-primary mr-3 flex-shrink-0">
+                <Bot className="w-5 h-5"/>
+            </div>
             <div className="rounded-2xl p-3 bg-muted flex items-center gap-2 rounded-bl-none">
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               <p className="text-sm text-muted-foreground">Mengetik...</p>
