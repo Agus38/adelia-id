@@ -83,8 +83,14 @@ export const nexusAssistantFlow = ai.defineFlow(
     outputSchema: AssistantOutputSchema,
   },
   async (input) => {
+    // Separate the history from the rest of the input for the prompt
+    const { history, appContext } = input;
+    
     // Generate the response from the model, using the full history
-    const response = await nexusAssistantPrompt(input);
+    const response = await nexusAssistantPrompt({
+      history,
+      appContext,
+    });
 
     return response.output!;
   }
