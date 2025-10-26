@@ -76,9 +76,9 @@ export function ChatInterface() {
       setIsHistoryLoading(false);
       return;
     }
-
-    // Set loading state only on initial setup
-    setIsHistoryLoading(true);
+    
+    setIsHistoryLoading(true); // Set loading true on new user/mount
+    
     const unsubscribe = onSnapshot(chatHistoryRef, 
       (docSnap) => {
         if (docSnap.exists() && docSnap.data().messages) {
@@ -168,18 +168,17 @@ export function ChatInterface() {
     setError(null);
     const userMessage: Message = { role: 'user', content: currentInput };
     
-    // Optimistically update the UI
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    // Optimistically update the UI with the user's message
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
     setInput('');
     
-    // Save history with the new user message immediately
-    saveHistoryToFirestore(newMessages);
-    
     startTransition(async () => {
+        const currentHistory = [...messages, userMessage];
+        // Save history with the new user message immediately
+        saveHistoryToFirestore(currentHistory);
       try {
         const assistantInput: AssistantInput = {
-          history: newMessages,
+          history: currentHistory,
           appContext: {
             userName: user?.fullName || 'Pengguna',
             userRole: user?.role || 'Pengguna',
@@ -190,17 +189,14 @@ export function ChatInterface() {
         const modelMessage: Message = { role: 'model', content: result.response };
         
         // Update state and save again with model's response
-        const finalMessages = [...newMessages, modelMessage];
-        setMessages(finalMessages);
-        saveHistoryToFirestore(finalMessages);
+        setMessages((prevMessages) => [...prevMessages, modelMessage]);
+        saveHistoryToFirestore([...currentHistory, modelMessage]);
 
       } catch (err: any) {
         console.error('AI Error:', err);
         setError('Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.');
         // Revert optimistic update on error
-        setMessages(prev => prev.filter(msg => msg !== userMessage));
-        // Also revert in Firestore
-        saveHistoryToFirestore(messages);
+        setMessages(messages);
       }
     });
   };
@@ -282,10 +278,7 @@ export function ChatInterface() {
                {msg.role === 'model' ? (
                     <AvatarFallback className="bg-primary/20 text-primary"><Bot className="w-5 h-5"/></AvatarFallback>
                ) : (
-                <>
-                   <AvatarImage src={user?.avatarUrl || user?.photoURL || undefined} alt={user?.fullName || "User"} data-ai-hint="user avatar" />
-                   <AvatarFallback><User className="w-4 h-4"/></AvatarFallback>
-                </>
+                <AvatarFallback><User className="w-4 h-4"/></AvatarFallback>
                )}
             </Avatar>
             
@@ -347,5 +340,3 @@ export function ChatInterface() {
     </div>
   );
 }
-
-    
