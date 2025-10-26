@@ -48,7 +48,7 @@ export const useUserStore = create<UserState>((set, get) => ({
       if (firestoreUnsubscribe) firestoreUnsubscribe();
       
       firestoreUnsubscribe = null;
-      const wasUser = !!get().user;
+      const wasUser = !!get().user; // Check if there was a user before this state change
 
       if (authUser) {
         const userDocRef = doc(db, 'users', authUser.uid);
@@ -100,6 +100,12 @@ export const useUserStore = create<UserState>((set, get) => ({
 
       } else {
         // No authenticated user
+        if (wasUser) { // If there was a user before, it means they just logged out
+            toast({
+                title: `Anda Telah Keluar`,
+                description: 'Sesi Anda telah berhasil diakhiri.',
+            });
+        }
         set({ user: null, loading: false });
       }
     });
