@@ -85,7 +85,14 @@ Gunakan riwayat percakapan untuk memahami konteks pertanyaan terbaru pengguna.
     const toolRequest = llmResponse.toolRequest();
     
     if (toolRequest) {
-        const augmentedInput = { ...toolRequest.input, userName, userAvatar };
+        // The tool's declared inputSchema is { issueDescription: string }.
+        // We augment this with userName and userAvatar for the log.
+        const augmentedInput = { 
+            ...toolRequest.input, 
+            userName, 
+            userAvatar 
+        };
+        
         const toolResponse = await toolRequest.run(augmentedInput);
 
         const toolResponsePart: Part = {
