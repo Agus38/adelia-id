@@ -274,14 +274,11 @@ export function ChatInterface() {
 
         {messages.map((msg, index) => (
           <div key={index} className={`flex items-start gap-3 max-w-[85%] sm:max-w-[75%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
-            <Avatar className="w-8 h-8 flex-shrink-0">
-               {msg.role === 'model' ? (
-                    <AvatarFallback className="bg-primary/20 text-primary"><Bot className="w-5 h-5"/></AvatarFallback>
-               ) : (
-                <AvatarFallback><User className="w-4 h-4"/></AvatarFallback>
-               )}
-            </Avatar>
-            
+            {msg.role === 'model' && (
+              <Avatar className="w-8 h-8 flex-shrink-0">
+                <AvatarFallback className="bg-primary/20 text-primary"><Bot className="w-5 h-5"/></AvatarFallback>
+              </Avatar>
+            )}
             <div className={`rounded-2xl p-3 text-sm ${
               msg.role === 'user' 
                 ? 'bg-primary text-primary-foreground rounded-br-none' 
