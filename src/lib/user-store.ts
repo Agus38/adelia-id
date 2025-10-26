@@ -104,6 +104,7 @@ export const useUserStore = create<UserState>((set, get) => ({
             toast({
                 title: `Anda Telah Keluar`,
                 description: 'Sesi Anda telah berhasil diakhiri.',
+                variant: "destructive",
             });
         }
         set({ user: null, loading: false });
