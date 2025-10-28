@@ -478,18 +478,31 @@ export function ChatInterface() {
          <div ref={messagesEndRef} />
       </main>
 
-      <footer className="border-t p-2 sm:p-4 flex-shrink-0">
-        <form onSubmit={handleSubmit} className="flex w-full items-end gap-2">
+      <footer className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 sm:p-4 flex-shrink-0 shadow-sm">
+        <form onSubmit={handleSubmit} className="flex w-full items-end gap-2.5">
           <Textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ketik pesan Anda..."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (input.trim() && !isPending) {
+                  handleSubmit(e as any);
+                }
+              }
+            }}
+            placeholder="Ketik pesan Anda di sini... (Enter untuk kirim, Shift+Enter untuk baris baru)"
             disabled={isPending}
-            className="flex-1 resize-none max-h-40 transition-all duration-200"
+            className="flex-1 resize-none max-h-40 transition-all duration-200 rounded-xl border-2 focus:border-primary/50"
             rows={1}
           />
-          <Button type="submit" disabled={isPending || !input.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
+          <Button 
+            type="submit" 
+            disabled={isPending || !input.trim()} 
+            size="icon" 
+            className="h-11 w-11 flex-shrink-0 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-md transition-all duration-200 hover:shadow-lg disabled:opacity-50"
+          >
             {isPending ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5" />}
           </Button>
         </form>
