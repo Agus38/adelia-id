@@ -526,30 +526,45 @@ export function ChatInterface() {
               )}
             </div>
           ))}
-        
-        {isPending && (
-          <div className="flex items-start gap-3 animate-in fade-in duration-300 mb-4">
-            <div className="flex-shrink-0 mt-1">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg shadow-md">
-                <Bot className="h-4 w-4 text-white" />
+          
+          {/* Loading State */}
+          {isPending && (
+            <div className="flex items-start gap-3 animate-in fade-in duration-300">
+              <div className="flex-shrink-0 mt-1">
+                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg shadow-md">
+                  <Bot className="h-4 w-4 text-white" />
+                </div>
+              </div>
+              <div className="rounded-2xl p-4 bg-card border-2 border-border/50 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary"/>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-foreground">Nexus sedang berpikir...</p>
+                    <div className="flex gap-1">
+                      <div className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="h-2 w-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="rounded-2xl p-4 bg-card border flex items-center gap-2.5 rounded-bl-md shadow-md">
-              <Loader2 className="h-4 w-4 animate-spin text-primary"/>
-              <p className="text-sm text-muted-foreground">Nexus sedang berpikir...</p>
-            </div>
-          </div>
-        )}
-        
-        {error && (
-             <div className="flex items-start gap-3 mb-4">
-                <div className="rounded-2xl p-4 bg-destructive/10 border border-destructive/20 text-sm text-destructive flex items-center gap-2.5 rounded-bl-md shadow-md">
-                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                    <p>{error}</p>
+          )}
+          
+          {/* Error State */}
+          {error && (
+            <div className="flex items-start gap-3 animate-in fade-in duration-300">
+              <div className="rounded-2xl p-4 bg-destructive/10 border-2 border-destructive/30 text-destructive shadow-lg max-w-xl">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                  <p className="text-sm">{error}</p>
                 </div>
+              </div>
             </div>
-        )}
-         <div ref={messagesEndRef} />
+          )}
+          
+          <div ref={messagesEndRef} />
+        </div>
       </main>
 
       <footer className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 sm:p-4 flex-shrink-0 shadow-sm">
