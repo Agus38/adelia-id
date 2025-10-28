@@ -347,40 +347,60 @@ export function ChatInterface() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-        {isHistoryLoading ? (
-             <div className="flex flex-1 items-center justify-center h-full">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      {/* Messages Container */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+          {isHistoryLoading ? (
+            <div className="flex flex-1 items-center justify-center h-full min-h-[400px]">
+              <div className="text-center space-y-4">
+                <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+                <p className="text-sm text-muted-foreground">Memuat percakapan...</p>
+              </div>
             </div>
-        ) : messages.length === 0 && !isPending && !error && (
-             <div className="text-center text-muted-foreground space-y-8 animate-in fade-in duration-700 pt-12">
+          ) : messages.length === 0 && !isPending && !error && (
+            <div className="flex items-center justify-center min-h-[500px]">
+              <div className="text-center space-y-8 animate-in fade-in zoom-in duration-700 max-w-2xl">
+                {/* Hero Icon */}
                 <div className="flex justify-center">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
-                      <div className="relative p-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full w-fit shadow-2xl">
-                          <Sparkles className="h-14 w-14 text-white" />
-                      </div>
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full blur-2xl opacity-40 animate-pulse"></div>
+                    <div className="relative p-8 bg-gradient-to-br from-blue-500 via-purple-600 to-pink-600 rounded-full shadow-2xl">
+                      <Sparkles className="h-16 w-16 text-white animate-pulse" />
                     </div>
+                  </div>
                 </div>
-                <div className="space-y-3">
-                    <p className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Halo, {user?.fullName || 'Sobat'}! 👋</p>
-                    <p className="text-sm text-muted-foreground max-w-md mx-auto">Saya Nexus AI, asisten pintar Anda. Saya siap membantu menjawab pertanyaan dan membantu Anda menggunakan aplikasi ini dengan lebih baik!</p>
+                
+                {/* Welcome Text */}
+                <div className="space-y-4">
+                  <h2 className="font-black text-3xl sm:text-4xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    Halo, {user?.fullName || 'Sobat'}! 👋
+                  </h2>
+                  <p className="text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
+                    Saya <span className="font-semibold text-foreground">Nexus AI</span>, asisten pintar Anda. 
+                    Saya dapat mengingat seluruh percakapan kita dan siap membantu menjawab pertanyaan Anda tentang aplikasi ini! ✨
+                  </p>
                 </div>
-                 <div className="flex flex-wrap justify-center gap-2.5 px-4 max-w-2xl mx-auto">
+                
+                {/* Prompt Suggestions */}
+                <div className="space-y-4">
+                  <p className="text-sm font-medium text-muted-foreground">Coba tanyakan:</p>
+                  <div className="flex flex-wrap justify-center gap-2.5 px-4">
                     {promptSuggestions.map((prompt, index) => (
-                        <Button 
-                          key={index} 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handlePromptSuggestionClick(prompt)}
-                          className="hover:bg-primary/10 hover:text-primary hover:border-primary transition-all duration-200 hover:shadow-md"
-                        >
-                            {prompt}
-                        </Button>
+                      <Button 
+                        key={index} 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handlePromptSuggestionClick(prompt)}
+                        className="hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white hover:border-transparent transition-all duration-300 hover:shadow-lg hover:scale-105"
+                      >
+                        {prompt}
+                      </Button>
                     ))}
+                  </div>
                 </div>
+              </div>
             </div>
-        )}
+          )}
 
         {messages.map((msg, index) => (
           <div
