@@ -567,34 +567,46 @@ export function ChatInterface() {
         </div>
       </main>
 
-      <footer className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 sm:p-4 flex-shrink-0 shadow-sm">
-        <form onSubmit={handleSubmit} className="flex w-full items-end gap-2.5">
-          <Textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (input.trim() && !isPending) {
-                  handleSubmit(e as any);
+      {/* Modern Footer */}
+      <footer className="sticky bottom-0 border-t bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 shadow-2xl">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
+          <form onSubmit={handleSubmit} className="flex w-full items-end gap-3">
+            <Textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (input.trim() && !isPending) {
+                    handleSubmit(e as any);
+                  }
                 }
-              }
-            }}
-            placeholder="Ketik pesan Anda di sini... (Enter untuk kirim, Shift+Enter untuk baris baru)"
-            disabled={isPending}
-            className="flex-1 resize-none max-h-40 transition-all duration-200 rounded-xl border-2 focus:border-primary/50"
-            rows={1}
-          />
-          <Button 
-            type="submit" 
-            disabled={isPending || !input.trim()} 
-            size="icon" 
-            className="h-11 w-11 flex-shrink-0 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-md transition-all duration-200 hover:shadow-lg disabled:opacity-50"
-          >
-            {isPending ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5" />}
-          </Button>
-        </form>
+              }}
+              placeholder="Ketik pesan Anda... (Enter untuk kirim, Shift+Enter untuk baris baru)"
+              disabled={isPending}
+              className="flex-1 resize-none max-h-32 transition-all duration-200 rounded-2xl border-2 focus:border-primary/50 text-base px-4 py-3"
+              rows={1}
+            />
+            <Button 
+              type="submit" 
+              disabled={isPending || !input.trim()} 
+              size="lg"
+              className="h-12 w-12 flex-shrink-0 rounded-xl bg-gradient-to-br from-blue-500 via-purple-600 to-pink-600 hover:from-blue-600 hover:via-purple-700 hover:to-pink-700 shadow-lg transition-all duration-200 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isPending ? (
+                <Loader2 className="h-5 w-5 animate-spin"/>
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+            </Button>
+          </form>
+          {messages.length > 0 && (
+            <p className="text-xs text-center text-muted-foreground mt-3">
+              Nexus AI mengingat {messages.length} pesan dalam percakapan ini
+            </p>
+          )}
+        </div>
       </footer>
     </div>
   );
