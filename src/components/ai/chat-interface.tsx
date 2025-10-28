@@ -289,41 +289,62 @@ export function ChatInterface() {
 
 
   return (
-    <div className="flex h-full flex-col bg-gradient-to-b from-background to-muted/20 rounded-lg">
-      <header className="p-4 sm:p-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between flex-shrink-0 shadow-sm">
+    <div className="flex h-full flex-col bg-background relative">
+      {/* Modern Header */}
+      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4">
           <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl blur opacity-50 animate-pulse"></div>
+              <div className="relative p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
                 <Bot className="h-6 w-6 text-white" />
               </div>
-              <div>
-                  <p className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Nexus AI Assistant</p>
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <p className="text-xs text-muted-foreground font-medium">Online & Siap Membantu</p>
-                  </div>
+            </div>
+            <div>
+              <h1 className="font-bold text-lg sm:text-xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Nexus AI Assistant
+              </h1>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
+                <p className="text-xs text-muted-foreground font-medium">Siap Membantu Anda</p>
               </div>
+            </div>
           </div>
           {messages.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline text-xs text-muted-foreground">
+                {messages.length} pesan
+              </span>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive transition-colors" disabled={isPending}>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-9 gap-2 hover:bg-destructive/10 hover:text-destructive transition-all" 
+                    disabled={isPending}
+                  >
                     <Trash2 className="h-4 w-4"/>
+                    <span className="hidden sm:inline">Hapus Chat</span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Hapus Riwayat Percakapan?</AlertDialogTitle>
+                    <AlertDialogTitle>Hapus Semua Percakapan?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Tindakan ini tidak dapat dibatalkan. Seluruh percakapan Anda dengan asisten AI akan dihapus.
+                      Tindakan ini tidak dapat dibatalkan. Seluruh riwayat percakapan Anda dengan Nexus AI akan dihapus dan AI akan melupakan percakapan sebelumnya.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleClearChat}>Ya, Hapus</AlertDialogAction>
+                    <AlertDialogAction onClick={handleClearChat} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Ya, Hapus Semua
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+            </div>
           )}
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
