@@ -255,20 +255,27 @@ export function ChatInterface() {
     
     startTransition(async () => {
       try {
+        // Pass the ENTIRE conversation history including the new user message
         const assistantInput: AssistantInput = {
-          history: updatedMessages,
+          history: updatedMessages, // This includes ALL previous messages + new user message
           appContext: {
             userName: user?.fullName || 'Pengguna',
             userRole: user?.role || 'Pengguna',
           },
         };
 
+        console.log('📤 Sending to AI - Total messages in history:', updatedMessages.length);
+        console.log('📤 Last 5 messages:', updatedMessages.slice(-5).map(m => ({ role: m.role, preview: m.content.substring(0, 50) })));
+
         const result = await nexusAssistant(assistantInput);
         const modelMessage: Message = { role: 'model', content: result.response };
         
+        // Save the complete conversation including the AI's response
         const finalMessages = [...updatedMessages, modelMessage];
         setMessages(finalMessages);
         saveHistoryToFirestore(finalMessages);
+
+        console.log('✅ AI Response received. Total messages now:', finalMessages.length);
 
       } catch (err: any) {
         console.error('AI Error:', err);
