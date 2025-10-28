@@ -69,10 +69,19 @@ Here are the key instructions you MUST follow:
   const lastMessage = history[history.length - 1];
   const historyForGenkit = history.slice(0, -1);
   
+  // Format history for Genkit with proper structure
+  // Ensure all messages in history include both user and model messages
   const formattedHistory = historyForGenkit.map(h => ({
     role: h.role,
     content: [{ text: h.content }],
   }));
+
+  console.log('=== NEXUS AI DEBUG ===');
+  console.log('Total messages in history:', history.length);
+  console.log('Messages sent to Genkit as history:', formattedHistory.length);
+  console.log('Current user prompt:', lastMessage.content);
+  console.log('Last 3 messages in formatted history:', formattedHistory.slice(-3));
+  console.log('======================');
 
   // Execute the generate call.
   const response = await ai.generate({
@@ -80,6 +89,11 @@ Here are the key instructions you MUST follow:
       system: systemPrompt,
       history: formattedHistory,
       prompt: lastMessage.content, // Use the last message content as the prompt
+      config: {
+        temperature: 0.7, // Add some creativity while maintaining consistency
+        topK: 40,
+        topP: 0.95,
+      },
       tools: [
         getDeveloperInfo, 
         getCurrentTime,
