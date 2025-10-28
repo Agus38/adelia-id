@@ -402,107 +402,130 @@ export function ChatInterface() {
             </div>
           )}
 
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`flex items-start gap-3 mb-4 ${
-              msg.role === 'model' ? 'mr-auto' : 'ml-auto flex-row-reverse'
-            }`}
-          >
-            {msg.role === 'model' && (
-              <div className="flex-shrink-0 mt-1">
-                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg shadow-md">
-                  <Bot className="h-4 w-4 text-white" />
-                </div>
-              </div>
-            )}
-            {msg.role === 'user' && (
-              <div className="flex-shrink-0 mt-1">
-                <div className="p-2 bg-primary rounded-lg shadow-md">
-                  <User className="h-4 w-4 text-primary-foreground" />
-                </div>
-              </div>
-            )}
+          {/* Messages */}
+          {messages.map((msg, index) => (
             <div
-              onClick={() => toggleMessageActions(index)}
-              className="max-w-[75%] sm:max-w-[65%] cursor-pointer group"
+              key={index}
+              className={`flex items-start gap-3 group ${
+                msg.role === 'model' ? 'justify-start' : 'justify-end'
+              }`}
             >
-              <div
-                className={`rounded-2xl p-4 text-sm shadow-md transition-all duration-200 hover:shadow-lg ${
-                  msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground rounded-br-md'
-                    : 'bg-card border rounded-bl-md'
-                }`}
-              >
-                <div className={`prose prose-sm max-w-full leading-relaxed ${msg.role === 'user' ? 'prose-invert' : 'dark:prose-invert'}`}>
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+              {msg.role === 'model' && (
+                <div className="flex-shrink-0 mt-1">
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg shadow-md">
+                    <Bot className="h-4 w-4 text-white" />
+                  </div>
                 </div>
-              </div>
-              {activeMessageIndex === index && (
-                <div className={`mt-2 flex gap-1.5 animate-in fade-in duration-200 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {msg.role === 'user' && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-muted"
-                        onClick={() => handleCopy(msg.content)}
-                        title="Salin pesan"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-muted"
-                        onClick={() => handleEdit(msg.content, index)}
-                        title="Edit pesan"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                    </>
-                  )}
-                  {msg.role === 'model' && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-muted"
-                        onClick={() => handleCopy(msg.content)}
-                        title="Salin pesan"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-blue-50"
-                        onClick={() => handleLike(index)}
-                        title="Suka"
-                      >
-                        <ThumbsUp
+              )}
+              
+              <div
+                onClick={() => toggleMessageActions(index)}
+                className="max-w-[85%] sm:max-w-[75%] cursor-pointer"
+              >
+                <div
+                  className={`rounded-2xl p-4 text-sm shadow-lg transition-all duration-200 hover:shadow-xl ${
+                    msg.role === 'user'
+                      ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
+                      : 'bg-card border-2 border-border/50'
+                  }`}
+                >
+                  <div className={`prose prose-sm max-w-none leading-relaxed ${msg.role === 'user' ? 'prose-invert' : 'dark:prose-invert'}`}>
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                {activeMessageIndex === index && (
+                  <div className={`mt-2 flex gap-1 animate-in fade-in slide-in-from-top-2 duration-200 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {msg.role === 'user' && (
+                      <>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="h-8 gap-1.5 text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopy(msg.content);
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                          Salin
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="h-8 gap-1.5 text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(msg.content, index);
+                          }}
+                        >
+                          <Pencil className="h-3 w-3" />
+                          Edit
+                        </Button>
+                      </>
+                    )}
+                    {msg.role === 'model' && (
+                      <>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="h-8 gap-1.5 text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopy(msg.content);
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                          Salin
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           className={cn(
-                            'h-3.5 w-3.5',
-                            likedMessages.has(index) && 'fill-blue-500 text-blue-500'
+                            "h-8 gap-1.5 text-xs",
+                            likedMessages.has(index) && "bg-blue-100 dark:bg-blue-900/30"
                           )}
-                        />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-muted"
-                        onClick={() => handleRegenerate(index)}
-                        title="Generate ulang"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" />
-                      </Button>
-                    </>
-                  )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLike(index);
+                          }}
+                        >
+                          <ThumbsUp
+                            className={cn(
+                              'h-3 w-3',
+                              likedMessages.has(index) && 'fill-blue-500 text-blue-500'
+                            )}
+                          />
+                          {likedMessages.has(index) ? 'Disukai' : 'Suka'}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="h-8 gap-1.5 text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRegenerate(index);
+                          }}
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                          Ulang
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {msg.role === 'user' && (
+                <div className="flex-shrink-0 mt-1">
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg shadow-md">
+                    <User className="h-4 w-4 text-white" />
+                  </div>
                 </div>
               )}
             </div>
-          </div>
-        ))}
+          ))}
         
         {isPending && (
           <div className="flex items-start gap-3 animate-in fade-in duration-300 mb-4">
