@@ -279,18 +279,24 @@ export function ChatInterface() {
 
 
   return (
-    <div className="flex h-full flex-col bg-card rounded-lg">
-      <header className="p-4 border-b flex items-center justify-between flex-shrink-0">
+    <div className="flex h-full flex-col bg-gradient-to-b from-background to-muted/20 rounded-lg">
+      <header className="p-4 sm:p-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
+                <Bot className="h-6 w-6 text-white" />
+              </div>
               <div>
-                  <p className="font-semibold">Nexus AI Assistant</p>
-                  <p className="text-xs text-muted-foreground">Online</p>
+                  <p className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Nexus AI Assistant</p>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <p className="text-xs text-muted-foreground font-medium">Online & Siap Membantu</p>
+                  </div>
               </div>
           </div>
           {messages.length > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isPending}>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive transition-colors" disabled={isPending}>
                     <Trash2 className="h-4 w-4"/>
                   </Button>
                 </AlertDialogTrigger>
