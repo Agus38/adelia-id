@@ -454,10 +454,15 @@ export function ChatInterface() {
         ))}
         
         {isPending && (
-          <div className="flex items-start gap-3 animate-in fade-in duration-300">
-            <div className="rounded-2xl p-3 bg-muted flex items-center gap-2 rounded-bl-none">
-              <Loader2 className="h-4 w-4 animate-spin"/>
-              <p className="text-sm text-muted-foreground">Mengetik...</p>
+          <div className="flex items-start gap-3 animate-in fade-in duration-300 mb-4">
+            <div className="flex-shrink-0 mt-1">
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg shadow-md">
+                <Bot className="h-4 w-4 text-white" />
+              </div>
+            </div>
+            <div className="rounded-2xl p-4 bg-card border flex items-center gap-2.5 rounded-bl-md shadow-md">
+              <Loader2 className="h-4 w-4 animate-spin text-primary"/>
+              <p className="text-sm text-muted-foreground">Nexus sedang berpikir...</p>
             </div>
           </div>
         )}
