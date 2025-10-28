@@ -468,9 +468,9 @@ export function ChatInterface() {
         )}
         
         {error && (
-             <div className="flex items-start gap-3">
-                <div className="rounded-2xl p-3 bg-destructive/10 text-sm text-destructive flex items-center gap-2 rounded-bl-none">
-                    <AlertCircle className="h-4 w-4" />
+             <div className="flex items-start gap-3 mb-4">
+                <div className="rounded-2xl p-4 bg-destructive/10 border border-destructive/20 text-sm text-destructive flex items-center gap-2.5 rounded-bl-md shadow-md">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
                     <p>{error}</p>
                 </div>
             </div>
