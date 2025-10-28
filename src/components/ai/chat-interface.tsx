@@ -316,24 +316,34 @@ export function ChatInterface() {
           )}
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
         {isHistoryLoading ? (
              <div className="flex flex-1 items-center justify-center h-full">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         ) : messages.length === 0 && !isPending && !error && (
-             <div className="text-center text-muted-foreground space-y-8 animate-in fade-in duration-500 pt-8">
+             <div className="text-center text-muted-foreground space-y-8 animate-in fade-in duration-700 pt-12">
                 <div className="flex justify-center">
-                    <div className="p-5 bg-primary/10 rounded-full w-fit shadow-inner">
-                        <Sparkles className="h-12 w-12 text-primary" />
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full blur-xl opacity-30 animate-pulse"></div>
+                      <div className="relative p-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full w-fit shadow-2xl">
+                          <Sparkles className="h-14 w-14 text-white" />
+                      </div>
                     </div>
                 </div>
-                <div>
-                    <p className="font-semibold text-xl text-foreground">Halo, {user?.fullName || 'Sobat'}!</p>
+                <div className="space-y-3">
+                    <p className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Halo, {user?.fullName || 'Sobat'}! 👋</p>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">Saya Nexus AI, asisten pintar Anda. Saya siap membantu menjawab pertanyaan dan membantu Anda menggunakan aplikasi ini dengan lebih baik!</p>
                 </div>
-                 <div className="flex flex-wrap justify-center gap-2 px-4">
+                 <div className="flex flex-wrap justify-center gap-2.5 px-4 max-w-2xl mx-auto">
                     {promptSuggestions.map((prompt, index) => (
-                        <Button key={index} variant="outline" size="sm" onClick={() => handlePromptSuggestionClick(prompt)}>
+                        <Button 
+                          key={index} 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handlePromptSuggestionClick(prompt)}
+                          className="hover:bg-primary/10 hover:text-primary hover:border-primary transition-all duration-200 hover:shadow-md"
+                        >
                             {prompt}
                         </Button>
                     ))}
