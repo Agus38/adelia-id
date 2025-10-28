@@ -68,6 +68,7 @@ export function ChatInterface() {
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [activeMessageIndex, setActiveMessageIndex] = useState<number | null>(null);
   const [likedMessages, setLikedMessages] = useState<Set<number>>(new Set());
+  const [conversationId] = useState(() => `conv_${Date.now()}`); // Unique conversation ID
 
   // Firestore document reference for chat history
   const chatHistoryRef = user ? doc(db, `users/${user.uid}/ai-assistant-chats`, 'nexus') : null;
