@@ -354,79 +354,102 @@ export function ChatInterface() {
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`flex items-start gap-3 max-w-[85%] sm:max-w-[75%] ${
+            className={`flex items-start gap-3 mb-4 ${
               msg.role === 'model' ? 'mr-auto' : 'ml-auto flex-row-reverse'
             }`}
           >
+            {msg.role === 'model' && (
+              <div className="flex-shrink-0 mt-1">
+                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg shadow-md">
+                  <Bot className="h-4 w-4 text-white" />
+                </div>
+              </div>
+            )}
+            {msg.role === 'user' && (
+              <div className="flex-shrink-0 mt-1">
+                <div className="p-2 bg-primary rounded-lg shadow-md">
+                  <User className="h-4 w-4 text-primary-foreground" />
+                </div>
+              </div>
+            )}
             <div
               onClick={() => toggleMessageActions(index)}
-              className="max-w-full cursor-pointer"
+              className="max-w-[75%] sm:max-w-[65%] cursor-pointer group"
             >
               <div
-                className={`rounded-2xl p-3 text-sm ${
+                className={`rounded-2xl p-4 text-sm shadow-md transition-all duration-200 hover:shadow-lg ${
                   msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground rounded-br-none'
-                    : 'bg-muted rounded-bl-none'
+                    ? 'bg-primary text-primary-foreground rounded-br-md'
+                    : 'bg-card border rounded-bl-md'
                 }`}
               >
-                <div className="prose prose-sm dark:prose-invert max-w-full leading-relaxed">
+                <div className={`prose prose-sm max-w-full leading-relaxed ${msg.role === 'user' ? 'prose-invert' : 'dark:prose-invert'}`}>
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               </div>
+              {activeMessageIndex === index && (
+                <div className={`mt-2 flex gap-1.5 animate-in fade-in duration-200 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  {msg.role === 'user' && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-muted"
+                        onClick={() => handleCopy(msg.content)}
+                        title="Salin pesan"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-muted"
+                        onClick={() => handleEdit(msg.content, index)}
+                        title="Edit pesan"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
+                  {msg.role === 'model' && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-muted"
+                        onClick={() => handleCopy(msg.content)}
+                        title="Salin pesan"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-blue-50"
+                        onClick={() => handleLike(index)}
+                        title="Suka"
+                      >
+                        <ThumbsUp
+                          className={cn(
+                            'h-3.5 w-3.5',
+                            likedMessages.has(index) && 'fill-blue-500 text-blue-500'
+                          )}
+                        />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-muted"
+                        onClick={() => handleRegenerate(index)}
+                        title="Generate ulang"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
-            {activeMessageIndex === index && msg.role === 'user' && (
-              <div className="mt-1.5 flex gap-1 self-end">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => handleCopy(msg.content)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => handleEdit(msg.content, index)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-            {activeMessageIndex === index && msg.role === 'model' && (
-              <div className="mt-1.5 flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => handleCopy(msg.content)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => handleLike(index)}
-                >
-                  <ThumbsUp
-                    className={cn(
-                      'h-4 w-4',
-                      likedMessages.has(index) && 'fill-blue-500 text-blue-500'
-                    )}
-                  />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => handleRegenerate(index)}
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
           </div>
         ))}
         
