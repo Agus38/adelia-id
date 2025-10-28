@@ -227,8 +227,10 @@ export function ChatInterface() {
     if (!chatHistoryRef) return;
     try {
         await deleteDoc(chatHistoryRef);
-        setMessages([]); // Optimistically update UI
-        toast({ title: "Riwayat percakapan dihapus."});
+        setMessages([]); // Clear all messages - AI will forget previous conversation
+        setLikedMessages(new Set()); // Clear liked messages too
+        console.log('🗑️ Conversation cleared - AI memory reset');
+        toast({ title: "Riwayat percakapan dihapus. AI akan memulai percakapan baru."});
     } catch (serverError) {
         const permissionError = new FirestorePermissionError({
           path: chatHistoryRef.path,
