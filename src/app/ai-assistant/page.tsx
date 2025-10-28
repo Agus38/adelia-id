@@ -23,10 +23,8 @@ export default function AiAssistantPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col h-full p-4 pt-6 md:p-8">
-        <div className="h-full rounded-lg border bg-card shadow-sm">
-            <ChatInterface />
-        </div>
+    <div className="flex flex-1 flex-col h-full">
+        <ChatInterface />
     </div>
   );
 }
