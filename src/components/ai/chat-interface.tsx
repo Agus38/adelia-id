@@ -1,0 +1,460 @@
+
+'use client';
+
+import { nexusAssistant } from '@/ai/flows/nexus-ai-assistant';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useUserStore } from '@/lib/user-store';
+import { Bot, Send, User, Sparkles, Trash2, Loader2, AlertCircle, Copy, Pencil, ThumbsUp, RefreshCw } from 'lucide-react';
+import { useRef, useState, useEffect, useTransition } from 'react';
+import ReactMarkdown from 'react-markdown';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { toast } from '@/hooks/use-toast';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { cn } from '@/lib/utils';
+
+// This is the simple format we'll use for our local state.
+interface LocalMessage {
+  role: 'user' | 'model';
+  content: string;
+}
+
+
+const allPromptSuggestions = [
+    "Apa yang bisa kamu lakukan?",
+    "Jelaskan tentang fitur BudgetFlow",
+    "Siapa yang membuat aplikasi ini?",
+    "Jam berapa sekarang?",
+    "Fitur apa saja yang ada di aplikasi ini?",
+    "Bantu saya membuat laporan harian",
+    "Bagaimana cara kerja fitur Stok Produk?",
+    "Apa fungsi dari halaman Cek Usia?",
+    "Ceritakan lelucon tentang teknologi",
+    "Beri saya kutipan motivasi",
+];
+
+// Helper function to shuffle an array and pick the first N items
+const getShuffledPrompts = (arr: string[], num: number) => {
+    const shuffled = [...arr].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, num);
+};
+
+
+export function ChatInterface() {
+  const [messages, setMessages] = useState<LocalMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [isPending, startTransition] = useTransition();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { user } = useUserStore();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [promptSuggestions, setPromptSuggestions] = useState<string[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [activeMessageIndex, setActiveMessageIndex] = useState<number | null>(null);
+  const [likedMessages, setLikedMessages] = useState<Set<number>>(new Set());
+
+  // Firestore document reference for chat history
+  const chatHistoryRef = user ? doc(db, `users/${user.uid}/ai-assistant-chats`, 'nexus') : null;
+
+  // Effect to load and listen for chat history from Firestore
+  useEffect(() => {
+    if (!chatHistoryRef) {
+      setIsHistoryLoading(false);
+      return;
+    }
+    
+    setIsHistoryLoading(true); // Set loading true on new user/mount
+    
+    const unsubscribe = onSnapshot(chatHistoryRef, 
+      (docSnap) => {
+        if (docSnap.exists() && docSnap.data().messages) {
+          // The data in Firestore is in Genkit's format. Convert it back to local format.
+          const firestoreMessages = docSnap.data().messages;
+          const localMessages = firestoreMessages.map((msg: any) => ({
+            role: msg.role,
+            content: msg.content[0]?.text || ''
+          })).filter((msg: LocalMessage) => msg.content);
+          setMessages(localMessages);
+        } else {
+          setMessages([]);
+        }
+        setIsHistoryLoading(false);
+      }, 
+      (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: chatHistoryRef.path,
+          operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error("Original onSnapshot error:", serverError);
+        setError("Gagal memuat riwayat obrolan karena masalah izin.");
+        setIsHistoryLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]); // Rerun only when user changes
+  
+  // This effect handles scrolling to the bottom of the chat
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isPending]);
+
+  // This effect sets the initial prompt suggestions
+  useEffect(() => {
+    setPromptSuggestions(getShuffledPrompts(allPromptSuggestions, 3));
+  }, []);
+
+   // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+        const scrollHeight = textareaRef.current.scrollHeight;
+        textareaRef.current.style.height = `${scrollHeight}px`;
+    }
+  }, [input]);
+  
+  const saveHistoryToFirestore = (updatedMessages: LocalMessage[]) => {
+    if (!chatHistoryRef) return;
+    
+    // Convert local message format to Genkit's expected format before saving
+    const messagesToStore = updatedMessages.map(msg => ({
+        role: msg.role,
+        content: [{ text: msg.content }]
+    }));
+
+    setDoc(chatHistoryRef, { messages: messagesToStore }, { merge: true }).catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: chatHistoryRef.path,
+            operation: 'write',
+            requestResourceData: { messages: messagesToStore }
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error("Error saving chat history:", serverError);
+        setError("Gagal menyimpan pesan karena masalah izin.");
+    });
+  }
+
+  const handlePromptSuggestionClick = (prompt: string) => {
+      setInput(prompt);
+      // Directly call handleSubmit logic, as we don't have a form event
+      handleSubmit(new Event('submit') as any, prompt);
+  };
+  
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+        title: "Pesan disalin!",
+        description: "Teks telah disalin ke clipboard Anda.",
+    });
+  };
+
+  const handleEdit = (text: string, index: number) => {
+    setInput(text);
+    const remainingMessages = messages.slice(0, index);
+    setMessages(remainingMessages);
+    setActiveMessageIndex(null);
+    textareaRef.current?.focus();
+  };
+  
+ const handleLike = (index: number) => {
+    setLikedMessages(prev => {
+        const newLiked = new Set(prev);
+        if (newLiked.has(index)) {
+            newLiked.delete(index);
+        } else {
+            newLiked.add(index);
+            toast({ title: 'Terima kasih atas masukan Anda!' });
+        }
+        return newLiked;
+    });
+ };
+  
+  const handleRegenerate = (aiMessageIndex: number) => {
+    const historyUpToUserPrompt = messages.slice(0, aiMessageIndex);
+    const userPromptMessage = historyUpToUserPrompt[historyUpToUserPrompt.length - 1];
+
+    if (userPromptMessage?.role !== 'user') {
+        setError("Tidak dapat membuat ulang respons. Prompt pengguna tidak ditemukan.");
+        return;
+    }
+    
+    setMessages(historyUpToUserPrompt);
+    setError(null);
+    setActiveMessageIndex(null);
+
+    startTransition(async () => {
+      try {
+        const result = await nexusAssistant({
+          history: historyUpToUserPrompt,
+          appContext: {
+            userName: user?.fullName || 'Pengguna',
+            userRole: user?.role || 'Pengguna',
+          },
+        });
+        const modelMessage: LocalMessage = { role: 'model', content: result.response };
+        
+        const finalMessages = [...historyUpToUserPrompt, modelMessage];
+        setMessages(finalMessages);
+        saveHistoryToFirestore(finalMessages);
+
+      } catch (err: any) {
+        console.error('AI Error on regenerate:', err);
+        setError('Maaf, terjadi kesalahan saat mencoba membuat ulang respons.');
+        // Restore the original messages if regeneration fails
+        setMessages([...historyUpToUserPrompt, messages[aiMessageIndex]]);
+      }
+    });
+  }
+
+
+  const toggleMessageActions = (index: number) => {
+    if (activeMessageIndex === index) {
+      setActiveMessageIndex(null);
+    } else {
+      setActiveMessageIndex(index);
+    }
+  };
+
+  const handleClearChat = async () => {
+    if (!chatHistoryRef) return;
+    try {
+        await deleteDoc(chatHistoryRef);
+        setMessages([]); // Optimistically update UI
+        toast({ title: "Riwayat percakapan dihapus."});
+    } catch (serverError) {
+        const permissionError = new FirestorePermissionError({
+          path: chatHistoryRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error("Failed to clear chat history:", serverError);
+        setError("Gagal menghapus riwayat karena masalah izin.");
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>, suggestedPrompt?: string) => {
+    e.preventDefault();
+    const currentInput = suggestedPrompt || input;
+    if (!currentInput.trim() || isPending) return;
+
+    setError(null);
+    const userMessage: LocalMessage = { role: 'user', content: currentInput };
+    
+    // Optimistically update the UI with the user's message
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    setInput('');
+    
+    startTransition(async () => {
+      try {
+        const result = await nexusAssistant({
+          history: updatedMessages,
+          appContext: {
+            userName: user?.fullName || 'Pengguna',
+            userRole: user?.role || 'Pengguna',
+          },
+        });
+        const modelMessage: LocalMessage = { role: 'model', content: result.response };
+        
+        const finalMessages = [...updatedMessages, modelMessage];
+        setMessages(finalMessages);
+        saveHistoryToFirestore(finalMessages);
+
+      } catch (err: any) {
+        console.error('AI Error:', err);
+        setError('Maaf, terjadi kesalahan saat menghubungi asisten AI. Silakan coba lagi nanti.');
+        setMessages(messages);
+      }
+    });
+  };
+
+
+  return (
+    <div className="flex h-full flex-col bg-card rounded-lg">
+      <header className="p-4 border-b flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3">
+              <div>
+                  <p className="font-semibold">Nexus AI Assistant</p>
+                  <p className="text-xs text-muted-foreground">Online</p>
+              </div>
+          </div>
+          {messages.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isPending}>
+                    <Trash2 className="h-4 w-4"/>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Hapus Riwayat Percakapan?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tindakan ini tidak dapat dibatalkan. Seluruh percakapan Anda dengan asisten AI akan dihapus.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearChat}>Ya, Hapus</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+          )}
+      </header>
+
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2">
+        {isHistoryLoading ? (
+             <div className="flex flex-1 items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        ) : messages.length === 0 && !isPending && !error && (
+             <div className="text-center text-muted-foreground space-y-8 animate-in fade-in duration-500 pt-8">
+                <div className="flex justify-center">
+                    <div className="p-5 bg-primary/10 rounded-full w-fit shadow-inner">
+                        <Sparkles className="h-12 w-12 text-primary" />
+                    </div>
+                </div>
+                <div>
+                    <p className="font-semibold text-xl text-foreground">Halo, {user?.fullName || 'Sobat'}!</p>
+                </div>
+                 <div className="flex flex-wrap justify-center gap-2 px-4">
+                    {promptSuggestions.map((prompt, index) => (
+                        <Button key={index} variant="outline" size="sm" onClick={() => handlePromptSuggestionClick(prompt)}>
+                            {prompt}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`flex items-start gap-3 max-w-[85%] sm:max-w-[75%] ${
+              msg.role === 'model' ? 'mr-auto' : 'ml-auto flex-row-reverse'
+            }`}
+          >
+            <div
+              onClick={() => toggleMessageActions(index)}
+              className="max-w-full cursor-pointer"
+            >
+              <div
+                className={`rounded-2xl p-3 text-sm ${
+                  msg.role === 'user'
+                    ? 'bg-primary text-primary-foreground rounded-br-none'
+                    : 'bg-muted rounded-bl-none'
+                }`}
+              >
+                <div className="prose prose-sm dark:prose-invert max-w-full leading-relaxed">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
+              </div>
+            </div>
+            {activeMessageIndex === index && msg.role === 'user' && (
+              <div className="mt-1.5 flex gap-1 self-end">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleCopy(msg.content)}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleEdit(msg.content, index)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            {activeMessageIndex === index && msg.role === 'model' && (
+              <div className="mt-1.5 flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleCopy(msg.content)}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleLike(index)}
+                >
+                  <ThumbsUp
+                    className={cn(
+                      'h-4 w-4',
+                      likedMessages.has(index) && 'fill-blue-500 text-blue-500'
+                    )}
+                  />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleRegenerate(index)}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+        
+        {isPending && (
+          <div className="flex items-start gap-3 animate-in fade-in duration-300">
+            <div className="rounded-2xl p-3 bg-muted flex items-center gap-2 rounded-bl-none">
+              <Loader2 className="h-4 w-4 animate-spin"/>
+              <p className="text-sm text-muted-foreground">Mengetik...</p>
+            </div>
+          </div>
+        )}
+        
+        {error && (
+             <div className="flex items-start gap-3">
+                <div className="rounded-2xl p-3 bg-destructive/10 text-sm text-destructive flex items-center gap-2 rounded-bl-none">
+                    <AlertCircle className="h-4 w-4" />
+                    <p>{error}</p>
+                </div>
+            </div>
+        )}
+         <div ref={messagesEndRef} />
+      </main>
+
+      <footer className="border-t p-2 sm:p-4 flex-shrink-0">
+        <form onSubmit={handleSubmit} className="flex w-full items-end gap-2">
+          <Textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ketik pesan Anda..."
+            disabled={isPending}
+            className="flex-1 resize-none max-h-40 transition-all duration-200"
+            rows={1}
+          />
+          <Button type="submit" disabled={isPending || !input.trim()} size="icon" className="h-10 w-10 flex-shrink-0">
+            {isPending ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5" />}
+          </Button>
+        </form>
+      </footer>
+    </div>
+  );
+}
