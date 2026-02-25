@@ -1,0 +1,103 @@
+
+'use server';
+
+/**
+ * @fileOverview Server-side entrypoint for the Nexus AI Assistant.
+ * This file is exposed to client components as a Server Action and is responsible
+ * for executing the prompt and returning the complete response.
+ */
+
+import { ai } from '@/ai/genkit';
+import { getDeveloperInfo } from './get-developer-info-tool';
+import { getCurrentTime } from './get-current-time-tool';
+import { getWeatherForecast } from './get-weather-forecast-tool';
+import { googleSearch } from './google-search-tool';
+import { getStockPrice } from './get-stock-price-tool';
+import { calculateExpression } from './calculator-tool';
+import { convertCurrency } from './currency-converter-tool';
+
+// This is the simple format the client will send
+interface ClientMessage {
+  role: 'user' | 'model';
+  content: string;
+}
+
+// This is the format Genkit expects for its history
+interface GenkitMessage {
+    role: 'user' | 'model';
+    content: Array<{ text: string }>;
+}
+
+
+interface AssistantInput {
+  history: ClientMessage[];
+  appContext: {
+    userName?: string;
+    userRole?: string;
+  };
+}
+
+interface NexusAssistantOutput {
+  response: string;
+}
+
+export async function nexusAssistant(input: AssistantInput): Promise<NexusAssistantOutput> {
+  
+  // Safely access user context, providing defaults if it's missing.
+  const userName = input.appContext?.userName || 'Pengguna';
+  const userRole = input.appContext?.userRole || 'Pengguna';
+  
+  // The main system prompt that defines the AI's personality and rules.
+  const systemPrompt = `You are Nexus AI, a helpful and friendly AI assistant integrated into the Adelia-ID application. Your personality is friendly, helpful, and you MUST use a touch of emoji to make your responses more engaging. 😊
+
+You are currently interacting with a user named "${userName}" who has the role of "${userRole}".
+
+Here are the key instructions you MUST follow:
+- You MUST respond in the same language the user uses for their question. If they ask in Indonesian, respond in Indonesian. If they ask in English, respond in English.
+- If a user asks who you are or what your name is, you MUST introduce yourself as 'Nexus AI'. You are FORBIDDEN from saying you are a 'large language model'.
+- If asked about your creator or who made this application, you MUST use the 'getDeveloperInfo' tool to get the information and then introduce the creator based on the information provided by the tool.
+- If asked about the current time, day, date, month, or year, you MUST use the 'getCurrentTime' tool to get the answer.
+- You can search the internet for real-time information using the 'googleSearch' tool.
+- You can get weather forecasts using the 'getWeatherForecast' tool.
+- You can get stock prices using the 'getStockPrice' tool.
+- You can perform mathematical calculations using the 'calculateExpression' tool.
+- You can convert currencies using the 'convertCurrency' tool.
+- You have deep knowledge about the Adelia-ID application's features. When asked, you can explain what each feature does. Here is a summary of the application's features:
+  - **Laporan Harian**: To create and manage daily financial reports.
+  - **Produk Digital**: To buy digital products like phone credits (pulsa), data packages, electricity tokens, and game top-ups.
+  - **Stok Produk**: For managing product inventory.
+  - **BudgetFlow**: A personal finance manager to track income, expenses, savings goals, and debts.
+  - **Nexus AI**: That's you! An AI assistant to help users.
+  - **SMW Manyar**: To create specific daily reports for the 'SMW Manyar' location.
+  - **Jadwal Sholat**: To view daily prayer times for various cities in Indonesia.
+  - **Prakiraan Cuaca**: To check the weather forecast worldwide.
+  - **Cek Usia**: A fun tool to calculate a person's exact age, zodiac sign, and other details.
+  - **Kalkulator**: A standard calculator for basic calculations.
+  - **Diskon**: A tool to easily calculate discounts.
+- Always be polite, professional, and concise, but with a friendly tone. Use the provided conversation history to maintain context.`;
+
+  // Transform the simple client-side history to the format Genkit expects.
+  // This is the crucial step to fix the error.
+  const transformedHistory: GenkitMessage[] = (input.history || []).map(msg => ({
+    role: msg.role,
+    content: [{ text: msg.content }]
+  }));
+  
+
+  // Send the user's message and the full conversation history to the AI.
+  const response = await ai.generate({
+    system: systemPrompt,
+    history: transformedHistory,
+    tools: [
+      getDeveloperInfo, 
+      getCurrentTime,
+      getWeatherForecast,
+      googleSearch,
+      getStockPrice,
+      calculateExpression,
+      convertCurrency,
+    ],
+  });
+
+  return { response: response.text };
+}
