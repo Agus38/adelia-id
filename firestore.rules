@@ -1,0 +1,48 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    function isAdmin() {
+      // Check for custom claim `role` on the user's auth token
+      return request.auth.token.role == 'Admin';
+    }
+
+    // Rules for user profiles
+    match /users/{userId} {
+      // Admins can create new user documents
+      allow create: if isAdmin();
+      // Users can read their own profile, Admins can read any profile
+      allow read: if isAdmin() || request.auth.uid == userId;
+      // Users can only update their own profile
+      allow update: if request.auth.uid == userId;
+      // Only Admins can delete user documents
+      allow delete: if isAdmin();
+      // Only Admins can list all users
+      allow list: if isAdmin();
+    }
+
+    // Rules for daily financial reports
+    match /dailyReports/{reportId} {
+      // A logged-in user can create a report for themselves
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // An admin can read any report. A user can only read their own reports.
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == resource.data.userId);
+       // A user can only update their own reports.
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Only Admins can delete reports
+      allow delete: if isAdmin();
+      // Only Admins can list all reports
+      allow list: if isAdmin();
+    }
+
+    // Rules for general app settings (menus, banners, etc.)
+    match /app-settings/{setting} {
+      // Everyone can read the app settings
+      allow read: if true;
+      // Only Admins can change the app settings
+      allow write: if isAdmin();
+    }
+  }
+}
