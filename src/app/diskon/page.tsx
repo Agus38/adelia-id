@@ -1,0 +1,153 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Tag, RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const formatCurrency = (value: number) => {
+    if (isNaN(value)) return 'Rp 0';
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(value);
+};
+
+export default function DiskonPage() {
+  const [originalPrice, setOriginalPrice] = useState('');
+  const [discountedPrice, setDiscountedPrice] = useState('');
+  
+  const [discountAmount, setDiscountAmount] = useState<number | null>(null);
+  const [discountPercentage, setDiscountPercentage] = useState<number | null>(null);
+
+  const handlePriceChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    if (value.length <= 12) {
+      setter(value);
+    }
+  };
+  
+  const formatDisplayValue = (value: string) => {
+    if (!value) return '';
+    return Number(value).toLocaleString('id-ID');
+  };
+
+  useEffect(() => {
+    const calculateDiscount = () => {
+      const original = parseFloat(originalPrice);
+      const discounted = parseFloat(discountedPrice);
+
+      if (!isNaN(original) && !isNaN(discounted) && original > 0 && original >= discounted) {
+        const amount = original - discounted;
+        const percentage = (amount / original) * 100;
+        setDiscountAmount(amount);
+        setDiscountPercentage(percentage);
+      } else {
+        setDiscountAmount(null);
+        setDiscountPercentage(null);
+      }
+    };
+    calculateDiscount();
+  }, [originalPrice, discountedPrice]);
+  
+  const handleReset = () => {
+      setOriginalPrice('');
+      setDiscountedPrice('');
+      setDiscountAmount(null);
+      setDiscountPercentage(null);
+  }
+
+  const getDynamicFontSize = (text: string) => {
+    const length = text.length;
+    if (length > 15) return 'text-sm';
+    if (length > 11) return 'text-base';
+    if (length > 8) return 'text-lg';
+    return 'text-xl md:text-2xl';
+  };
+
+
+  return (
+    <div className="flex flex-1 flex-col p-4 pt-6 md:p-8">
+      <div className="flex-shrink-0 mb-6">
+        <div className="flex items-center space-x-2">
+          <Tag className="h-8 w-8" />
+          <h2 className="text-3xl font-bold tracking-tight">Kalkulator Diskon</h2>
+        </div>
+        <p className="text-muted-foreground mt-2 text-sm sm:text-base">
+          Hitung potongan harga dengan mudah untuk mengetahui besaran diskon dalam nominal dan persentase.
+        </p>
+      </div>
+      <div className="flex flex-1 items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+             <CardTitle className="text-center">Hitung Diskon Anda</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="original-price">Harga Asli (Sebelum Diskon)</Label>
+              <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                  <Input 
+                      id="original-price" 
+                      type="text"
+                      inputMode='numeric'
+                      placeholder="0" 
+                      value={formatDisplayValue(originalPrice)} 
+                      onChange={handlePriceChange(setOriginalPrice)}
+                      className="pl-8 font-semibold"
+                      maxLength={12}
+                  />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="discounted-price">Harga Setelah Diskon</Label>
+               <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
+                  <Input 
+                      id="discounted-price" 
+                      type="text"
+                      inputMode='numeric'
+                      placeholder="0" 
+                      value={formatDisplayValue(discountedPrice)} 
+                      onChange={handlePriceChange(setDiscountedPrice)}
+                      className="pl-8 font-semibold"
+                      maxLength={12}
+                  />
+              </div>
+            </div>
+            
+             {(discountAmount !== null || discountPercentage !== null) && (
+                <div className="space-y-4 pt-4 border-t animate-in fade-in duration-300">
+                    <h3 className="text-lg font-semibold text-center">Hasil Perhitungan</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-muted rounded-lg text-center overflow-hidden">
+                            <p className="text-sm text-muted-foreground">Potongan Harga</p>
+                            <p className={cn(
+                                "font-bold text-primary break-words",
+                                getDynamicFontSize(formatCurrency(discountAmount ?? 0))
+                            )}>
+                                {formatCurrency(discountAmount ?? 0)}
+                            </p>
+                        </div>
+                        <div className="p-4 bg-muted rounded-lg text-center">
+                            <p className="text-sm text-muted-foreground">Persentase Diskon</p>
+                            <p className="text-xl md:text-2xl font-bold text-primary">{discountPercentage?.toFixed(1) ?? '0'}%</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            <Button onClick={handleReset} variant="outline" className="w-full">
+              <RefreshCw className="mr-2 h-4 w-4"/> Reset
+            </Button>
+
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
